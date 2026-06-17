@@ -1,112 +1,112 @@
 // SPDX-License-Identifier: MIT
-/* Copyright (c) 2023, ARTCOMPILER INC */
+/* Copyright (c) 2026, ARTCOMPILER INC */
 //
-// L0175 inherits L0000: its Checker/Transformer extend L0000's, adding handlers for the
-// L0175 vocabulary (hello, image, theme, print) and overriding PROG. Unhandled tags fall
-// through to L0000's base handlers via `super`/the shared Visitor dispatch.
+// L0175 — a content-composition language for 5th-grade ELA assessment items
+// (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence).
+//
+// A program authors an inline SUPERSET of tagged content for a literary passage —
+// candidate inference/conclusion `claim`s and evidence `source`s, each tagged — plus one
+// or more `outcome`s. The overridden PROG runs a deterministic COMPOSE that selects, per
+// outcome, the subset of content that best fits and assembles a finished item.
+//
+// The authoring surface is the l0169 builder idiom; see lexicon.ts. The Transformer's
+// attribute/collection/element handlers reconstruct plain records (L0000's deepConvertRecords
+// supports `{ ...record, key: v0 }`), and PROG reads them as plain props and composes.
+//
+// Validation: enum membership + required fields are HARD errors (pushed into the error array,
+// failing the compile, per the Compiler pipeline). Selection compromises (missing id refs,
+// thin distractor pools, unsatisfiable outcomes, hot-text ambiguity) are non-fatal WARNINGS
+// carried in each item's `warnings`.
 import {
   Checker as BaseChecker,
   Transformer as BaseTransformer,
   Compiler,
 } from "@graffiticode/l0000";
 
+// ---------------------------------------------------------------------------
+// Enumerations (the closed vocabularies; bare kebab identifiers resolve to these strings).
+// ---------------------------------------------------------------------------
+const ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text"]);
+const PASSAGE_TYPES = new Set(["literary", "informational"]);
+const DIMENSIONS = new Set([
+  "character", "setting", "event", "point-of-view",
+  "theme", "topic", "narrators-feelings", "character-relationship",
+]);
+const CLAIM_STATUS = new Set(["supported", "distractor"]);
+const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irrelevant"]);
+const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"];
+const STANDARDS = new Set(["rl-1", "rl-3", "rl-6", "rl-9"]);
+
+// Which standard the dimension implies (rl-1 — cite evidence — is foundational to every item).
+const DIM_STANDARD: Record<string, string> = {
+  "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
+  "point-of-view": "rl-6", "narrators-feelings": "rl-6",
+  "theme": "rl-9", "topic": "rl-9",
+};
+
+const DIM_PHRASE: Record<string, string> = {
+  "character": "the character", "setting": "the setting", "event": "the events",
+  "point-of-view": "the point of view", "theme": "the theme", "topic": "the topic",
+  "narrators-feelings": "the narrator's feelings",
+  "character-relationship": "the characters' relationship",
+};
+
+const DEFAULT_RUBRIC = [
+  { score: 2, descriptor: "Makes a valid inference and supports it with specific, relevant details from the passage." },
+  { score: 1, descriptor: "Makes a partially valid inference, or supports it with limited or only partially relevant details." },
+  { score: 0, descriptor: "Does not make a valid inference, or provides no relevant textual support." },
+];
+
+// ---------------------------------------------------------------------------
+// Builder attribute handlers — generated below. Each is arity-2 (value, continuation) and
+// merges one key into the continuation record. ERROR_TYPE stores under the JS-friendly key.
+// ---------------------------------------------------------------------------
+const ATTR_KEYS: Record<string, string> = {
+  ID: "id", STATUS: "status", DIMENSION: "dimension", ERROR_TYPE: "errorType",
+  TEXT: "text", RATIONALE: "rationale", CITES: "cites", LINE: "line", QUOTE: "quote",
+  SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
+  FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
+  RUBRIC: "rubric", DOK: "dok",
+  CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
+};
+
 export class Checker extends BaseChecker {
   [key: string]: any;
-
-  THEME(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      this.visit(node.elts[1], options, async (e1, v1) => {
-        const node0 = this.nodePool[node.elts[0]];
-        if ((v0.tag === "TAG" && v0.elts[0] === "DARK") || v0.elts[0] === "LIGHT") {
-          const err = [];
-          const val = node;
-          resume(err, val);
-        } else {
-          const err = [
-            {
-              message: `Expecting a tag DARK or tag LIGHT. Got ${(v0.tag && "tag " + v0.elts[0]) || v0}.`,
-              ...node0.coord,
-            },
-          ];
-          const val = node;
-          resume(err, val);
-        }
-      });
-    });
-  }
-
-  HELLO(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      const err = [];
-      const val = node;
-      resume(err, val);
-    });
-  }
+  // Every L0175 tag falls through to L0000's CATCH_ALL (returns the node, no error), so the
+  // Checker passes our custom forms cleanly; semantic validation runs in the Transformer
+  // where the assembled records are readable as plain props.
 }
 
 export class Transformer extends BaseTransformer {
   [key: string]: any;
 
-  PRINT(node, options, resume) {
-    this.visit(node.elts[0], options, (e0, v0) => {
-      const err = e0;
-      const val = {
-        print: v0,
-      };
-      resume(err, val);
-    });
-  }
-
-  HELLO(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      const data = options?.data || {};
-      const err = [];
-      const val = {
-        ...data,
-        hello: data.hello !== undefined ? data.hello : v0,
-      };
-      resume(err, val);
-    });
-  }
-
-  IMAGE(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      const data = options?.data || {};
-      const err = [];
-      const val = {
-        image: v0,
-        ...data,
-      };
-      resume(err, val);
-    });
-  }
-
-  THEME(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      this.visit(node.elts[1], options, async (e1, v1) => {
-        const data = options?.data || {};
-        // If the themed body is already a named record (e.g. { hello }), merge it so its
-        // fields sit alongside `theme`. Otherwise (a scalar or list) wrap it under `value`
-        // so it isn't lost next to `theme`.
-        const isRecord = typeof v1 === "object" && v1 !== null && !Array.isArray(v1);
-        const body = isRecord ? v1 : { value: v1 };
-        resume([], {
-          theme: v0?.tag.toLowerCase(),
-          ...body,
-          ...data,
+  constructor(code: any) {
+    super(code);
+    // Attribute & collection builders: { ...continuation, key: value }.
+    for (const [tag, key] of Object.entries(ATTR_KEYS)) {
+      this[tag] = (node: any, options: any, resume: any) => {
+        this.visit(node.elts[0], options, (e0: any, v0: any) => {
+          this.visit(node.elts[1], options, (e1: any, v1: any) => {
+            const base = isPlain(v1) ? v1 : {};
+            resume([].concat(e0).concat(e1), { ...base, [key]: v0 });
+          });
         });
-      });
-    });
+      };
+    }
+    // Element wrappers: pass the assembled attribute-chain record through.
+    for (const tag of ["CLAIM", "SOURCE", "OUTCOME"]) {
+      this[tag] = (node: any, options: any, resume: any) => {
+        this.visit(node.elts[0], options, (e0: any, v0: any) => resume(e0, v0));
+      };
+    }
   }
 
-  PROG(node, options, resume) {
-    this.visit(node.elts[0], options, async (e0, v0) => {
-      const data = options?.data || {};
-      const val = v0.pop();
-      // No `_` wrapper: the program result IS the data (carried in the compile envelope's
-      // `data` field). Records merge with any input data; scalars/lists pass through as-is.
-      const isObject = typeof val === "object" && val !== null && !Array.isArray(val);
-      resume(e0, isObject ? { ...val, ...data } : val);
+  PROG(node: any, options: any, resume: any) {
+    this.visit(node.elts[0], options, (e0: any, v0: any) => {
+      const errors: any[] = [].concat(e0 || []);
+      const top = Array.isArray(v0) ? v0[v0.length - 1] : v0;
+      const out = composeProgram(top || {}, errors);
+      resume(errors, out);
     });
   }
 }
@@ -117,3 +117,389 @@ export const compiler = new Compiler({
   Checker,
   Transformer,
 });
+
+// ===========================================================================
+// Composition (pure, deterministic — no LLM). A future error-transform pass (swap-referent,
+// overgeneralize, ...) would slot in where distractor claims are gathered.
+// ===========================================================================
+
+function isPlain(v: any): boolean {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+function str(v: any): string {
+  // Enum values may arrive as a bare lexeme string (IDENT fallback) or, when registered as
+  // tags, as a { tag } object — normalize both to the plain string.
+  if (v && typeof v === "object" && typeof v.tag === "string") return v.tag;
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+function slug(s: string): string {
+  return str(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "p";
+}
+
+function composeProgram(top: any, errors: any[]): any {
+  const heading = str(top.passage);
+  const passageType = top.type !== undefined ? str(top.type) : "literary";
+  const lineTexts: string[] = Array.isArray(top.lines) ? top.lines.map(str) : [];
+  const claims: any[] = Array.isArray(top.claims) ? top.claims : [];
+  const sources: any[] = Array.isArray(top.evidence) ? top.evidence : [];
+  const outcomes: any[] = Array.isArray(top.outcomes) ? top.outcomes : [];
+
+  // --- hard validation (fails the compile) ---
+  if (passageType && !PASSAGE_TYPES.has(passageType)) {
+    errors.push({ message: `Unknown passage type '${passageType}'. Expected one of: ${[...PASSAGE_TYPES].join(", ")}.` });
+  }
+  if (lineTexts.length === 0) {
+    errors.push({ message: "Passage has no `lines`." });
+  }
+  for (const c of claims) validateClaim(c, errors);
+  for (const s of sources) validateSource(s, errors);
+  for (const o of outcomes) validateOutcome(o, errors);
+
+  const passageId = slug(heading);
+  const passage = {
+    id: passageId,
+    heading,
+    type: passageType,
+    lines: lineTexts.map((text, i) => ({ id: i + 1, text })),
+  };
+  const ctx = {
+    passage,
+    claims,
+    sources,
+    claimById: index(claims, "id"),
+    sourceById: index(sources, "id"),
+  };
+
+  const items = outcomes.map((o) => composeOutcome(o, ctx));
+  if (items.length === 1) return items[0];
+  return { kind: "items", items };
+}
+
+function validateClaim(c: any, errors: any[]) {
+  const id = str(c.id);
+  const where = id ? `claim '${id}'` : "a claim";
+  if (!CLAIM_STATUS.has(str(c.status))) {
+    errors.push({ message: `${where}: invalid status '${str(c.status)}'. Expected supported or distractor.` });
+  }
+  // dimension is required on supported claims (it must match the outcome); optional on
+  // distractors (foils share the item's dimension by construction), but validated if present.
+  if (str(c.dimension)) {
+    if (!DIMENSIONS.has(str(c.dimension))) {
+      errors.push({ message: `${where}: invalid dimension '${str(c.dimension)}'.` });
+    }
+  } else if (str(c.status) === "supported") {
+    errors.push({ message: `${where}: supported claim needs a dimension.` });
+  }
+  if (!str(c.text)) errors.push({ message: `${where}: missing text.` });
+  if (str(c.status) === "distractor") {
+    if (!ERROR_TYPES.includes(str(c.errorType))) {
+      errors.push({ message: `${where}: distractor needs a valid error-type (${ERROR_TYPES.join(", ")}).` });
+    }
+    if (!str(c.rationale)) {
+      errors.push({ message: `${where}: distractor needs a rationale (the justification for the foil).` });
+    }
+  }
+}
+
+function validateSource(s: any, errors: any[]) {
+  const id = str(s.id);
+  const where = id ? `source '${id}'` : "a source";
+  if (!id) errors.push({ message: `${where}: missing id.` });
+  if (!SOURCE_STATUS.has(str(s.status))) {
+    errors.push({ message: `${where}: invalid status '${str(s.status)}'. Expected directly-supports, supports-wrong-claim, or irrelevant.` });
+  }
+  if (s.line === undefined && !str(s.quote)) {
+    errors.push({ message: `${where}: needs a line number or a quote.` });
+  }
+}
+
+function validateOutcome(o: any, errors: any[]) {
+  if (!ITEM_TYPES.has(str(o.type))) {
+    errors.push({ message: `outcome: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.` });
+  }
+  if (!DIMENSIONS.has(str(o.dimension))) {
+    errors.push({ message: `outcome: invalid dimension '${str(o.dimension)}'.` });
+  }
+  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) {
+    errors.push({ message: `outcome: invalid standard '${str(o.standard)}'.` });
+  }
+}
+
+function index(arr: any[], key: string): Record<string, any> {
+  const m: Record<string, any> = {};
+  for (const x of arr) if (x && x[key] !== undefined) m[str(x[key])] = x;
+  return m;
+}
+
+function standardsFor(outcome: any, correct: any, dim: string): string[] {
+  const companion = str(outcome.standard) || str(correct && correct.standard) || DIM_STANDARD[dim];
+  const out = ["rl-1"];
+  if (companion && companion !== "rl-1") out.push(companion);
+  return out;
+}
+
+function sourceText(s: any, passage: any): string {
+  if (str(s.quote)) return str(s.quote);
+  const ln = passage.lines.find((l: any) => l.id === s.line);
+  return ln ? ln.text : "";
+}
+
+// Deterministic shuffle (seeded) so recompiling the same program yields stable option labels.
+function strHash(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a: number) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const rnd = mulberry32(strHash(seed));
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const LABELS = ["A", "B", "C", "D", "E", "F"];
+
+// Rank supported candidates by fit to the outcome; best first, tie-break by id.
+function rankClaims(cands: any[], outcome: any, ctx: any): any[] {
+  const scored = cands.map((c) => {
+    let s = 0;
+    if (str(outcome.standard) && str(c.standard) === str(outcome.standard)) s += 4;
+    if (str(outcome.dok) && str(c.dok) === str(outcome.dok)) s += 2;
+    if (str(outcome.subject) && str(c.subject).toLowerCase() === str(outcome.subject).toLowerCase()) s += 4;
+    const direct = (Array.isArray(c.cites) ? c.cites : [])
+      .map((id: any) => ctx.sourceById[str(id)])
+      .filter((src: any) => src && str(src.status) === "directly-supports");
+    s += Math.min(direct.length, 3); // richness
+    const ls = direct.map((d: any) => d.line).filter((n: any) => typeof n === "number");
+    if (ls.length > 1) s += Math.max(...ls) - Math.min(...ls) > 1 ? 2 : 1; // spread (DOK3)
+    return { c, s };
+  });
+  scored.sort((a, b) => b.s - a.s || str(a.c.id).localeCompare(str(b.c.id)));
+  return scored.map((x) => x.c);
+}
+
+// Distinct = not a normalized-text duplicate of an already-chosen option.
+function norm(t: string): string {
+  return str(t).toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
+}
+
+function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any[] {
+  const all = ctx.claims.filter((c: any) => str(c.status) === "distractor");
+  const sameDim = all.filter((c: any) => str(c.dimension) === str(correct.dimension));
+  const pool = sameDim.length >= 3 ? sameDim : all;
+  const seen = new Set([norm(correct.text)]);
+  const byType: Record<string, any[]> = {};
+  for (const c of pool) (byType[str(c.errorType)] = byType[str(c.errorType)] || []).push(c);
+  const chosen: any[] = [];
+  const take = (c: any) => {
+    if (!c) return;
+    const n = norm(c.text);
+    if (seen.has(n)) { warnings.push(`Dropped near-duplicate distractor '${str(c.id)}'.`); return; }
+    seen.add(n); chosen.push(c);
+  };
+  for (const t of ERROR_TYPES) if (byType[t] && byType[t].length) take(byType[t].shift());
+  const rest = pool.filter((c: any) => !chosen.includes(c));
+  while (chosen.length < 3 && rest.length) take(rest.shift());
+  if (chosen.length < 3) warnings.push(`Only ${chosen.length} distractor claim(s) available; an EBSR/Hot-Text item wants 3.`);
+  const missing = ERROR_TYPES.filter((t) => !chosen.some((c) => str(c.errorType) === t));
+  if (missing.length) warnings.push(`Distractor error types not represented: ${missing.join(", ")}.`);
+  return chosen.slice(0, 3);
+}
+
+function partAOptions(correct: any, distractors: any[], seed: string) {
+  const opts = [
+    { text: str(correct.text), correct: true, claimId: str(correct.id) },
+    ...distractors.map((d) => ({ text: str(d.text), correct: false, claimId: str(d.id), errorType: str(d.errorType) })),
+  ];
+  return labelize(seededShuffle(opts, seed + ":A"));
+}
+
+function labelize(opts: any[]) {
+  return opts.map((o, i) => ({ key: LABELS[i], ...o }));
+}
+
+function composeOutcome(outcome: any, ctx: any): any {
+  const warnings: string[] = [];
+  const dim = str(outcome.dimension);
+  const itemType = str(outcome.type);
+  const subject = str(outcome.subject);
+  const dok = str(outcome.dok) || "r-dok3";
+  const seed = `${ctx.passage.id}:${dim}:${itemType}`;
+
+  // 1. Select the correct claim from possibly many supported candidates.
+  const candidates = ctx.claims.filter((c: any) => str(c.status) === "supported" && str(c.dimension) === dim);
+  let correct: any = null;
+  if (str(outcome.focus)) {
+    correct = ctx.claimById[str(outcome.focus)];
+    if (!correct) warnings.push(`focus claim '${str(outcome.focus)}' not found; ranking instead.`);
+  }
+  if (!correct) correct = rankClaims(candidates, outcome, ctx)[0];
+  if (!correct) {
+    warnings.push(`Outcome dimension '${dim}' cannot be satisfied: no supported claim with that dimension.`);
+    return baseItem(itemType, outcome, ctx, dim, dok, null, warnings);
+  }
+  const alternativeClaims = Math.max(0, candidates.length - 1);
+
+  const item = baseItem(itemType, outcome, ctx, dim, dok, correct, warnings);
+  item.review.alternativeClaims = alternativeClaims;
+
+  const directSources = (Array.isArray(correct.cites) ? correct.cites : [])
+    .map((id: any) => ctx.sourceById[str(id)])
+    .filter((s: any) => s && str(s.status) === "directly-supports");
+
+  if (itemType === "short-text") {
+    item.prompt = shortTextPrompt(dim, subject);
+    item.rubric = Array.isArray(outcome.rubric) && outcome.rubric.length ? outcome.rubric : DEFAULT_RUBRIC;
+    item.distractorAnalysis = [];
+    item.answerKey = { rationale: str(correct.rationale) };
+    if (ctx.passage.lines.length < 6) warnings.push("Short Text items should use a long literary passage; this passage is short.");
+    return item;
+  }
+
+  // EBSR & Hot Text share Part A (statement options).
+  const distractors = selectDistractorClaims(correct, ctx, warnings);
+  item.partA = { options: partAOptions(correct, distractors, seed) };
+  const aKey = item.partA.options.find((o: any) => o.correct)?.key;
+  const analysis: any[] = item.partA.options
+    .filter((o: any) => !o.correct)
+    .map((o: any) => ({
+      part: "A", key: o.key, claimId: o.claimId, errorType: o.errorType,
+      tiesTo: [o.claimId],
+      rationale: str(ctx.claimById[o.claimId]?.rationale),
+    }));
+
+  if (itemType === "hot-text") {
+    const directLines = new Set(directSources.map((s: any) => s.line));
+    item.selectable = ctx.passage.lines.map((l: any) => ({ lineId: l.id, text: l.text, correct: directLines.has(l.id) }));
+    if (directLines.size === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
+    // Defensible-options guard: direct support + wrong-claim sources that also reference the correct claim.
+    const extra = ctx.sources.filter((s: any) =>
+      str(s.status) === "supports-wrong-claim" &&
+      (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id))).length;
+    if (extra >= 2) warnings.push(`Hot Text: ${directLines.size + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
+    item.distractorAnalysis = analysis;
+    item.answerKey = { partA: aKey, rationale: str(correct.rationale) };
+    return item;
+  }
+
+  // EBSR Part B — curated 4 line options.
+  const correctSrc = directSources[0];
+  const distractorSrcs = pickPartBDistractors(correct, distractors, ctx);
+  const bOpts = [
+    ...(correctSrc ? [{ line: correctSrc.line, text: sourceText(correctSrc, ctx.passage), correct: true, sourceId: str(correctSrc.id) }] : []),
+    ...distractorSrcs.map((s: any) => ({
+      line: s.line, text: sourceText(s, ctx.passage), correct: false, sourceId: str(s.id),
+      status: str(s.status), tiesTo: firstWrongClaim(s, correct),
+    })),
+  ];
+  if (!correctSrc) warnings.push("No directly-supporting evidence for the correct claim; EBSR Part B has no correct option.");
+  if (bOpts.length < 4) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4.`);
+  item.partB = { options: labelize(seededShuffle(bOpts, seed + ":B")) };
+  const bKey = item.partB.options.find((o: any) => o.correct)?.key;
+
+  // A<->B no-giveaway check: at least one Part B distractor should also tie to the correct claim.
+  const overlap = distractorSrcs.some((s: any) => (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id)));
+  if (distractorSrcs.length && !overlap) {
+    warnings.push("Part B options do not overlap the correct Part A option — possible A↔B giveaway.");
+  }
+
+  for (const o of item.partB.options) {
+    if (!o.correct) {
+      analysis.push({
+        part: "B", key: o.key, sourceId: o.sourceId, status: o.status, tiesTo: o.tiesTo,
+        rationale: partBRationale(ctx.sourceById[o.sourceId], o.status),
+      });
+    }
+  }
+  item.distractorAnalysis = analysis;
+  item.answerKey = { partA: aKey, partB: bKey, rationale: str(correct.rationale) };
+  return item;
+}
+
+function pickPartBDistractors(correct: any, distractors: any[], ctx: any): any[] {
+  const distractorIds = new Set(distractors.map((d) => str(d.id)));
+  const wrong = ctx.sources.filter((s: any) =>
+    str(s.status) === "supports-wrong-claim" &&
+    (Array.isArray(s.supports) ? s.supports.map(str) : []).some((id: string) => distractorIds.has(id)));
+  const irrelevant = ctx.sources.filter((s: any) => str(s.status) === "irrelevant");
+  const out: any[] = [];
+  const seen = new Set<string>();
+  for (const s of [...wrong, ...irrelevant]) {
+    if (out.length >= 3) break;
+    if (seen.has(str(s.id))) continue;
+    seen.add(str(s.id));
+    out.push(s);
+  }
+  return out;
+}
+
+function firstWrongClaim(s: any, correct: any): string {
+  const ids = (Array.isArray(s.supports) ? s.supports.map(str) : []).filter((id: string) => id !== str(correct.id));
+  return ids[0] || "";
+}
+
+function partBRationale(s: any, status: string): string {
+  if (s && str(s.rationale)) return str(s.rationale);
+  if (status === "supports-wrong-claim") return "Real evidence, but it supports a different (erroneous) inference, not the correct one.";
+  return "Does not directly support the inference.";
+}
+
+function shortTextPrompt(dim: string, subject: string): string {
+  const about = subject || DIM_PHRASE[dim] || "the passage";
+  return `What inference can you make about ${about}? Use specific details from the passage to support your answer.`;
+}
+
+function stemFor(itemType: string, dim: string, subject: string) {
+  const about = subject || DIM_PHRASE[dim] || "the passage";
+  if (itemType === "hot-text") {
+    return {
+      partA: `Click the statement that is best supported by the passage about ${about}.`,
+      partB: "Click the sentence from the passage that best supports your answer in Part A.",
+      leadIn: "This question has two parts. First, answer Part A. Then answer Part B.",
+    };
+  }
+  // ebsr
+  return {
+    partA: `Which inference about ${about} is best supported by the passage?`,
+    partB: "Which detail from the passage best supports your answer in Part A?",
+    leadIn: "This question has two parts. First, answer Part A. Then answer Part B.",
+  };
+}
+
+function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: string, correct: any, warnings: string[]): any {
+  const scoring = itemType === "short-text"
+    ? "0–2 points; hand-scored against the rubric."
+    : "Both parts correct = 1 point; otherwise 0.";
+  return {
+    kind: "item",
+    id: `${ctx.passage.id}-${itemType}-${dim}`,
+    type: itemType,
+    standards: standardsFor(outcome, correct, dim),
+    dok,
+    dimension: dim,
+    passage: ctx.passage,
+    passages: null,
+    stem: stemFor(itemType, dim, str(outcome.subject)),
+    distractorAnalysis: [],
+    answerKey: {},
+    review: {
+      standards: standardsFor(outcome, correct, dim),
+      dok,
+      dimension: dim,
+      scoring,
+      correctClaim: correct ? { id: str(correct.id), text: str(correct.text) } : null,
+      alternativeClaims: 0,
+    },
+    warnings,
+  };
+}

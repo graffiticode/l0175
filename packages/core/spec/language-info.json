@@ -1,50 +1,37 @@
 {
   "id": "0175",
-  "description": "The base Graffiticode dialect. Evaluates small functional-programming expressions (arithmetic, lists, lambdas, map/filter/reduce, pattern matching, tags) and renders a handful of UI primitives (hello, image, theme, id). Right tool for 'compute this value' or 'render a hello/image/themed greeting' requests; domain-specific artifacts (assessments, spreadsheets, SVG, board content) belong in the higher-numbered dialects.",
-  "supported_item_types": [
-    "expression",
-    "rendered_ui"
-  ],
+  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence). A program authors an inline superset of tagged content for one literary passage — candidate inference claims and evidence sources — plus intended outcomes; the compiler selects the best-fitting content and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate it.",
+  "supported_item_types": ["ebsr", "hot-text", "short-text"],
   "example_prompts": [
     {
-      "prompt": "Double every number in [1 2 3 4] and then sum them.",
-      "produces": "expression",
-      "notes": "Exercises map + reduce on an explicit list — the canonical list-transformation pattern."
+      "prompt": "From a short story about a girl named Mara at a tide pool, write an EBSR item about what Mara cares about, standard rl-1.",
+      "produces": "ebsr",
+      "notes": "Two-part selected response: Part A inference statement, Part B supporting line; needs a supported claim plus three error-typed distractor claims."
     },
     {
-      "prompt": "Define a function `triple` that multiplies a number by 3, then map it over the range 1 to 5.",
-      "produces": "expression",
-      "notes": "Combines `let`-bound lambda, `range`, and `map` — covers user-defined functions applied to a generated list."
+      "prompt": "From the same tide-pool passage, also produce a short-text constructed-response item asking for an inference about Mara with evidence.",
+      "produces": "short-text",
+      "notes": "Reuses the same pool; emits a prompt and a 0/1/2 rubric, no distractors."
     },
     {
-      "prompt": "Filter the even numbers out of [1 2 3 4 5 6] using a lambda with `eq` and `mod`.",
-      "produces": "expression",
-      "notes": "Pins down the predicate shape (eq (mod x 2) 0) so the translator doesn't guess between `mod` and a custom helper."
+      "prompt": "Make a hot-text item where students click the sentences that show Mara's focus on the tide pool.",
+      "produces": "hot-text",
+      "notes": "Part B exposes every passage line as selectable; the correct claim's directly-supporting lines are the answer."
     },
     {
-      "prompt": "Match a pair (x, y) and return whichever value is larger.",
-      "produces": "expression",
-      "notes": "Pattern matching on a pair — exercises `case` with destructuring plus a comparison operator."
+      "prompt": "Add a faulty-reasoning distractor that mistakes Mara's quiet whisper for fear of her family.",
+      "produces": "ebsr",
+      "notes": "A distractor claim with error-type faulty-reasoning and a rationale; composition uses it for Part A error-type coverage."
     },
     {
-      "prompt": "Render a hello greeting for 'world' in the dark theme.",
-      "produces": "rendered_ui",
-      "notes": "Minimal UI program: `theme DARK hello \"world\"..` — covers the theme-wraps-hello composition."
+      "prompt": "Write an item about the narrator's point of view in a first-person diary entry, standard rl-6.",
+      "produces": "ebsr",
+      "notes": "Dimension point-of-view selects the matching supported claim and reports rl-6 alongside rl-1."
     },
     {
-      "prompt": "Display the image at https://example.com/photo.jpg.",
-      "produces": "rendered_ui",
-      "notes": "Single-primitive UI program using the `image` function — the simplest rendered output L0175 can produce."
-    },
-    {
-      "prompt": "Define tags `yes` and `no`, then return `true` for `yes` and `false` for `no` using `case`.",
-      "produces": "expression",
-      "notes": "Exercises user-defined tags plus `case` dispatch — the core pattern for representing finite-choice values."
-    },
-    {
-      "prompt": "Sum the squares of the numbers from 1 to 10.",
-      "produces": "expression",
-      "notes": "Chains `range`, `map` with `pow x 2` (or a squaring lambda), and `reduce add 0` — a three-stage pipeline on computed inputs."
+      "prompt": "Compose an item comparing how two characters in the story react to the same event, standard rl-3.",
+      "produces": "ebsr",
+      "notes": "Dimension character-relationship; the companion standard rl-3 is emitted with rl-1."
     }
   ]
 }

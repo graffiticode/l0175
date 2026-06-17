@@ -1,41 +1,83 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Dialect Extensions
 
-L0175 is the base dialect of Graffiticode, focused on simple interactions and visualizations.
+L0175 composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 ·
+Target 4: Reasoning & Evidence) from an authored, inline superset of tagged content.
 
-## L0175 Functions
+## Authoring contract
 
-| Function | Signature | Description |
-| :------- | :-------- | :---------- |
-| `hello` | `<string: record>` | Renders a "hello, {string}!" greeting |
-| `image` | `<string: record>` | Renders an image from a URL |
-| `theme` | `<tag record: record>` | Sets UI theme (DARK or LIGHT) wrapping a body expression |
-| `id` | `<string any: record>` | Sets an element identifier |
+A program is ONE flat builder chain ending in a single `{}..`. Top-level forms
+(`passage`, `type`, `lines`, `claims`, `evidence`, `outcomes`) chain with no `{}` between
+them. Inside the `claims` / `evidence` / `outcomes` lists, each element (`claim` / `source`
+/ `outcome`) is its own attribute chain terminated by its own `{}`, and elements are
+separated by commas.
 
-## L0175 Built-in Tags
+Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels (`id`,
+`cites`, `supports`). Write closed-enum values as bare kebab-case identifiers (`ebsr`,
+`character`, `misreads-detail`, `directly-supports`, `rl-1`, `r-dok3`).
 
-- `DARK` — dark theme
-- `LIGHT` — light theme
+## Forms and attributes
 
-## L0175 Examples
+- **passage** `"heading"` — plus `type` (`literary` | `informational`) and `lines [ "..." ... ]`.
+- **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
+  claims), `text`. A `distractor` also requires `error-type` and a non-empty `rationale`.
+  Optional: `cites` (evidence ids), `subject`, `standard`, `dok` (used to rank the correct claim).
+- **source** — `id`, `line` (passage line number) or `quote`, `status`
+  (`directly-supports` | `supports-wrong-claim` | `irrelevant`), `supports` (claim ids).
+  Optional `rationale` explaining a foil.
+- **outcome** — `type` (`ebsr` | `hot-text` | `short-text`), `dimension`, optional `subject`,
+  `standard`, `dok`, and `focus` (force a correct-claim id).
 
-### Hello world
+## Authoring guidance
+
+- Provide **at least one supported claim per dimension** you target, and for EBSR/Hot-Text
+  provide **three distractor claims** covering all three error types
+  (`misreads-detail`, `erroneous-inference`, `faulty-reasoning`).
+- Tag evidence so Part B has material: mark the lines that **directly support** the correct
+  claim, give a few **supports-wrong-claim** foils (ideally also tied to the correct claim so
+  they plausibly support more than one Part A option), and a couple of **irrelevant** lines.
+- Distractor rationales must state *why a student would plausibly choose the foil* (the error
+  it targets). They appear in the item's `distractorAnalysis` output.
+- The same passage + superset can drive several outcomes; add one `outcome` per item you want.
+
+## Built-in enumerations
+
+- item `type`: `ebsr`, `hot-text`, `short-text`
+- `dimension`: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
+- `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
+- `standard`: `rl-1`, `rl-3`, `rl-6`, `rl-9` · `dok`: `r-dok3`
+
+## What composition does
+
+The compiler selects the best-fitting supported claim per outcome, builds the task-model
+item, and emits `distractorAnalysis` (every foil's error type + rationale + the claim it
+ties to), an `answerKey`, the matched `standards` and `dok`, and `warnings` when the pool is
+thin or an outcome cannot be satisfied. It never generates content — author it.
+
+## Example
+
 ```
-hello "world"..
-```
-
-### Themed greeting
-```
-theme DARK hello "world"..
-```
-
-### Image display
-```
-image "https://example.com/photo.jpg"..
-```
-
-### Combining core and L0175 functions
-```
-let name = "world"..
-theme LIGHT hello name..
+passage "The Tide Pool"
+type literary
+lines [
+  "Mara crouched at the edge of the tide pool, ignoring the picnic behind her."
+  "Her brother called twice, but she did not turn around."
+  "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
+]
+claims [
+  claim id "c1" status supported dimension character subject "Mara"
+    text "Mara is more interested in the tide pool than in her family's picnic."
+    cites ["e1" "e3"] {},
+  claim id "c2" status distractor error-type misreads-detail
+    text "Mara is angry at her brother."
+    rationale "Not turning around shows absorption, not anger." cites ["e2"] {}
+]
+evidence [
+  source id "e1" line 1 status directly-supports supports ["c1"] {},
+  source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {},
+  source id "e3" line 3 status directly-supports supports ["c1"] {}
+]
+outcomes [ outcome type ebsr dimension character subject "Mara" standard rl-1 {} ]
+{}..
 ```

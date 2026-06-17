@@ -2,21 +2,117 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "L0175",
   "title": "L0175",
-  "description": "Output of an L0175 program — a rendered UI record (hello/image/theme) or an evaluated base-language value.",
-  "type": "object",
-  "properties": {
-    "hello": {
-      "description": "The person, place or thing being greeted",
-      "type": "string"
+  "description": "Output of an L0175 program — a composed ELA assessment item, or a set of items (one per outcome).",
+  "oneOf": [{ "$ref": "#/$defs/item" }, { "$ref": "#/$defs/items" }],
+  "$defs": {
+    "items": {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "items" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+      },
+      "required": ["kind", "items"]
     },
-    "theme": {
-      "description": "Light or dark theme",
-      "type": "string",
-      "enum": ["light", "dark"]
+    "item": {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "item" },
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["ebsr", "hot-text", "short-text"] },
+        "standards": { "type": "array", "items": { "type": "string" } },
+        "dok": { "type": "string" },
+        "dimension": { "type": "string" },
+        "passage": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "heading": { "type": "string" },
+            "type": { "type": "string", "enum": ["literary", "informational"] },
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "id": { "type": "number" }, "text": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "passages": { "type": ["object", "null"] },
+        "stem": {
+          "type": "object",
+          "properties": {
+            "partA": { "type": "string" },
+            "partB": { "type": "string" },
+            "leadIn": { "type": "string" }
+          }
+        },
+        "partA": { "$ref": "#/$defs/optionGroup" },
+        "partB": { "$ref": "#/$defs/optionGroup" },
+        "selectable": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lineId": { "type": "number" },
+              "text": { "type": "string" },
+              "correct": { "type": "boolean" }
+            }
+          }
+        },
+        "prompt": { "type": "string" },
+        "rubric": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "score": { "type": "number" }, "descriptor": { "type": "string" } }
+          }
+        },
+        "distractorAnalysis": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "part": { "type": "string", "enum": ["A", "B"] },
+              "key": { "type": "string" },
+              "claimId": { "type": "string" },
+              "sourceId": { "type": "string" },
+              "errorType": { "type": "string" },
+              "status": { "type": "string" },
+              "tiesTo": {},
+              "rationale": { "type": "string" }
+            }
+          }
+        },
+        "answerKey": {
+          "type": "object",
+          "properties": {
+            "partA": { "type": "string" },
+            "partB": { "type": "string" },
+            "rationale": { "type": "string" }
+          }
+        },
+        "review": { "type": "object" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["kind", "type", "passage", "standards", "dok", "dimension", "warnings"]
     },
-    "image": {
-      "description": "URL of an image to display",
-      "type": "string"
+    "optionGroup": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "text": { "type": "string" },
+              "line": { "type": "number" },
+              "correct": { "type": "boolean" }
+            },
+            "required": ["key", "correct"]
+          }
+        }
+      }
     }
   }
 }

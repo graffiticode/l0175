@@ -3,20 +3,29 @@
 [![License: MIT](https://img.shields.io/badge/Code-MIT-blue.svg)](packages/LICENSE)
 [![License: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)](LICENSE-DOCS)
 
-L0175 is a Graffiticode dialect — the first child of [@graffiticode/l0000](https://www.npmjs.com/package/@graffiticode/l0000). It inherits L0000's base functional vocabulary (arithmetic, lists, lambdas, `map`/`filter`/`reduce`, pattern matching, tags) and adds a small set of UI primitives for rendering hello greetings, images, and themed output.
+L0175 is a Graffiticode dialect (child of [@graffiticode/l0000](https://www.npmjs.com/package/@graffiticode/l0000)) for composing **5th-grade English Language Arts assessment items** — Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence.
 
-## Vocabulary
+A program authors, inline, a *superset* of tagged content for one literary passage —
+candidate inference `claim`s and evidence `source`s — plus one or more intended `outcome`s.
+The compiler **composes** each outcome by selecting the best-fitting content and assembling
+a finished item in one of three task models: `ebsr` (two-part selected response),
+`hot-text` (select text), or `short-text` (constructed response). It selects and validates
+authored content against the guideline; it does not generate content.
 
-L0175 adds the following on top of the L0000 base lexicon:
+## Example
 
-| Function | Arity | Example | Description |
-|----------|:-----:|---------|-------------|
-| `hello`  | 1 | `hello "world"..` | Renders **hello, world!** |
-| `image`  | 1 | `image "https://example.com/photo.jpg"..` | Renders an image at the given URL |
-| `theme`  | 2 | `theme DARK hello "world"..` | Wraps a UI expression in a theme (`DARK` or `LIGHT`) with a toggle |
-| `id`     | 2 | `id "tag" expr..` | Tags an expression with a stable identifier |
+```
+passage "The Tide Pool"
+type literary
+lines [ "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." ]
+claims [ claim id "c1" status supported dimension character subject "Mara"
+  text "Mara is more interested in the tide pool than in the picnic." cites ["e1"] {} ]
+evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
+outcomes [ outcome type ebsr dimension character subject "Mara" standard rl-1 {} ]
+{}..
+```
 
-See [`packages/core/spec/`](packages/core/spec/) for the full language specification, examples, and authoring guide.
+See [`packages/core/spec/`](packages/core/spec/) for the full vocabulary, examples, and authoring guide, and `packages/core/data/` for the source guideline PDF.
 
 ## Structure
 

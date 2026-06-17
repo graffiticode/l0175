@@ -1,18 +1,19 @@
 {
   "id": "0175",
-  "summary": "Base Graffiticode dialect — a small functional language for evaluating expressions or rendering simple UI primitives.",
+  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence) by selecting, from an authored inline superset of tagged content, the subset that best fits an intended outcome.",
   "in_scope": [
-    "Arithmetic, string manipulation, list construction and traversal, ranges",
-    "Lambdas, let-bound helpers, pattern matching on numbers/lists/pairs/records/tags",
-    "map / filter / reduce over lists",
-    "Comparison operators (eq / ne / gt / lt / ge / le)",
-    "UI primitives: hello (greetings), image (URL), theme (DARK / LIGHT), id (element identifier)"
+    "A single literary passage with numbered lines",
+    "An inference graph: supported and distractor claims, plus evidence sources tagged directly-supports / supports-wrong-claim / irrelevant",
+    "The eight inference dimensions (character, setting, event, point-of-view, theme, topic, narrators-feelings, character-relationship)",
+    "Three task models: ebsr (two-part selected response), hot-text (select text), short-text (constructed response)",
+    "Authored, error-typed distractors (misreads-detail / erroneous-inference / faulty-reasoning; supports-wrong-claim / irrelevant) with rationales",
+    "Standards rl-1 / rl-3 / rl-6 / rl-9 and DOK r-dok3"
   ],
   "out_of_scope": [
-    "Anything that produces a domain-specific artifact (assessments, spreadsheets, charts, maps, diagrams, boards, data pipelines, games, puzzles) — those belong in higher-numbered dialects, not in L0175",
-    "External data (HTTP, file, database) — L0175 evaluates a closed program",
-    "Stateful or streaming operations",
-    "Custom rendering beyond hello / image / theme / id",
+    "Targets, claims, or grades beyond G5 · Claim 1 · Target 4 — those belong in their own dialects",
+    "Dual-text stimuli (a single literary passage only in this version)",
+    "Compile-time LLM generation — the compiler selects and validates authored content, it does not invent it",
+    "Auto-scoring of short-text responses — they are hand-scored against the emitted rubric",
     "Cross-language composition via import — each item runs in exactly one dialect"
   ]
 }

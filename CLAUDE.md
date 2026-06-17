@@ -29,13 +29,13 @@ Vitest is installed at the root but no test runner script is wired up yet, and n
 
 ## Architecture
 
-L0175 is a Graffiticode dialect — the first child of `@graffiticode/l0000`. It's an npm-workspaces monorepo with three packages.
+L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence). It's an npm-workspaces monorepo with three packages. A program authors an inline superset of tagged content (a literary passage, candidate inference `claim`s, evidence `source`s) plus intended `outcome`s; the compiler composes each outcome into a finished item. See `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf` for the source guideline.
 
 ### Structure
 
 - **`packages/core/`** — `@graffiticode/l0175`: the language itself. Pure TypeScript.
-  - `src/lexicon.ts`: merges L0000's base lexicon with L0175's additions (`hello`, `image`, `theme`, `id`, plus `DARK`/`LIGHT` tags)
-  - `src/compiler.ts`: `Checker` and `Transformer` classes extending L0000's, adding handlers for the L0175 vocabulary
+  - `src/lexicon.ts`: merges L0000's base lexicon with L0175's builder vocabulary (attribute functions, the `claims`/`evidence`/`outcomes` collection builders, the `claim`/`source`/`outcome` element wrappers, and the kebab-case enum values)
+  - `src/compiler.ts`: `Checker` + `Transformer` extending L0000's; the builder handlers reconstruct records and the overridden `PROG` runs the deterministic compose/selection that assembles each item
   - `spec/`: language documentation, examples, schema, RAG training prompts, etc.
   - `tools/build-static.js`: copies spec content into `dist/static/` for the API to serve
 
@@ -45,8 +45,7 @@ L0175 is a Graffiticode dialect — the first child of `@graffiticode/l0000`. It
   - Port: 50175 (dev) or `process.env.PORT`
 
 - **`packages/view/`** — `@graffiticode/l0175-view`: React view component. Vite + TypeScript + Tailwind.
-  - `src/components/form/Form.tsx`: language-specific form rendering
-  - `src/components/form/ThemeToggle.tsx`: dark/light toggle wired up by the `theme` function
+  - `src/components/form/Form.tsx`: renders composed items; `ItemView` + `EbsrItem`/`HotTextItem`/`ShortTextItem` render the three task models, with a `ModeToggle` for Student / Review
   - `embed/`: standalone HTML entry built by `vite.embed.config.ts` for embedding in the API's static bundle
   - Built on top of `@graffiticode/l0000-view`
 
@@ -60,16 +59,16 @@ L0175 is a Graffiticode dialect — the first child of `@graffiticode/l0000`. It
 
 ### Language Functions
 
-L0175 inherits the full L0000 base vocabulary (arithmetic, lists, lambdas, `map`/`filter`/`reduce`, pattern matching, tags) and adds:
+The authoring surface is the l0169 builder idiom: a program is one flat chain ending in a single `{}..`. Top-level forms thread a shared continuation; list elements (`claim`/`source`/`outcome`) are their own `{}`-terminated chains.
 
-| Function | Arity | Description |
-|----------|:-----:|-------------|
-| `hello`  | 1 | Renders `hello, {string}!` |
-| `image`  | 1 | Renders an image at the given URL |
-| `theme`  | 2 | Wraps a UI expression in a theme (`DARK` or `LIGHT`) with a toggle button |
-| `id`     | 2 | Tags an expression with a stable identifier |
+| Form | Arity | Role |
+|------|:-----:|------|
+| `passage` / `type` / `lines` | 2 | Passage heading, type (`literary`/`informational`), and numbered lines |
+| `claims` / `evidence` / `outcomes` | 2 | Collection builders (each takes a list) |
+| `claim` / `source` / `outcome` | 1 | Element wrappers over an attribute chain |
+| attribute fns (`id`, `status`, `dimension`, `error-type`, `text`, `rationale`, `cites`, `line`, `quote`, `supports`, `subject`, `standard`, `dok`, `focus`, …) | 2 | Merge one key into the element record |
 
-The `Checker` validates that `theme`'s first argument is the `DARK` or `LIGHT` tag; unhandled tags fall through to L0000's base handlers via the shared Visitor dispatch.
+Enum values are bare kebab-case identifiers (`ebsr`, `character`, `misreads-detail`, `directly-supports`, `rl-1`, `r-dok3`) registered in the lexicon. Validation (enum membership, required distractor rationale) runs in the Transformer as hard errors; selection compromises surface as `warnings` in the composed item.
 
 ### Data Flow
 
