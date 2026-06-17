@@ -37,6 +37,12 @@ const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irr
 const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"];
 const STANDARDS = new Set(["rl-1", "rl-3", "rl-6", "rl-9"]);
 
+// Small prior on distractor temptingness by error type (DOK3 rewards reasoning errors over
+// surface misreads). Used by the computed plausibility score; author `plausibility` overrides it.
+const ERROR_TYPE_PRIOR: Record<string, number> = {
+  "faulty-reasoning": 0.1, "erroneous-inference": 0.08, "misreads-detail": 0.05,
+};
+
 // Which standard the dimension implies (rl-1 — cite evidence — is foundational to every item).
 const DIM_STANDARD: Record<string, string> = {
   "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
@@ -66,7 +72,7 @@ const ATTR_KEYS: Record<string, string> = {
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
   FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
-  RUBRIC: "rubric", DOK: "dok",
+  RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
 };
 
@@ -199,6 +205,9 @@ function validateClaim(c: any, errors: any[]) {
       errors.push({ message: `${where}: distractor needs a rationale (the justification for the foil).` });
     }
   }
+  if (c.plausibility !== undefined && (typeof c.plausibility !== "number" || c.plausibility < 0 || c.plausibility > 1)) {
+    errors.push({ message: `${where}: plausibility must be a number between 0 and 1.` });
+  }
 }
 
 function validateSource(s: any, errors: any[]) {
@@ -293,13 +302,42 @@ function norm(t: string): string {
   return str(t).toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
 }
 
+function clamp01(x: number): number {
+  return Math.max(0, Math.min(1, x));
+}
+
+// How tempting a distractor is to a partial-understander, in [0,1]. An author-supplied
+// `plausibility` overrides (pins) the score; otherwise it is computed from graph signals:
+// evidence that also backs the correct claim (a confused student would cite it), same
+// dimension as the correct answer, structural parallelism, and an error-type prior.
+export function plausibility(d: any, correct: any, ctx: any): number {
+  if (typeof d.plausibility === "number") return clamp01(d.plausibility); // author override
+  let s = 0.4; // base
+  const cited = (Array.isArray(d.cites) ? d.cites : [])
+    .map((id: any) => ctx.sourceById[str(id)])
+    .filter(Boolean);
+  const overlaps = cited.some((src: any) =>
+    str(src.status) === "supports-wrong-claim" &&
+    (Array.isArray(src.supports) ? src.supports.map(str) : []).includes(str(correct.id)));
+  if (overlaps) s += 0.3; // strongest tell: real text seems to back the foil
+  if (str(d.dimension) && str(d.dimension) === str(correct.dimension)) s += 0.15;
+  const la = str(d.text).length, lb = str(correct.text).length;
+  if (la && lb) s += 0.1 * (1 - Math.abs(la - lb) / Math.max(la, lb)); // structural parallelism
+  s += ERROR_TYPE_PRIOR[str(d.errorType)] ?? 0;
+  return clamp01(s);
+}
+
 function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any[] {
   const all = ctx.claims.filter((c: any) => str(c.status) === "distractor");
   const sameDim = all.filter((c: any) => str(c.dimension) === str(correct.dimension));
   const pool = sameDim.length >= 3 ? sameDim : all;
   const seen = new Set([norm(correct.text)]);
+  // Rank candidates by plausibility (desc), tie-break by id for determinism.
+  const byScore = (a: any, b: any) =>
+    plausibility(b, correct, ctx) - plausibility(a, correct, ctx) || str(a.id).localeCompare(str(b.id));
   const byType: Record<string, any[]> = {};
   for (const c of pool) (byType[str(c.errorType)] = byType[str(c.errorType)] || []).push(c);
+  for (const t of ERROR_TYPES) byType[t]?.sort(byScore);
   const chosen: any[] = [];
   const take = (c: any) => {
     if (!c) return;
@@ -307,8 +345,10 @@ function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any
     if (seen.has(n)) { warnings.push(`Dropped near-duplicate distractor '${str(c.id)}'.`); return; }
     seen.add(n); chosen.push(c);
   };
+  // Coverage: take the most plausible foil of each error type.
   for (const t of ERROR_TYPES) if (byType[t] && byType[t].length) take(byType[t].shift());
-  const rest = pool.filter((c: any) => !chosen.includes(c));
+  // Fill remaining slots with the most plausible leftovers.
+  const rest = pool.filter((c: any) => !chosen.includes(c)).sort(byScore);
   while (chosen.length < 3 && rest.length) take(rest.shift());
   if (chosen.length < 3) warnings.push(`Only ${chosen.length} distractor claim(s) available; an EBSR/Hot-Text item wants 3.`);
   const missing = ERROR_TYPES.filter((t) => !chosen.some((c) => str(c.errorType) === t));
@@ -372,11 +412,15 @@ function composeOutcome(outcome: any, ctx: any): any {
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
   const analysis: any[] = item.partA.options
     .filter((o: any) => !o.correct)
-    .map((o: any) => ({
-      part: "A", key: o.key, claimId: o.claimId, errorType: o.errorType,
-      tiesTo: [o.claimId],
-      rationale: str(ctx.claimById[o.claimId]?.rationale),
-    }));
+    .map((o: any) => {
+      const claim = ctx.claimById[o.claimId];
+      return {
+        part: "A", key: o.key, claimId: o.claimId, errorType: o.errorType,
+        tiesTo: [o.claimId],
+        plausibility: Math.round(plausibility(claim, correct, ctx) * 100) / 100,
+        rationale: str(claim?.rationale),
+      };
+    });
 
   if (itemType === "hot-text") {
     const directLines = new Set(directSources.map((s: any) => s.line));

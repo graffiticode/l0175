@@ -79,6 +79,7 @@
               "errorType": { "type": "string" },
               "status": { "type": "string" },
               "tiesTo": {},
+              "plausibility": { "type": "number", "description": "0..1 temptingness of the foil (author override or computed)" },
               "rationale": { "type": "string" }
             }
           }

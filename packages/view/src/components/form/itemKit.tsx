@@ -76,6 +76,7 @@ export function OptionRow({
       {review && analysis && (
         <p className="ml-9 mt-1 text-xs text-amber-700">
           <span className="font-semibold">{analysis.errorType || analysis.status}</span>
+          {typeof analysis.plausibility === "number" ? ` · p=${analysis.plausibility}` : ""}
           {analysis.tiesTo && Array.isArray(analysis.tiesTo) ? "" : analysis.tiesTo ? ` → ${analysis.tiesTo}` : ""}
           {analysis.rationale ? ` — ${analysis.rationale}` : ""}
         </p>

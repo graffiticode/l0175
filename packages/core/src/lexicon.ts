@@ -54,6 +54,7 @@ const additions = {
   stem: fn2("STEM"),
   rubric: fn2("RUBRIC"),
   dok: fn2("DOK"),
+  plausibility: fn2("PLAUSIBILITY"), // optional 0..1 author override for distractor ranking
 
   // --- collection builders (arity-2) ---
   claims: fn2("CLAIMS"),

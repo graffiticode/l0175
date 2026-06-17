@@ -21,7 +21,10 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 - **passage** `"heading"` — plus `type` (`literary` | `informational`) and `lines [ "..." ... ]`.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type` and a non-empty `rationale`.
-  Optional: `cites` (evidence ids), `subject`, `standard`, `dok` (used to rank the correct claim).
+  Optional: `cites` (evidence ids), `subject`, `standard`, `dok` (used to rank the correct claim),
+  and `plausibility` (a 0–1 override for how tempting a distractor is — otherwise the compiler
+  computes it from evidence overlap, dimension match, structure, and error type when choosing
+  among foils of the same error type).
 - **source** — `id`, `line` (passage line number) or `quote`, `status`
   (`directly-supports` | `supports-wrong-claim` | `irrelevant`), `supports` (claim ids).
   Optional `rationale` explaining a foil.
@@ -33,6 +36,11 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 - Provide **at least one supported claim per dimension** you target, and for EBSR/Hot-Text
   provide **three distractor claims** covering all three error types
   (`misreads-detail`, `erroneous-inference`, `faulty-reasoning`).
+- **Generate a *range* of distractors — more than the three option slots — spanning all three
+  error types and a spread of difficulty, and give each a `plausibility` score (0–1)** for how
+  tempting it is to a partial-understander. Composition selects the most plausible foil per
+  error type from this scored pool; if a score is omitted the compiler computes one from the
+  inference graph (evidence overlap, dimension match, structure, error type).
 - Tag evidence so Part B has material: mark the lines that **directly support** the correct
   claim, give a few **supports-wrong-claim** foils (ideally also tied to the correct claim so
   they plausibly support more than one Part A option), and a couple of **irrelevant** lines.
