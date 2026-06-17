@@ -407,6 +407,17 @@ function composeOutcome(outcome: any, ctx: any): any {
   }
 
   // EBSR & Hot Text share Part A (statement options).
+  // Viability check: a healthy pool has >=5 distinct distractors usable for this dimension, so
+  // selection (and the plausibility ranking) has real choice. Thin pools warn — a signal the
+  // upstream generator's repair loop can use to regenerate more foils.
+  const viableDistractors = new Set(
+    ctx.claims
+      .filter((c: any) => str(c.status) === "distractor" && (!str(c.dimension) || str(c.dimension) === dim))
+      .map((c: any) => norm(str(c.text))),
+  ).size;
+  if (viableDistractors < 5) {
+    warnings.push(`Only ${viableDistractors} viable distractor(s) for dimension '${dim}'; author at least 5 for stronger selection.`);
+  }
   const distractors = selectDistractorClaims(correct, ctx, warnings);
   item.partA = { options: partAOptions(correct, distractors, seed) };
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;

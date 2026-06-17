@@ -18,18 +18,30 @@ claims [
   claim id "c5" status supported dimension character subject "the brother"
     text "Mara's brother wants her attention."
     cites ["e2"] {},
-  claim id "c2" status distractor error-type misreads-detail
+  claim id "c2" status distractor error-type misreads-detail plausibility 0.85
     text "Mara is angry at her brother for calling her."
     rationale "Misreads line 2: not turning around shows absorption, not anger."
     cites ["e2"] {},
-  claim id "c3" status distractor error-type erroneous-inference
-    text "Mara dislikes spending time outdoors."
-    rationale "Contradicted by her delight at the crab in line 3."
+  claim id "c6" status distractor error-type misreads-detail plausibility 0.6
+    text "Mara is bored and impatient to leave."
+    rationale "Misreads her stillness as boredom; line 3 shows delight, not boredom."
     cites ["e6"] {},
-  claim id "c4" status distractor error-type faulty-reasoning
+  claim id "c3" status distractor error-type erroneous-inference plausibility 0.55
+    text "Mara dislikes spending time outdoors."
+    rationale "Over-generalizes from her quiet to a dislike contradicted by line 3."
+    cites ["e6"] {},
+  claim id "c7" status distractor error-type erroneous-inference plausibility 0.5
+    text "Mara wishes she were somewhere else with her friends."
+    rationale "Invents an off-text desire; nothing in the passage mentions friends."
+    cites ["e7"] {},
+  claim id "c4" status distractor error-type faulty-reasoning plausibility 0.45
     text "Because Mara whispers, she must be afraid of her family."
     rationale "Whispering is treated as fear without textual support."
-    cites ["e5"] {}
+    cites ["e5"] {},
+  claim id "c8" status distractor error-type faulty-reasoning plausibility 0.4
+    text "Because Mara ignores the picnic, she must not love her family."
+    rationale "Leaps from one moment of focus to a sweeping claim about her feelings."
+    cites ["e6"] {}
 ]
 evidence [
   source id "e1" line 1 status directly-supports supports ["c1"] {},

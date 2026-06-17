@@ -6,7 +6,7 @@
     {
       "prompt": "From a short story about a girl named Mara at a tide pool, write an EBSR item about what Mara cares about, standard rl-1.",
       "produces": "ebsr",
-      "notes": "Two-part selected response: Part A inference statement, Part B supporting line; needs a supported claim plus three error-typed distractor claims."
+      "notes": "Two-part selected response: Part A inference statement, Part B supporting line; needs a supported claim plus at least 5 viable error-typed distractor claims (the item draws 3; a deeper pool gives selection real choice)."
     },
     {
       "prompt": "From the same tide-pool passage, also produce a short-text constructed-response item asking for an inference about Mara with evidence.",

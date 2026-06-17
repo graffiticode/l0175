@@ -34,13 +34,15 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 ## Authoring guidance
 
 - Provide **at least one supported claim per dimension** you target, and for EBSR/Hot-Text
-  provide **three distractor claims** covering all three error types
-  (`misreads-detail`, `erroneous-inference`, `faulty-reasoning`).
-- **Generate a *range* of distractors — more than the three option slots — spanning all three
-  error types and a spread of difficulty, and give each a `plausibility` score (0–1)** for how
-  tempting it is to a partial-understander. Composition selects the most plausible foil per
-  error type from this scored pool; if a score is omitted the compiler computes one from the
-  inference graph (evidence overlap, dimension match, structure, error type).
+  author **at least 5 viable distractor claims** covering all three error types
+  (`misreads-detail`, `erroneous-inference`, `faulty-reasoning`) — with ≥2 alternatives in at
+  least two of the types. An item draws only 3 foils, so a deeper pool gives selection real
+  choice; fewer than 5 viable distractors triggers a composition warning.
+- **Over-generate: aim for 5–8 distinct distractors** (some will be filtered as near-duplicates
+  or accidentally correct), spanning a spread of difficulty, and give each a `plausibility`
+  score (0–1) for how tempting it is to a partial-understander. Composition selects the most
+  plausible foil per error type from this scored pool; if a score is omitted the compiler
+  computes one from the inference graph (evidence overlap, dimension match, structure, error type).
 - Tag evidence so Part B has material: mark the lines that **directly support** the correct
   claim, give a few **supports-wrong-claim** foils (ideally also tied to the correct claim so
   they plausibly support more than one Part A option), and a couple of **irrelevant** lines.
@@ -77,9 +79,22 @@ claims [
   claim id "c1" status supported dimension character subject "Mara"
     text "Mara is more interested in the tide pool than in her family's picnic."
     cites ["e1" "e3"] {},
-  claim id "c2" status distractor error-type misreads-detail
+  | at least 5 viable distractors; the item draws 3 (one per error type, most plausible first)
+  claim id "c2" status distractor error-type misreads-detail plausibility 0.85
     text "Mara is angry at her brother."
-    rationale "Not turning around shows absorption, not anger." cites ["e2"] {}
+    rationale "Not turning around shows absorption, not anger." cites ["e2"] {},
+  claim id "c3" status distractor error-type misreads-detail plausibility 0.6
+    text "Mara is bored and wants to leave."
+    rationale "Her stillness is focus, not boredom (the crab makes her smile)." cites ["e2"] {},
+  claim id "c4" status distractor error-type erroneous-inference plausibility 0.55
+    text "Mara dislikes being outdoors."
+    rationale "Over-generalizes from her quiet to a dislike the text contradicts." cites ["e3"] {},
+  claim id "c5" status distractor error-type erroneous-inference plausibility 0.5
+    text "Mara is waiting for her brother to join her."
+    rationale "Invents a goal the passage never states." cites ["e2"] {},
+  claim id "c6" status distractor error-type faulty-reasoning plausibility 0.45
+    text "Because Mara is quiet, she must be upset."
+    rationale "Treats quiet as upset without textual support." cites ["e2"] {}
 ]
 evidence [
   source id "e1" line 1 status directly-supports supports ["c1"] {},
