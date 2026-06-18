@@ -95,8 +95,8 @@ export const Form = ({ state }: FormProps) => {
   const isItem = data && (data.kind === "item" || data.kind === "items");
   const items: any[] = data?.kind === "items" ? data.items : isItem ? [data] : [];
 
-  // In preview mode multiple questions are paginated one at a time; review mode stays stacked.
-  const paginated = mode === "preview" && items.length > 1;
+  // Multiple questions are paginated one at a time, in both Preview and Review.
+  const paginated = items.length > 1;
   const current = Math.min(page, items.length - 1);
   const visibleItems = paginated ? [items[current]] : items;
 
