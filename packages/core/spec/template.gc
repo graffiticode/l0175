@@ -2,62 +2,62 @@
 passage "The Tide Pool"
 type literary
 lines [
-  "Mara crouched at the edge of the tide pool, ignoring the picnic her family had spread out behind her.",
-  "Her brother called twice, but she did not turn around.",
-  "A tiny crab scuttled under a rock, and Mara smiled for the first time all day.",
-  "She had spent the whole car ride staring out the window, saying nothing.",
-  "Now her fingers traced the cold water as if the pool were the only thing that mattered.",
-  "\"Five more minutes,\" she whispered, though no one was listening.",
-  "Behind her, paper plates rustled and her mother laughed at someone's joke.",
+  "Mara crouched at the edge of the tide pool, ignoring the picnic her family had spread out behind her."
+  "Her brother called twice, but she did not turn around."
+  "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
+  "She had spent the whole car ride staring out the window, saying nothing."
+  "Now her fingers traced the cold water as if the pool were the only thing that mattered."
+  "\"Five more minutes,\" she whispered, though no one was listening."
+  "Behind her, paper plates rustled and her mother laughed at someone's joke."
   "Mara did not hear them."
 ]
 claims [
   claim id "c1" status supported dimension character subject "Mara" standard rl-1 dok r-dok3
     text "Mara is more interested in the tide pool than in her family's picnic."
     rationale "Lines 1, 3, and 5 show Mara absorbed by the tide pool while she ignores her family."
-    cites ["e1" "e2" "e3" "e4"] {},
+    cites ["e1" "e2" "e3" "e4"] {}
   claim id "c5" status supported dimension character subject "the brother"
     text "Mara's brother wants her attention."
-    cites ["e2"] {},
+    cites ["e2"] {}
   claim id "c2" status distractor error-type misreads-detail plausibility 0.85
     text "Mara is angry at her brother for calling her."
     rationale "Misreads line 2: not turning around shows absorption, not anger."
-    cites ["e2"] {},
+    cites ["e2"] {}
   claim id "c6" status distractor error-type misreads-detail plausibility 0.6
     text "Mara is bored and impatient to leave."
     rationale "Misreads her stillness as boredom; line 3 shows delight, not boredom."
-    cites ["e6"] {},
+    cites ["e6"] {}
   claim id "c3" status distractor error-type erroneous-inference plausibility 0.55
     text "Mara dislikes spending time outdoors."
     rationale "Over-generalizes from her quiet to a dislike contradicted by line 3."
-    cites ["e6"] {},
+    cites ["e6"] {}
   claim id "c7" status distractor error-type erroneous-inference plausibility 0.5
     text "Mara wishes she were somewhere else with her friends."
     rationale "Invents an off-text desire; nothing in the passage mentions friends."
-    cites ["e7"] {},
+    cites ["e7"] {}
   claim id "c4" status distractor error-type faulty-reasoning plausibility 0.45
     text "Because Mara whispers, she must be afraid of her family."
     rationale "Whispering is treated as fear without textual support."
-    cites ["e5"] {},
+    cites ["e5"] {}
   claim id "c8" status distractor error-type faulty-reasoning plausibility 0.4
     text "Because Mara ignores the picnic, she must not love her family."
     rationale "Leaps from one moment of focus to a sweeping claim about her feelings."
     cites ["e6"] {}
 ]
 evidence [
-  source id "e1" line 1 status directly-supports supports ["c1"] {},
+  source id "e1" line 1 status directly-supports supports ["c1"] {}
   source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"]
-    rationale "Real evidence, but props up the 'anger' misreading, not the inference." {},
-  source id "e3" line 3 status directly-supports supports ["c1"] {},
-  source id "e4" line 5 status directly-supports supports ["c1"] {},
+    rationale "Real evidence, but props up the 'anger' misreading, not the inference." {}
+  source id "e3" line 3 status directly-supports supports ["c1"] {}
+  source id "e4" line 5 status directly-supports supports ["c1"] {}
   source id "e5" line 6 status supports-wrong-claim supports ["c4"]
-    rationale "Her whisper is real, but it shows focus, not fear." {},
-  source id "e6" line 7 status irrelevant supports [] {},
+    rationale "Her whisper is real, but it shows focus, not fear." {}
+  source id "e6" line 7 status irrelevant supports [] {}
   source id "e7" line 8 status irrelevant supports [] {}
 ]
 outcomes [
-  outcome type ebsr       dimension character subject "Mara" standard rl-1 {},
-  outcome type short-text dimension character subject "Mara" standard rl-1 {},
+  outcome type ebsr       dimension character subject "Mara" standard rl-1 {}
+  outcome type short-text dimension character subject "Mara" standard rl-1 {}
   outcome type hot-text   dimension character subject "Mara" standard rl-1 {}
 ]
 {}..

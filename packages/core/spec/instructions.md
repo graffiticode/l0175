@@ -11,8 +11,8 @@ Target 4: Reasoning & Evidence) from an authored, inline superset of tagged cont
 A program is ONE flat builder chain ending in a single `{}..`. Top-level forms
 (`passage`, `type`, `lines`, `claims`, `evidence`, `outcomes`) chain with no `{}` between
 them. Inside the `claims` / `evidence` / `outcomes` lists, each element (`claim` / `source`
-/ `outcome`) is its own attribute chain terminated by its own `{}`, and elements are
-separated by commas.
+/ `outcome`) is its own attribute chain terminated by its own `{}`; whitespace separates
+elements (commas are optional).
 
 Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels (`id`,
 `cites`, `supports`). Write closed-enum values as bare kebab-case identifiers (`ebsr`,
@@ -113,27 +113,27 @@ lines [
 claims [
   claim id "c1" status supported dimension character subject "Mara"
     text "Mara is more interested in the tide pool than in her family's picnic."
-    cites ["e1" "e3"] {},
+    cites ["e1" "e3"] {}
   /* at least 5 viable distractors; the item draws 3 (one per error type, most plausible first) */
   claim id "c2" status distractor error-type misreads-detail plausibility 0.85
     text "Mara is angry at her brother."
-    rationale "Not turning around shows absorption, not anger." cites ["e2"] {},
+    rationale "Not turning around shows absorption, not anger." cites ["e2"] {}
   claim id "c3" status distractor error-type misreads-detail plausibility 0.6
     text "Mara is bored and wants to leave."
-    rationale "Her stillness is focus, not boredom (the crab makes her smile)." cites ["e2"] {},
+    rationale "Her stillness is focus, not boredom (the crab makes her smile)." cites ["e2"] {}
   claim id "c4" status distractor error-type erroneous-inference plausibility 0.55
     text "Mara dislikes being outdoors."
-    rationale "Over-generalizes from her quiet to a dislike the text contradicts." cites ["e3"] {},
+    rationale "Over-generalizes from her quiet to a dislike the text contradicts." cites ["e3"] {}
   claim id "c5" status distractor error-type erroneous-inference plausibility 0.5
     text "Mara is waiting for her brother to join her."
-    rationale "Invents a goal the passage never states." cites ["e2"] {},
+    rationale "Invents a goal the passage never states." cites ["e2"] {}
   claim id "c6" status distractor error-type faulty-reasoning plausibility 0.45
     text "Because Mara is quiet, she must be upset."
     rationale "Treats quiet as upset without textual support." cites ["e2"] {}
 ]
 evidence [
-  source id "e1" line 1 status directly-supports supports ["c1"] {},
-  source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {},
+  source id "e1" line 1 status directly-supports supports ["c1"] {}
+  source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {}
   source id "e3" line 3 status directly-supports supports ["c1"] {}
 ]
 outcomes [ outcome type ebsr dimension character subject "Mara" standard rl-1 {} ]

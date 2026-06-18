@@ -23,9 +23,9 @@ title "Optional assessment title"
 passage "Heading"
 type literary
 lines [ "Sentence one." "Sentence two." ]
-claims [ claim ... {}, claim ... {} ]
-evidence [ source ... {}, source ... {} ]
-outcomes [ outcome ... {}, outcome ... {} ]
+claims [ claim ... {} claim ... {} ]
+evidence [ source ... {} source ... {} ]
+outcomes [ outcome ... {} outcome ... {} ]
 {}..
 ```
 
@@ -88,10 +88,10 @@ item still composes.
 | `text` | string | ✓ | The statement a student reads as an option. |
 | `error-type` | tag | ✓ on distractor | Which student misconception the foil targets: `misreads-detail`, `erroneous-inference`, or `faulty-reasoning`. |
 | `rationale` | string | ✓ on distractor | Why a student would plausibly choose this foil (the error it targets). Surfaced in the item's `distractorAnalysis`. |
-| `plausibility` | number 0–1 | | Optional author override for how tempting the foil is. If omitted, the compiler computes a score from evidence overlap, dimension match, structural parallelism, and error type, and uses it to pick the strongest foil per error type. |
-| `subject` | string | | Who/what the claim is about (e.g. `"Mara"`, or a specific reference like `"Cortez's age"`). Boosts fit-ranking when it matches the outcome's `subject`, and fills the stem's reference slot. |
-| `standard` | tag | | The companion RL standard the claim addresses; boosts fit-ranking and is emitted on the item. |
-| `dok` | tag | | The claim's cognitive demand (`r-dok3`); boosts fit-ranking when it matches the outcome. |
+| `plausibility` | number 0–1 | — | Optional author override for how tempting the foil is. If omitted, the compiler computes a score from evidence overlap, dimension match, structural parallelism, and error type, and uses it to pick the strongest foil per error type. |
+| `subject` | string | — | Who/what the claim is about (e.g. `"Mara"`, or a specific reference like `"Cortez's age"`). Boosts fit-ranking when it matches the outcome's `subject`, and fills the stem's reference slot. |
+| `standard` | tag | — | The companion RL standard the claim addresses; boosts fit-ranking and is emitted on the item. |
+| `dok` | tag | — | The claim's cognitive demand (`r-dok3`); boosts fit-ranking when it matches the outcome. |
 
 ## Evidence content
 
@@ -169,30 +169,80 @@ lines [
   "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
 ]
 claims [
-  claim id "c1" status supported dimension character subject "Mara" standard rl-1
+  claim id "c1"
+    status supported
+    dimension character
+    subject "Mara"
+    standard rl-1
     text "Mara is more interested in the tide pool than in her family's picnic."
-    cites ["e1" "e3"] {},
-  claim id "c2" status distractor error-type misreads-detail plausibility 0.8
+    cites [
+      "e1"
+      "e3"
+    ] {}
+  claim id "c2"
+    status distractor
+    error-type misreads-detail
+    plausibility 0.8
     text "Mara is angry at her brother."
-    rationale "Not turning around shows absorption, not anger." cites ["e2"] {},
-  claim id "c3" status distractor error-type erroneous-inference
+    rationale "Not turning around shows absorption, not anger."
+    cites [
+      "e2"
+    ] {}
+  claim id "c3"
+    status distractor
+    error-type erroneous-inference
     text "Mara dislikes the outdoors."
-    rationale "Contradicted by her smile in line 3." cites ["e2"] {},
-  claim id "c4" status distractor error-type faulty-reasoning
+    rationale "Contradicted by her smile in line 3."
+    cites [
+      "e2"
+    ] {}
+  claim id "c4"
+    status distractor
+    error-type faulty-reasoning
     text "Because Mara is quiet, she must be upset."
-    rationale "Treats quiet as upset without support." cites ["e2"] {}
+    rationale "Treats quiet as upset without support."
+    cites [
+      "e2"
+    ] {}
 ]
 evidence [
-  source id "e1" line 1 status directly-supports supports ["c1"] {},
-  source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {},
-  source id "e3" line 3 status directly-supports supports ["c1"] {}
+  source id "e1"
+    line 1
+    status directly-supports
+    supports [
+      "c1"
+    ] {}
+  source id "e2"
+    line 2
+    status supports-wrong-claim
+    supports [
+      "c1"
+      "c2"
+    ] {}
+  source id "e3"
+    line 3
+    status directly-supports
+    supports [
+      "c1"
+    ] {}
 ]
 outcomes [
-  outcome type ebsr dimension character subject "Mara" standard rl-1 {},
-  outcome type short-text dimension character subject "Mara" standard rl-1
-    rubric [ band score 2 descriptor "Valid inference with specific evidence." {},
-             band score 1 descriptor "Partial inference or weak evidence." {},
-             band score 0 descriptor "No valid inference or no evidence." {} ] {}
+  outcome type ebsr
+    dimension character
+    subject "Mara"
+    standard rl-1 {}
+  outcome type short-text
+    dimension character
+    subject "Mara"
+    standard rl-1
+    rubric [
+      band score 2
+        descriptor "Valid inference with specific evidence." {}
+      band score 1
+        descriptor "Partial inference or weak evidence." {}
+      band score 0
+        descriptor "No valid inference or no evidence." {}
+    ] {}
 ]
 {}..
 ```
