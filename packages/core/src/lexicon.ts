@@ -58,6 +58,9 @@ const additions = {
   plausibility: fn2("PLAUSIBILITY"), // optional 0..1 author override for distractor ranking
   mode: fn2("MODE"), // stem mode: inference | conclusion | author-intent
   other: fn2("OTHER"), // second subject, for character-relationship stems
+  "stem-b": fn2("STEM_B"), // optional Part B stem override
+  score: fn2("SCORE"), // rubric band score
+  descriptor: fn2("DESCRIPTOR"), // rubric band descriptor
 
   // --- collection builders (arity-2) ---
   claims: fn2("CLAIMS"),
@@ -68,6 +71,7 @@ const additions = {
   claim: fn1("CLAIM"),
   source: fn1("SOURCE"),
   outcome: fn1("OUTCOME"),
+  band: fn1("BAND"), // a rubric band: score + descriptor
 };
 
 export const lexicon = { ...base, ...enums, ...additions };

@@ -9,6 +9,7 @@
       "type": "object",
       "properties": {
         "kind": { "const": "items" },
+        "title": { "type": "string" },
         "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
       },
       "required": ["kind", "items"]
@@ -18,6 +19,7 @@
       "properties": {
         "kind": { "const": "item" },
         "id": { "type": "string" },
+        "title": { "type": "string" },
         "type": { "type": "string", "enum": ["ebsr", "hot-text", "short-text"] },
         "standards": { "type": "array", "items": { "type": "string" } },
         "dok": { "type": "string" },

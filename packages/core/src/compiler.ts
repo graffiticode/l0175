@@ -43,6 +43,16 @@ const ERROR_TYPE_PRIOR: Record<string, number> = {
   "faulty-reasoning": 0.1, "erroneous-inference": 0.08, "misreads-detail": 0.05,
 };
 
+// Hand-tuned thresholds — located here for later calibration (the IRT/response-data track in
+// the backlog would replace these and the plausibility/rankClaims weights with learned values).
+const TUNING = {
+  MIN_VIABLE_DISTRACTORS: 5, // below this, warn — a richer pool gives selection real choice
+  DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A)
+  PART_OPTIONS: 4, // options per part (EBSR Part A/B)
+  HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
+  SHORT_TEXT_MIN_LINES: 6, // shorter literary passage → warn
+};
+
 // Which standard the dimension implies (rl-1 — cite evidence — is foundational to every item).
 const DIM_STANDARD: Record<string, string> = {
   "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
@@ -100,12 +110,18 @@ const DEFAULT_RUBRIC = [
 // Builder attribute handlers — generated below. Each is arity-2 (value, continuation) and
 // merges one key into the continuation record. ERROR_TYPE stores under the JS-friendly key.
 // ---------------------------------------------------------------------------
+// Per-element source coordinate, stamped onto the element record by the wrappers. A Symbol
+// key keeps it out of Object.entries → it never reaches deepConvertRecords / the output.
+const COORD = Symbol("coord");
+const coordOf = (x: any): any => (x && x[COORD]) || {};
+
 const ATTR_KEYS: Record<string, string> = {
   ID: "id", STATUS: "status", DIMENSION: "dimension", ERROR_TYPE: "errorType",
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
   FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
+  STEM_B: "stemB", SCORE: "score", DESCRIPTOR: "descriptor",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
 };
 
@@ -132,10 +148,14 @@ export class Transformer extends BaseTransformer {
         });
       };
     }
-    // Element wrappers: pass the assembled attribute-chain record through.
-    for (const tag of ["CLAIM", "SOURCE", "OUTCOME"]) {
+    // Element wrappers: pass the assembled attribute-chain record through, stamping the
+    // element's source coord (Symbol key, so it never leaks into output) for error highlighting.
+    for (const tag of ["CLAIM", "SOURCE", "OUTCOME", "BAND"]) {
       this[tag] = (node: any, options: any, resume: any) => {
-        this.visit(node.elts[0], options, (e0: any, v0: any) => resume(e0, v0));
+        this.visit(node.elts[0], options, (e0: any, v0: any) => {
+          if (v0 && typeof v0 === "object") v0[COORD] = node.coord ?? this.nodePool[node.elts[0]]?.coord;
+          resume(e0, v0);
+        });
       };
     }
   }
@@ -209,64 +229,72 @@ function composeProgram(top: any, errors: any[]): any {
     sourceById: index(sources, "id"),
   };
 
-  const items = outcomes.map((o) => composeOutcome(o, ctx));
-  if (items.length === 1) return items[0];
-  return { kind: "items", items };
+  const graphWarnings = validateGraph(ctx, errors);
+  const title = str(top.title);
+
+  const items = outcomes.map((o) => composeOutcome(o, ctx, graphWarnings));
+  if (items.length === 1) {
+    if (title) items[0].title = title;
+    return items[0];
+  }
+  const result: any = { kind: "items", items };
+  if (title) result.title = title;
+  return result;
 }
 
 function validateClaim(c: any, errors: any[]) {
   const id = str(c.id);
   const where = id ? `claim '${id}'` : "a claim";
+  const at = coordOf(c);
+  const push = (message: string) => errors.push({ message, ...at });
   if (!CLAIM_STATUS.has(str(c.status))) {
-    errors.push({ message: `${where}: invalid status '${str(c.status)}'. Expected supported or distractor.` });
+    push(`${where}: invalid status '${str(c.status)}'. Expected supported or distractor.`);
   }
   // dimension is required on supported claims (it must match the outcome); optional on
   // distractors (foils share the item's dimension by construction), but validated if present.
   if (str(c.dimension)) {
-    if (!DIMENSIONS.has(str(c.dimension))) {
-      errors.push({ message: `${where}: invalid dimension '${str(c.dimension)}'.` });
-    }
+    if (!DIMENSIONS.has(str(c.dimension))) push(`${where}: invalid dimension '${str(c.dimension)}'.`);
   } else if (str(c.status) === "supported") {
-    errors.push({ message: `${where}: supported claim needs a dimension.` });
+    push(`${where}: supported claim needs a dimension.`);
   }
-  if (!str(c.text)) errors.push({ message: `${where}: missing text.` });
+  if (!str(c.text)) push(`${where}: missing text.`);
   if (str(c.status) === "distractor") {
     if (!ERROR_TYPES.includes(str(c.errorType))) {
-      errors.push({ message: `${where}: distractor needs a valid error-type (${ERROR_TYPES.join(", ")}).` });
+      push(`${where}: distractor needs a valid error-type (${ERROR_TYPES.join(", ")}).`);
     }
     if (!str(c.rationale)) {
-      errors.push({ message: `${where}: distractor needs a rationale (the justification for the foil).` });
+      push(`${where}: distractor needs a rationale (the justification for the foil).`);
     }
   }
   if (c.plausibility !== undefined && (typeof c.plausibility !== "number" || c.plausibility < 0 || c.plausibility > 1)) {
-    errors.push({ message: `${where}: plausibility must be a number between 0 and 1.` });
+    push(`${where}: plausibility must be a number between 0 and 1.`);
   }
 }
 
 function validateSource(s: any, errors: any[]) {
   const id = str(s.id);
   const where = id ? `source '${id}'` : "a source";
-  if (!id) errors.push({ message: `${where}: missing id.` });
+  const at = coordOf(s);
+  const push = (message: string) => errors.push({ message, ...at });
+  if (!id) push(`${where}: missing id.`);
   if (!SOURCE_STATUS.has(str(s.status))) {
-    errors.push({ message: `${where}: invalid status '${str(s.status)}'. Expected directly-supports, supports-wrong-claim, or irrelevant.` });
+    push(`${where}: invalid status '${str(s.status)}'. Expected directly-supports, supports-wrong-claim, or irrelevant.`);
   }
   if (s.line === undefined && !str(s.quote)) {
-    errors.push({ message: `${where}: needs a line number or a quote.` });
+    push(`${where}: needs a line number or a quote.`);
   }
 }
 
 function validateOutcome(o: any, errors: any[]) {
+  const at = coordOf(o);
+  const push = (message: string) => errors.push({ message, ...at });
   if (!ITEM_TYPES.has(str(o.type))) {
-    errors.push({ message: `outcome: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.` });
+    push(`outcome: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.`);
   }
-  if (!DIMENSIONS.has(str(o.dimension))) {
-    errors.push({ message: `outcome: invalid dimension '${str(o.dimension)}'.` });
-  }
-  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) {
-    errors.push({ message: `outcome: invalid standard '${str(o.standard)}'.` });
-  }
+  if (!DIMENSIONS.has(str(o.dimension))) push(`outcome: invalid dimension '${str(o.dimension)}'.`);
+  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) push(`outcome: invalid standard '${str(o.standard)}'.`);
   if (o.mode !== undefined && !MODES.has(str(o.mode))) {
-    errors.push({ message: `outcome: invalid mode '${str(o.mode)}'. Expected inference, conclusion, or author-intent.` });
+    push(`outcome: invalid mode '${str(o.mode)}'. Expected inference, conclusion, or author-intent.`);
   }
 }
 
@@ -274,6 +302,40 @@ function index(arr: any[], key: string): Record<string, any> {
   const m: Record<string, any> = {};
   for (const x of arr) if (x && x[key] !== undefined) m[str(x[key])] = x;
   return m;
+}
+
+// Program-level referential integrity. Duplicate ids corrupt the indices → hard errors;
+// dangling references and out-of-range lines are non-fatal warnings (the plan's deferred
+// cross-reference checks). Returns the warnings to seed each item's `warnings`.
+function validateGraph(ctx: any, errors: any[]): string[] {
+  const warnings: string[] = [];
+  const lineCount = ctx.passage.lines.length;
+  for (const [label, arr] of [["claim", ctx.claims], ["source", ctx.sources]] as const) {
+    const seen = new Set<string>();
+    for (const x of arr) {
+      const id = str(x.id);
+      if (!id) continue;
+      if (seen.has(id)) errors.push({ message: `Duplicate ${label} id '${id}'.`, ...coordOf(x) });
+      seen.add(id);
+    }
+  }
+  for (const c of ctx.claims) {
+    for (const ref of Array.isArray(c.cites) ? c.cites : []) {
+      if (!ctx.sourceById[str(ref)]) warnings.push(`claim '${str(c.id)}' cites unknown evidence id '${str(ref)}'.`);
+    }
+  }
+  for (const s of ctx.sources) {
+    for (const ref of Array.isArray(s.supports) ? s.supports : []) {
+      if (!ctx.claimById[str(ref)]) warnings.push(`source '${str(s.id)}' supports unknown claim id '${str(ref)}'.`);
+    }
+    if (s.line !== undefined && !str(s.quote)) {
+      const ln = Number(s.line);
+      if (!Number.isFinite(ln) || ln < 1 || ln > lineCount) {
+        warnings.push(`source '${str(s.id)}' line ${str(s.line)} is outside the passage (1..${lineCount}).`);
+      }
+    }
+  }
+  return warnings;
 }
 
 function standardsFor(outcome: any, correct: any, dim: string): string[] {
@@ -385,11 +447,11 @@ function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any
   for (const t of ERROR_TYPES) if (byType[t] && byType[t].length) take(byType[t].shift());
   // Fill remaining slots with the most plausible leftovers.
   const rest = pool.filter((c: any) => !chosen.includes(c)).sort(byScore);
-  while (chosen.length < 3 && rest.length) take(rest.shift());
-  if (chosen.length < 3) warnings.push(`Only ${chosen.length} distractor claim(s) available; an EBSR/Hot-Text item wants 3.`);
+  while (chosen.length < TUNING.DISTRACTOR_SLOTS && rest.length) take(rest.shift());
+  if (chosen.length < TUNING.DISTRACTOR_SLOTS) warnings.push(`Only ${chosen.length} distractor claim(s) available; an EBSR/Hot-Text item wants 3.`);
   const missing = ERROR_TYPES.filter((t) => !chosen.some((c) => str(c.errorType) === t));
   if (missing.length) warnings.push(`Distractor error types not represented: ${missing.join(", ")}.`);
-  return chosen.slice(0, 3);
+  return chosen.slice(0, TUNING.DISTRACTOR_SLOTS);
 }
 
 function partAOptions(correct: any, distractors: any[], seed: string) {
@@ -404,8 +466,8 @@ function labelize(opts: any[]) {
   return opts.map((o, i) => ({ key: LABELS[i], ...o }));
 }
 
-function composeOutcome(outcome: any, ctx: any): any {
-  const warnings: string[] = [];
+function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): any {
+  const warnings: string[] = [...graphWarnings];
   const dim = str(outcome.dimension);
   const itemType = str(outcome.type);
   const subject = str(outcome.subject);
@@ -435,10 +497,12 @@ function composeOutcome(outcome: any, ctx: any): any {
 
   if (itemType === "short-text") {
     item.prompt = str(outcome.stem) || shortTextPrompt(dim, subject, str(outcome.mode) || "inference", str(outcome.other));
-    item.rubric = Array.isArray(outcome.rubric) && outcome.rubric.length ? outcome.rubric : DEFAULT_RUBRIC;
+    item.rubric = Array.isArray(outcome.rubric) && outcome.rubric.length
+      ? outcome.rubric.map((b: any) => ({ score: Number(b.score), descriptor: str(b.descriptor) }))
+      : DEFAULT_RUBRIC;
     item.distractorAnalysis = [];
     item.answerKey = { rationale: str(correct.rationale) };
-    if (ctx.passage.lines.length < 6) warnings.push("Short Text items should use a long literary passage; this passage is short.");
+    if (ctx.passage.lines.length < TUNING.SHORT_TEXT_MIN_LINES) warnings.push("Short Text items should use a long literary passage; this passage is short.");
     return item;
   }
 
@@ -451,7 +515,7 @@ function composeOutcome(outcome: any, ctx: any): any {
       .filter((c: any) => str(c.status) === "distractor" && (!str(c.dimension) || str(c.dimension) === dim))
       .map((c: any) => norm(str(c.text))),
   ).size;
-  if (viableDistractors < 5) {
+  if (viableDistractors < TUNING.MIN_VIABLE_DISTRACTORS) {
     warnings.push(`Only ${viableDistractors} viable distractor(s) for dimension '${dim}'; author at least 5 for stronger selection.`);
   }
   const distractors = selectDistractorClaims(correct, ctx, warnings);
@@ -477,7 +541,7 @@ function composeOutcome(outcome: any, ctx: any): any {
     const extra = ctx.sources.filter((s: any) =>
       str(s.status) === "supports-wrong-claim" &&
       (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id))).length;
-    if (extra >= 2) warnings.push(`Hot Text: ${directLines.size + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
+    if (extra >= TUNING.HOT_TEXT_DEFENSIBLE_EXTRA) warnings.push(`Hot Text: ${directLines.size + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
     item.distractorAnalysis = analysis;
     item.answerKey = { partA: aKey, rationale: str(correct.rationale) };
     return item;
@@ -494,7 +558,7 @@ function composeOutcome(outcome: any, ctx: any): any {
     })),
   ];
   if (!correctSrc) warnings.push("No directly-supporting evidence for the correct claim; EBSR Part B has no correct option.");
-  if (bOpts.length < 4) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4.`);
+  if (bOpts.length < TUNING.PART_OPTIONS) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4.`);
   item.partB = { options: labelize(seededShuffle(bOpts, seed + ":B")) };
   const bKey = item.partB.options.find((o: any) => o.correct)?.key;
 
@@ -553,11 +617,11 @@ function shortTextPrompt(dim: string, subject: string, mode: string, other: stri
   return `${lead} Explain using key details from the passage to support your answer.`;
 }
 
-function stemFor(itemType: string, dim: string, subject: string, mode: string, other: string, override: string) {
+function stemFor(itemType: string, dim: string, subject: string, mode: string, other: string, override: string, overrideB: string) {
   const about = aboutPhrase(dim, subject, other);
   return {
     partA: override || partAStem(itemType, mode, about),
-    partB: partBStem(itemType),
+    partB: overrideB || partBStem(itemType),
     leadIn: LEAD_IN,
   };
 }
@@ -576,7 +640,7 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
     passage: ctx.passage,
     passages: null,
     stem: stemFor(itemType, dim, str(outcome.subject),
-      str(outcome.mode) || "inference", str(outcome.other), str(outcome.stem)),
+      str(outcome.mode) || "inference", str(outcome.other), str(outcome.stem), str(outcome.stemB)),
     distractorAnalysis: [],
     answerKey: {},
     review: {

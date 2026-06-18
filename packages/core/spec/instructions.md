@@ -31,7 +31,11 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 - **outcome** — `type` (`ebsr` | `hot-text` | `short-text`), `dimension`, optional `subject`,
   `standard`, `dok`, `focus` (force a correct-claim id), `mode`
   (`inference` (default) | `conclusion` | `author-intent`), `other` (second subject, for
-  `character-relationship` stems), and `stem` (override the auto-generated Part A stem / prompt).
+  `character-relationship` stems), `stem` (override the auto-generated Part A stem / prompt),
+  `stem-b` (override Part B), and `rubric` (short-text only — a list of
+  `band score <n> descriptor "…"` elements; defaults to a 0/1/2 rubric if omitted).
+- **band** — a rubric row: `band score 2 descriptor "…" {}`. Used only inside an outcome's `rubric`.
+- A top-level **`title`** attribute (before `passage`) names the assessment; it is echoed on the output.
 
 ## Stems (Appropriate Stems, SBAC G5 · C1 · T4)
 
@@ -49,6 +53,16 @@ relationship with {other}"; `point-of-view`→ "the author's point of view"; `se
 `event` / `theme` / `topic`→ the matching phrase. Hot Text uses the "Click on the statement…"
 forms; Short Text uses "…? Explain using key details from the passage to support your answer."
 Set `stem` only to pin an exact phrasing the auto-stem doesn't produce.
+
+**`subject` is the guideline's "[provide character's name / setting / event / other reference]"
+slot, and it takes any noun phrase — not just a name.** To point the item at a specific aspect
+of the text, put that phrase in `subject`: e.g. `subject "Cortez's age"` →
+"Which of these inferences about Cortez's age is supported by the passage?"; likewise
+`"the letter Cortez burned"`, `"the journey across the mountains"`, `"Cortez's motive"`. The
+concrete answer and its foils are authored as `claim`s (the correct claim states the inferred
+fact, e.g. "Cortez is about twelve"); the `subject` phrase only frames the stem. Remember the
+focus must be **inferable from evidence** (Target 4) — a fact stated outright is literal recall
+and out of scope.
 
 ## Authoring guidance
 
