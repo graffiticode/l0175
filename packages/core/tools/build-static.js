@@ -4,7 +4,7 @@
 //     (the legacy lexicon.js request path is aliased to it by the API server.)
 //   - instructions.md: parent (L0000) instructions concatenated with L0175's.
 // The rest (spec.html, language-info.json, scope.json, schema.json, template.gc,
-// usage-guide.md) are L0175's own.
+// usage-guide.md, stems.md) are L0175's own.
 import { createRequire } from "module";
 import {
   mkdirSync,
@@ -51,7 +51,7 @@ const ownInstructions = readFileSync(join(specDir, "instructions.md"), "utf-8");
 writeFileSync(join(outDir, "instructions.md"), `${parentInstructions}\n\n${ownInstructions}`);
 
 // 4. Copy L0175's own verbatim spec assets.
-for (const f of ["usage-guide.md", "scope.json", "schema.json", "template.gc"]) {
+for (const f of ["usage-guide.md", "stems.md", "scope.json", "schema.json", "template.gc"]) {
   const src = join(specDir, f);
   if (existsSync(src)) copyFileSync(src, join(outDir, f));
 }

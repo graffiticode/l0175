@@ -1,7 +1,7 @@
 {
   "revised": "2026-06-18",
   "id": "0175",
-  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence). A program authors an inline superset of tagged content for one literary passage — candidate inference claims and evidence sources — plus intended outcomes; the compiler selects the best-fitting content and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate it.",
+  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence). Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one literary passage. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems.",
   "supported_item_types": ["ebsr", "hot-text", "short-text"],
   "example_prompts": [
     {
@@ -22,12 +22,12 @@
     {
       "prompt": "Add a faulty-reasoning distractor that mistakes Mara's quiet whisper for fear of her family.",
       "produces": "ebsr",
-      "notes": "A distractor claim with error-type faulty-reasoning and a rationale; composition uses it for Part A error-type coverage."
+      "notes": "A distractor claim with error-type faulty-reasoning, a rationale, and targets naming the question(s) it foils; composition uses it for Part A error-type coverage."
     },
     {
       "prompt": "Write an item about the narrator's point of view in a first-person diary entry, standard rl-6.",
       "produces": "ebsr",
-      "notes": "Dimension point-of-view selects the matching supported claim and reports rl-6 alongside rl-1."
+      "notes": "Dimension point-of-view; the outcome's focus names the supported claim and the item reports rl-6 alongside rl-1."
     },
     {
       "prompt": "Compose an item comparing how two characters in the story react to the same event, standard rl-3.",

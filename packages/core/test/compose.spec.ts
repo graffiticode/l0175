@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Compose-engine regression tests. Parses .gc fixtures with @graffiticode/parser (a sibling
 // repo in this workspace) and runs the built compiler. Run: `npm test` (builds core first).
+//
+// L0175 is item-first: each outcome carries a unique `id`, a `focus` (the correct claim), and an
+// explicit `stem` (+ `stem-b` on EBSR); each distractor `targets` the question(s) it foils, and
+// composition draws an item's foils ONLY from the distractors that target it.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-// @ts-ignore — sibling repo, plain JS, no types
+// @ts-expect-error — sibling repo, plain JS, no types
 import { parser } from "../../../../graffiticode/packages/parser/src/index.js";
 import { lexicon, compiler } from "../dist/index.js";
 
@@ -24,15 +28,15 @@ const PASSAGE = `passage "The Tide Pool" type literary lines [
   "Behind her, paper plates rustled and her mother laughed."
 ]`;
 
-// Five distinct distractors (>=5 viable); c2 (misreads, plausibility 0.9) beats c2b/c5.
+// Five distinct distractors targeting q1/q3; c2 (misreads, plausibility 0.9) beats c2b/c5.
 const POOL = `claims [
   claim id "c1" status supported dimension character subject "Mara" standard rl-1 text "Mara cares more about the tide pool than the picnic." cites ["e1" "e2" "e3"] {},
   claim id "cb" status supported dimension character subject "the brother" text "The brother wants Mara's attention." cites ["e2"] {},
-  claim id "c2" status distractor error-type misreads-detail plausibility 0.9 text "Mara is angry at her brother." rationale "Silence is absorption, not anger." cites ["e2"] {},
-  claim id "c2b" status distractor error-type misreads-detail plausibility 0.3 text "Mara is upset with her family." rationale "Weak duplicate-ish foil." cites ["e2"] {},
-  claim id "c3" status distractor error-type erroneous-inference text "Mara dislikes the outdoors." rationale "Contradicted by her smile." cites ["e4"] {},
-  claim id "c4" status distractor error-type faulty-reasoning text "Mara fears her family." rationale "Whisper treated as fear." cites ["e4"] {},
-  claim id "c5" status distractor error-type misreads-detail text "Mara is bored." rationale "Stillness is focus." cites ["e4"] {}
+  claim id "c2" status distractor error-type misreads-detail plausibility 0.9 targets ["q1" "q3"] text "Mara is angry at her brother." rationale "Silence is absorption, not anger." cites ["e2"] {},
+  claim id "c2b" status distractor error-type misreads-detail plausibility 0.3 targets ["q1" "q3"] text "Mara is upset with her family." rationale "Weak duplicate-ish foil." cites ["e2"] {},
+  claim id "c3" status distractor error-type erroneous-inference targets ["q1" "q3"] text "Mara dislikes the outdoors." rationale "Contradicted by her smile." cites ["e4"] {},
+  claim id "c4" status distractor error-type faulty-reasoning targets ["q1" "q3"] text "Mara fears her family." rationale "Whisper treated as fear." cites ["e4"] {},
+  claim id "c5" status distractor error-type misreads-detail targets ["q1" "q3"] text "Mara is bored." rationale "Stillness is focus." cites ["e4"] {}
 ]
 evidence [
   source id "e1" line 1 status directly-supports supports ["c1"] {},
@@ -40,6 +44,13 @@ evidence [
   source id "e3" line 4 status directly-supports supports ["c1"] {},
   source id "e4" line 6 status irrelevant supports [] {}
 ]`;
+
+// Reusable, guideline-authored stems (the compiler no longer synthesizes these).
+const STEM_A = `stem "Which of these inferences about Mara is supported by the passage?"`;
+const STEM_B = `stem-b "Which sentence(s) from the passage best support your answer in Part A?"`;
+const Q1 = `outcome id "q1" type ebsr dimension character subject "Mara" standard rl-1 focus "c1" ${STEM_A} ${STEM_B} {}`;
+const Q2 = `outcome id "q2" type short-text dimension character subject "Mara" standard rl-1 focus "c1" stem "What inference can be made about Mara? Explain using key details from the passage to support your answer." {}`;
+const Q3 = `outcome id "q3" type hot-text dimension character subject "Mara" standard rl-1 focus "c1" stem "Click on the statement that best provides an inference about Mara that is supported by the passage." {}`;
 
 const prog = (outcomes: string) => `${PASSAGE}\n${POOL}\noutcomes [ ${outcomes} ]\n{}..`;
 const one = async (outcome: string) => {
@@ -49,116 +60,163 @@ const one = async (outcome: string) => {
 
 describe("compose — task models", () => {
   it("composes all three task models from one pool", async () => {
-    const { errors, data } = await compile(prog(`
-      outcome type ebsr dimension character subject "Mara" standard rl-1 {},
-      outcome type short-text dimension character subject "Mara" standard rl-1 {},
-      outcome type hot-text dimension character subject "Mara" standard rl-1 {}`));
+    const { errors, data } = await compile(prog(`${Q1}, ${Q2}, ${Q3}`));
     expect(errors).toHaveLength(0);
     expect(data.items.map((i: any) => i.type)).toEqual(["ebsr", "short-text", "hot-text"]);
   });
 
   it("EBSR Part A has 4 options with exactly one correct", async () => {
-    const { item } = await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`);
+    const { item } = await one(Q1);
     expect(item.partA.options).toHaveLength(4);
     expect(item.partA.options.filter((o: any) => o.correct)).toHaveLength(1);
     expect(item.partB.options.filter((o: any) => o.correct)).toHaveLength(1);
   });
 
   it("Hot Text marks the directly-supporting lines as the correct selection", async () => {
-    const { item } = await one(`outcome type hot-text dimension character subject "Mara" standard rl-1 {}`);
+    const { item } = await one(Q3);
     expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.lineId)).toEqual([1, 4]);
   });
 
-  it("Short Text emits a prompt and a default 0/1/2 rubric, no distractors", async () => {
-    const { item } = await one(`outcome type short-text dimension character subject "Mara" standard rl-1 {}`);
-    expect(item.prompt).toMatch(/inference|conclusion/i);
+  it("Short Text emits the authored prompt and a default 0/1/2 rubric, no distractors", async () => {
+    const { item } = await one(Q2);
+    expect(item.prompt).toMatch(/What inference can be made about Mara/);
     expect(item.rubric.map((r: any) => r.score)).toEqual([2, 1, 0]);
     expect(item.distractorAnalysis).toHaveLength(0);
   });
 });
 
-describe("compose — selection", () => {
-  it("picks the best supported claim by fit (subject) and records alternatives", async () => {
-    const { item } = await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`);
-    expect(item.review.correctClaim.id).toBe("c1");
-    expect(item.review.alternativeClaims).toBeGreaterThanOrEqual(1);
+describe("compose — selection binds foils by `targets`", () => {
+  it("draws an item's foils ONLY from distractors that target it (no dimension bleed)", async () => {
+    // Two same-dimension questions with DISJOINT foil sets — the case the old dimension join broke.
+    const src = `${PASSAGE}
+      claims [
+        claim id "c1" status supported dimension character subject "Mara" text "Mara prefers the tide pool to the picnic." cites ["e1" "e3"] {},
+        claim id "cb" status supported dimension character subject "the brother" text "The brother wants Mara's attention." cites ["e2"] {},
+        claim id "a1" status distractor error-type misreads-detail targets ["qA"] text "Mara is angry at her brother." rationale "r" cites ["e2"] {},
+        claim id "a2" status distractor error-type erroneous-inference targets ["qA"] text "Mara dislikes the outdoors." rationale "r" cites ["e4"] {},
+        claim id "a3" status distractor error-type faulty-reasoning targets ["qA"] text "Because Mara is quiet she must be upset." rationale "r" cites ["e2"] {},
+        claim id "b1" status distractor error-type misreads-detail targets ["qB"] text "The brother is angry at Mara." rationale "r" cites ["e2"] {},
+        claim id "b2" status distractor error-type erroneous-inference targets ["qB"] text "The brother wants to go home." rationale "r" cites ["e4"] {},
+        claim id "b3" status distractor error-type faulty-reasoning targets ["qB"] text "Because the brother calls, he is in charge." rationale "r" cites ["e2"] {}
+      ]
+      evidence [
+        source id "e1" line 1 status directly-supports supports ["c1"] {},
+        source id "e2" line 2 status supports-wrong-claim supports ["c1" "a1"] {},
+        source id "e3" line 4 status directly-supports supports ["c1"] {},
+        source id "e4" line 6 status irrelevant supports [] {}
+      ]
+      outcomes [
+        outcome id "qA" type ebsr dimension character subject "Mara" focus "c1" ${STEM_A} ${STEM_B} {},
+        outcome id "qB" type ebsr dimension character subject "the brother" focus "cb" stem "Which of these inferences about the brother is supported by the passage?" ${STEM_B} {}
+      ] {}..`;
+    const { errors, data } = await compile(src);
+    expect(errors).toHaveLength(0);
+    const foils = (item: any) => item.distractorAnalysis.filter((d: any) => d.part === "A").map((d: any) => d.claimId).sort();
+    const qA = data.items.find((i: any) => i.id.endsWith("qA"));
+    const qB = data.items.find((i: any) => i.id.endsWith("qB"));
+    expect(foils(qA)).toEqual(["a1", "a2", "a3"]);
+    expect(foils(qB)).toEqual(["b1", "b2", "b3"]);
   });
 
-  it("ranks distractors by plausibility (c2 0.9 wins the misreads slot)", async () => {
-    const { item } = await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`);
+  it("ranks the targeted distractors by plausibility (c2 0.9 wins the misreads slot)", async () => {
+    const { item } = await one(Q1);
     const misreads = item.distractorAnalysis.find((d: any) => d.errorType === "misreads-detail");
     expect(misreads.claimId).toBe("c2");
     expect(misreads.plausibility).toBeGreaterThan(0.5);
   });
 
-  it("honors the focus override", async () => {
-    const { item } = await one(`outcome type ebsr dimension character subject "x" focus "cb" standard rl-1 {}`);
-    expect(item.review.correctClaim.id).toBe("cb");
+  it("uses the focus claim as the correct answer", async () => {
+    const { item } = await one(Q1);
+    expect(item.review.correctClaim.id).toBe("c1");
   });
 });
 
-describe("compose — warnings & validation", () => {
-  it("warns when fewer than 5 viable distractors", async () => {
-    const src = `${PASSAGE}
-      claims [ claim id "c1" status supported dimension character text "correct inference here ok" cites ["e1"] {},
-        claim id "d1" status distractor error-type misreads-detail text "foil a here ok" rationale "r" cites ["e2"] {},
-        claim id "d2" status distractor error-type erroneous-inference text "foil b here ok" rationale "r" cites ["e2"] {} ]
-      evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {},
-        source id "e2" line 2 status irrelevant supports [] {} ]
-      outcomes [ outcome type ebsr dimension character subject "x" standard rl-1 {} ] {}..`;
-    const { data } = await compile(src);
-    expect((data.warnings || []).some((w: string) => /viable distractor/.test(w))).toBe(true);
+describe("compose — hard errors (the item-first contract)", () => {
+  const errs = async (mut: (s: string) => string) => (await compile(mut(prog(Q1)))).errors.map((e: any) => e.message);
+
+  it("errors when a distractor has no targets", async () => {
+    const m = await errs((s) => s.replace(`targets ["q1" "q3"] text "Mara is angry`, `text "Mara is angry`));
+    expect(m.some((x) => /needs targets/.test(x))).toBe(true);
   });
 
-  it("warns on a dangling cites reference", async () => {
-    const { item } = await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`);
-    void item; // baseline has none
-    const src = prog(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`)
-      .replace(`cites ["e1" "e2" "e3"]`, `cites ["e1" "e99"]`);
-    const { data } = await compile(src);
-    expect((data.warnings || []).some((w: string) => /e99/.test(w))).toBe(true);
+  it("errors when an outcome is missing focus", async () => {
+    const m = await errs((s) => s.replace(`focus "c1" ${STEM_A}`, STEM_A));
+    expect(m.some((x) => /missing focus/.test(x))).toBe(true);
+  });
+
+  it("errors when an outcome is missing its stem", async () => {
+    const m = await errs((s) => s.replace(` ${STEM_A}`, ``));
+    expect(m.some((x) => /missing stem/.test(x))).toBe(true);
+  });
+
+  it("errors when an EBSR outcome is missing stem-b", async () => {
+    const m = await errs((s) => s.replace(` ${STEM_B}`, ``));
+    expect(m.some((x) => /Part B stem/.test(x))).toBe(true);
+  });
+
+  it("errors when focus points at a distractor, not a supported claim", async () => {
+    const m = await errs((s) => s.replace(`focus "c1"`, `focus "c2"`));
+    expect(m.some((x) => /must be a supported claim/.test(x))).toBe(true);
+  });
+
+  it("errors when targets names an unknown outcome", async () => {
+    const m = await errs((s) => s.replace(`targets ["q1" "q3"]`, `targets ["qZ"]`));
+    expect(m.some((x) => /targets unknown outcome/.test(x))).toBe(true);
+  });
+
+  it("errors when fewer than 3 distractors target an EBSR/Hot-Text outcome", async () => {
+    // Strip every distractor's q1 binding except c2's → only 1 targets q1.
+    const m = await errs((s) =>
+      s.replaceAll(`targets ["q1" "q3"]`, `targets ["q3"]`).replace(`targets ["q3"] text "Mara is angry`, `targets ["q1"] text "Mara is angry`));
+    expect(m.some((x) => /at least 3/.test(x))).toBe(true);
   });
 
   it("errors on a duplicate id", async () => {
-    const src = prog(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`)
-      .replace(`id "c2b"`, `id "c2"`);
-    const { errors } = await compile(src);
-    expect(errors.some((e: any) => /Duplicate claim id/.test(e.message))).toBe(true);
+    const m = await errs((s) => s.replace(`id "c2b"`, `id "c2"`));
+    expect(m.some((x) => /Duplicate claim id/.test(x))).toBe(true);
   });
 
   it("errors (with coords) when a distractor lacks a rationale", async () => {
-    const src = prog(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`)
-      .replace(`rationale "Silence is absorption, not anger." `, ``);
-    const { errors } = await compile(src);
+    const { errors } = await compile(prog(Q1).replace(`rationale "Silence is absorption, not anger." `, ``));
     const e = errors.find((x: any) => /needs a rationale/.test(x.message));
     expect(e).toBeTruthy();
     expect(typeof e.from).toBe("number");
   });
+});
 
-  it("warns (not errors) on an unsatisfiable dimension", async () => {
-    const { errors, item } = await one(`outcome type ebsr dimension theme subject "x" standard rl-9 {}`);
-    expect(errors).toHaveLength(0);
-    expect(item.warnings.some((w: string) => /cannot be satisfied/.test(w))).toBe(true);
+describe("compose — warnings (non-fatal)", () => {
+  it("warns when fewer than 5 viable distractors target an outcome", async () => {
+    const src = `${PASSAGE}
+      claims [ claim id "c1" status supported dimension character text "correct inference here ok" cites ["e1"] {},
+        claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "foil a here ok" rationale "r" cites ["e2"] {},
+        claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "foil b here ok" rationale "r" cites ["e2"] {},
+        claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "foil c here ok" rationale "r" cites ["e2"] {} ]
+      evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {},
+        source id "e2" line 2 status irrelevant supports [] {} ]
+      outcomes [ outcome id "q1" type ebsr dimension character subject "x" focus "c1" ${STEM_A} ${STEM_B} {} ] {}..`;
+    const { errors, data } = await compile(src);
+    expect(errors).toHaveLength(0); // 3 targeted foils → no hard error
+    expect((data.warnings || []).some((w: string) => /viable distractor/.test(w))).toBe(true);
+  });
+
+  it("warns on a dangling cites reference", async () => {
+    const src = prog(Q1).replace(`cites ["e1" "e2" "e3"]`, `cites ["e1" "e99"]`);
+    const { data } = await compile(src);
+    expect((data.warnings || []).some((w: string) => /e99/.test(w))).toBe(true);
   });
 });
 
-describe("compose — stems", () => {
-  const stem = async (extra: string) =>
-    (await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 ${extra} {}`)).item.stem;
-
-  it("renders inference / conclusion / author-intent variants", async () => {
-    expect((await stem(``)).partA).toMatch(/Which of these inferences about Mara/);
-    expect((await stem(`mode conclusion`)).partA).toMatch(/Which of these conclusions about Mara/);
-    expect((await stem(`mode author-intent`)).partA).toMatch(/What did the author most likely mean/);
+describe("compose — stems are authored verbatim", () => {
+  it("passes the authored Part A / Part B stems through unchanged", async () => {
+    const { item } = await one(Q1);
+    expect(item.stem.partA).toBe("Which of these inferences about Mara is supported by the passage?");
+    expect(item.stem.partB).toBe("Which sentence(s) from the passage best support your answer in Part A?");
   });
 
-  it("resolves the about-phrase per dimension and supports other/override", async () => {
-    const nf = (await one(`outcome type ebsr dimension narrators-feelings subject "Mara" standard rl-6 {}`)).item.stem.partA;
-    expect(nf).toMatch(/the narrator's feelings toward Mara/);
-    const rel = (await one(`outcome type ebsr dimension character-relationship subject "Mara" other "Tom" standard rl-3 {}`)).item.stem.partA;
-    expect(rel).toMatch(/Mara's relationship with Tom/);
-    expect((await stem(`stem "Custom A?"`)).partA).toBe("Custom A?");
-    expect((await stem(`stem-b "Custom B?"`)).partB).toBe("Custom B?");
+  it("uses the fixed Hot-Text Part B instruction (no authored Part B stem)", async () => {
+    const { item } = await one(Q3);
+    expect(item.stem.partA).toMatch(/Click on the statement that best provides an inference about Mara/);
+    expect(item.stem.partB).toMatch(/Click the sentence\(s\)/);
   });
 });
 
@@ -168,7 +226,8 @@ describe("compose — vocabulary", () => {
       ${PASSAGE}
       claims [ claim id "c1" status supported dimension character text "correct inference here ok" cites ["e1"] {} ]
       evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
-      outcomes [ outcome type short-text dimension character subject "x" standard rl-1
+      outcomes [ outcome id "q1" type short-text dimension character subject "x" focus "c1"
+        stem "What inference can be made about the character? Explain using key details."
         rubric [ band score 2 descriptor "Full." {}, band score 0 descriptor "None." {} ] {} ] {}..`;
     const { data } = await compile(src);
     expect(data.title).toBe("My Assessment");
@@ -184,7 +243,7 @@ describe("output shape", () => {
     const required = JSON.parse(
       readFileSync(new URL("../spec/schema.json", import.meta.url), "utf8"),
     ).$defs.item.required;
-    const { item } = await one(`outcome type ebsr dimension character subject "Mara" standard rl-1 {}`);
+    const { item } = await one(Q1);
     for (const key of required) expect(item, `missing ${key}`).toHaveProperty(key);
   });
 });

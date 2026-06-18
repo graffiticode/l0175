@@ -44,7 +44,7 @@ const ERROR_TYPE_PRIOR: Record<string, number> = {
 };
 
 // Hand-tuned thresholds — located here for later calibration (the IRT/response-data track in
-// the backlog would replace these and the plausibility/rankClaims weights with learned values).
+// the backlog would replace these and the plausibility weights with learned values).
 const TUNING = {
   MIN_VIABLE_DISTRACTORS: 5, // below this, warn — a richer Part A pool gives selection real choice
   MIN_VIABLE_PART_B: 5, // below this many Part B foil sources, warn (item draws 3 of them)
@@ -61,45 +61,14 @@ const DIM_STANDARD: Record<string, string> = {
   "theme": "rl-9", "topic": "rl-9",
 };
 
-// --- Appropriate Stems (Smarter Balanced · Grade 5 · Claim 1 · Target 4) -------------------
-// Encoded directly from the guideline's "Appropriate Stems" lists. Hardcoded to T4 for now; a
-// future version would load these from a per-guideline parameter source (there are 100s of
-// targets). Stems vary by item type, by `mode` (inference | conclusion | author-intent), and by
-// the dimension's "about" phrase. Authors can override the Part A stem / prompt via `stem`.
-const MODES = new Set(["inference", "conclusion", "author-intent"]);
+// --- Stems (Smarter Balanced · Grade 5 · Claim 1 · Target 4) --------------------------------
+// Stems are AUTHORED, not generated: the upstream code generator instantiates the guideline's
+// "Appropriate Stems" catalog (spec/stems.md) and emits each item's `stem` (and `stem-b` on
+// EBSR) on the outcome. The compiler trusts the authored text — it does not synthesize stems.
+// The two invariants below are not per-item question text: the EBSR lead-in and the fixed
+// Hot-Text Part B selection instruction (Hot Text has no authored Part B stem).
 const LEAD_IN = "This question has two parts. First, answer Part A. Then, answer Part B.";
-
-// Resolves the guideline's "[provide character's name / setting / ...]" slot.
-function aboutPhrase(dim: string, subject: string, other: string): string {
-  const subj = subject || "the character";
-  switch (dim) {
-    case "narrators-feelings": return `the narrator's feelings toward ${subj}`;
-    case "character-relationship": return `${subj}'s relationship with ${other || "another character"}`;
-    case "point-of-view": return "the author's point of view";
-    case "setting": return "the setting";
-    case "event": return "the events";
-    case "theme": return "the theme";
-    case "topic": return "the topic";
-    default: return subj; // character
-  }
-}
-
-function partAStem(itemType: string, mode: string, about: string): string {
-  if (itemType === "hot-text") {
-    if (mode === "conclusion") return `Click on the statement that best provides a conclusion that can be drawn about ${about}.`;
-    if (mode === "author-intent") return `Click on the statement that best describes what the author most likely meant by including ${about} in the passage.`;
-    return `Click on the statement that best provides an inference about ${about} that is supported by the passage.`;
-  }
-  if (mode === "conclusion") return `Which of these conclusions about ${about} is supported by the passage?`;
-  if (mode === "author-intent") return `What did the author most likely mean by including ${about} in the passage?`;
-  return `Which of these inferences about ${about} is supported by the passage?`;
-}
-
-function partBStem(itemType: string): string {
-  return itemType === "hot-text"
-    ? "Click the sentence(s) from the passage that best support your answer in Part A. Choose one option."
-    : "Which sentence(s) from the passage best support your answer in Part A?";
-}
+const HOT_TEXT_PART_B = "Click the sentence(s) from the passage that best support your answer in Part A. Choose one option.";
 
 const DEFAULT_RUBRIC = [
   { score: 2, descriptor: "Makes a valid inference and supports it with specific, relevant details from the passage." },
@@ -118,7 +87,8 @@ const coordOf = (x: any): any => (x && x[COORD]) || {};
 
 const ATTR_KEYS: Record<string, string> = {
   ID: "id", STATUS: "status", DIMENSION: "dimension", ERROR_TYPE: "errorType",
-  TEXT: "text", RATIONALE: "rationale", CITES: "cites", LINE: "line", QUOTE: "quote",
+  TEXT: "text", RATIONALE: "rationale", CITES: "cites", TARGETS: "targets",
+  LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
   FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
@@ -226,8 +196,10 @@ function composeProgram(top: any, errors: any[]): any {
     passage,
     claims,
     sources,
+    outcomes,
     claimById: index(claims, "id"),
     sourceById: index(sources, "id"),
+    outcomeById: index(outcomes, "id"),
   };
 
   const graphWarnings = validateGraph(ctx, errors);
@@ -251,8 +223,8 @@ function validateClaim(c: any, errors: any[]) {
   if (!CLAIM_STATUS.has(str(c.status))) {
     push(`${where}: invalid status '${str(c.status)}'. Expected supported or distractor.`);
   }
-  // dimension is required on supported claims (it must match the outcome); optional on
-  // distractors (foils share the item's dimension by construction), but validated if present.
+  // dimension is required on supported claims (it must match the outcome); on distractors the
+  // binding is by `targets` (not dimension), so it is optional there but validated if present.
   if (str(c.dimension)) {
     if (!DIMENSIONS.has(str(c.dimension))) push(`${where}: invalid dimension '${str(c.dimension)}'.`);
   } else if (str(c.status) === "supported") {
@@ -265,6 +237,9 @@ function validateClaim(c: any, errors: any[]) {
     }
     if (!str(c.rationale)) {
       push(`${where}: distractor needs a rationale (the justification for the foil).`);
+    }
+    if (!Array.isArray(c.targets) || c.targets.length === 0) {
+      push(`${where}: distractor needs targets (the outcome id(s) of the question(s) it foils).`);
     }
   }
   if (c.plausibility !== undefined && (typeof c.plausibility !== "number" || c.plausibility < 0 || c.plausibility > 1)) {
@@ -287,16 +262,21 @@ function validateSource(s: any, errors: any[]) {
 }
 
 function validateOutcome(o: any, errors: any[]) {
+  const id = str(o.id);
+  const where = id ? `outcome '${id}'` : "an outcome";
   const at = coordOf(o);
   const push = (message: string) => errors.push({ message, ...at });
+  if (!id) push(`${where}: missing id (each question needs a unique id so distractors can target it).`);
   if (!ITEM_TYPES.has(str(o.type))) {
-    push(`outcome: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.`);
+    push(`${where}: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.`);
   }
-  if (!DIMENSIONS.has(str(o.dimension))) push(`outcome: invalid dimension '${str(o.dimension)}'.`);
-  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) push(`outcome: invalid standard '${str(o.standard)}'.`);
-  if (o.mode !== undefined && !MODES.has(str(o.mode))) {
-    push(`outcome: invalid mode '${str(o.mode)}'. Expected inference, conclusion, or author-intent.`);
-  }
+  if (!DIMENSIONS.has(str(o.dimension))) push(`${where}: invalid dimension '${str(o.dimension)}'.`);
+  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) push(`${where}: invalid standard '${str(o.standard)}'.`);
+  // Item-first contract: the question owns its correct answer (focus) and its stem text,
+  // authored from the guideline's Appropriate-Stem catalog (the compiler no longer synthesizes stems).
+  if (!str(o.focus)) push(`${where}: missing focus (the id of the supported claim this question is built around).`);
+  if (!str(o.stem)) push(`${where}: missing stem (author it from the guideline's Appropriate-Stem catalog).`);
+  if (str(o.type) === "ebsr" && !str(o.stemB)) push(`${where}: EBSR needs a Part B stem (stem-b).`);
 }
 
 function index(arr: any[], key: string): Record<string, any> {
@@ -311,7 +291,7 @@ function index(arr: any[], key: string): Record<string, any> {
 function validateGraph(ctx: any, errors: any[]): string[] {
   const warnings: string[] = [];
   const lineCount = ctx.passage.lines.length;
-  for (const [label, arr] of [["claim", ctx.claims], ["source", ctx.sources]] as const) {
+  for (const [label, arr] of [["claim", ctx.claims], ["source", ctx.sources], ["outcome", ctx.outcomes]] as const) {
     const seen = new Set<string>();
     for (const x of arr) {
       const id = str(x.id);
@@ -323,6 +303,34 @@ function validateGraph(ctx: any, errors: any[]): string[] {
   for (const c of ctx.claims) {
     for (const ref of Array.isArray(c.cites) ? c.cites : []) {
       if (!ctx.sourceById[str(ref)]) warnings.push(`claim '${str(c.id)}' cites unknown evidence id '${str(ref)}'.`);
+    }
+    // A distractor's targets must name real questions (hard error — the binding is the contract).
+    if (str(c.status) === "distractor") {
+      for (const ref of Array.isArray(c.targets) ? c.targets : []) {
+        if (!ctx.outcomeById[str(ref)]) errors.push({ message: `distractor '${str(c.id)}' targets unknown outcome id '${str(ref)}'.`, ...coordOf(c) });
+      }
+    }
+  }
+  // Each question must pin a real, supported correct answer, and (for option items) have enough
+  // foils bound to it — both hard errors, so a thin or mis-wired item fails the compile.
+  for (const o of ctx.outcomes) {
+    const oid = str(o.id);
+    const f = str(o.focus);
+    if (f) {
+      const fc = ctx.claimById[f];
+      if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
+      else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
+    }
+    const t = str(o.type);
+    if (oid && (t === "ebsr" || t === "hot-text")) {
+      const distinct = new Set(
+        ctx.claims
+          .filter((c: any) => str(c.status) === "distractor" && (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid))
+          .map((c: any) => norm(str(c.text))),
+      ).size;
+      if (distinct < TUNING.DISTRACTOR_SLOTS) {
+        errors.push({ message: `outcome '${oid}': only ${distinct} distractor(s) target it; an EBSR/Hot-Text item needs at least ${TUNING.DISTRACTOR_SLOTS}.`, ...coordOf(o) });
+      }
     }
   }
   for (const s of ctx.sources) {
@@ -377,25 +385,6 @@ function seededShuffle<T>(arr: T[], seed: string): T[] {
 }
 const LABELS = ["A", "B", "C", "D", "E", "F"];
 
-// Rank supported candidates by fit to the outcome; best first, tie-break by id.
-function rankClaims(cands: any[], outcome: any, ctx: any): any[] {
-  const scored = cands.map((c) => {
-    let s = 0;
-    if (str(outcome.standard) && str(c.standard) === str(outcome.standard)) s += 4;
-    if (str(outcome.dok) && str(c.dok) === str(outcome.dok)) s += 2;
-    if (str(outcome.subject) && str(c.subject).toLowerCase() === str(outcome.subject).toLowerCase()) s += 4;
-    const direct = (Array.isArray(c.cites) ? c.cites : [])
-      .map((id: any) => ctx.sourceById[str(id)])
-      .filter((src: any) => src && str(src.status) === "directly-supports");
-    s += Math.min(direct.length, 3); // richness
-    const ls = direct.map((d: any) => d.line).filter((n: any) => typeof n === "number");
-    if (ls.length > 1) s += Math.max(...ls) - Math.min(...ls) > 1 ? 2 : 1; // spread (DOK3)
-    return { c, s };
-  });
-  scored.sort((a, b) => b.s - a.s || str(a.c.id).localeCompare(str(b.c.id)));
-  return scored.map((x) => x.c);
-}
-
 // Distinct = not a normalized-text duplicate of an already-chosen option.
 function norm(t: string): string {
   return str(t).toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
@@ -426,10 +415,12 @@ export function plausibility(d: any, correct: any, ctx: any): number {
   return clamp01(s);
 }
 
-function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any[] {
-  const all = ctx.claims.filter((c: any) => str(c.status) === "distractor");
-  const sameDim = all.filter((c: any) => str(c.dimension) === str(correct.dimension));
-  const pool = sameDim.length >= 3 ? sameDim : all;
+// Select up to 3 foils for an item from the distractors explicitly bound to this question via
+// `targets` (NOT a dimension join) — so the foils are authored against this exact stem + key.
+function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: string[]): any[] {
+  const oid = str(outcome.id);
+  const pool = ctx.claims.filter((c: any) =>
+    str(c.status) === "distractor" && (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid));
   const seen = new Set([norm(correct.text)]);
   // Rank candidates by plausibility (desc), tie-break by id for determinism.
   const byScore = (a: any, b: any) =>
@@ -449,7 +440,7 @@ function selectDistractorClaims(correct: any, ctx: any, warnings: string[]): any
   // Fill remaining slots with the most plausible leftovers.
   const rest = pool.filter((c: any) => !chosen.includes(c)).sort(byScore);
   while (chosen.length < TUNING.DISTRACTOR_SLOTS && rest.length) take(rest.shift());
-  if (chosen.length < TUNING.DISTRACTOR_SLOTS) warnings.push(`Only ${chosen.length} distractor claim(s) available; an EBSR/Hot-Text item wants 3.`);
+  if (chosen.length < TUNING.DISTRACTOR_SLOTS) warnings.push(`Only ${chosen.length} distractor claim(s) target this outcome; an EBSR/Hot-Text item wants 3.`);
   const missing = ERROR_TYPES.filter((t) => !chosen.some((c) => str(c.errorType) === t));
   if (missing.length) warnings.push(`Distractor error types not represented: ${missing.join(", ")}.`);
   return chosen.slice(0, TUNING.DISTRACTOR_SLOTS);
@@ -471,23 +462,17 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
   const warnings: string[] = [...graphWarnings];
   const dim = str(outcome.dimension);
   const itemType = str(outcome.type);
-  const subject = str(outcome.subject);
   const dok = str(outcome.dok) || "r-dok3";
-  const seed = `${ctx.passage.id}:${dim}:${itemType}`;
+  const seed = `${ctx.passage.id}:${str(outcome.id)}:${itemType}`;
 
-  // 1. Select the correct claim from possibly many supported candidates.
-  const candidates = ctx.claims.filter((c: any) => str(c.status) === "supported" && str(c.dimension) === dim);
-  let correct: any = null;
-  if (str(outcome.focus)) {
-    correct = ctx.claimById[str(outcome.focus)];
-    if (!correct) warnings.push(`focus claim '${str(outcome.focus)}' not found; ranking instead.`);
-  }
-  if (!correct) correct = rankClaims(candidates, outcome, ctx)[0];
+  // 1. The question pins its own correct answer via `focus` (validated as a supported claim).
+  const correct: any = ctx.claimById[str(outcome.focus)];
   if (!correct) {
-    warnings.push(`Outcome dimension '${dim}' cannot be satisfied: no supported claim with that dimension.`);
+    warnings.push(`Outcome '${str(outcome.id)}' focus '${str(outcome.focus)}' not found; cannot compose.`);
     return baseItem(itemType, outcome, ctx, dim, dok, null, warnings);
   }
-  const alternativeClaims = Math.max(0, candidates.length - 1);
+  const alternativeClaims = Math.max(0,
+    ctx.claims.filter((c: any) => str(c.status) === "supported" && str(c.dimension) === dim).length - 1);
 
   const item = baseItem(itemType, outcome, ctx, dim, dok, correct, warnings);
   item.review.alternativeClaims = alternativeClaims;
@@ -497,7 +482,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
     .filter((s: any) => s && str(s.status) === "directly-supports");
 
   if (itemType === "short-text") {
-    item.prompt = str(outcome.stem) || shortTextPrompt(dim, subject, str(outcome.mode) || "inference", str(outcome.other));
+    item.prompt = str(outcome.stem); // authored from the guideline catalog (required)
     item.rubric = Array.isArray(outcome.rubric) && outcome.rubric.length
       ? outcome.rubric.map((b: any) => ({ score: Number(b.score), descriptor: str(b.descriptor) }))
       : DEFAULT_RUBRIC;
@@ -508,18 +493,20 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
   }
 
   // EBSR & Hot Text share Part A (statement options).
-  // Viability check: a healthy pool has >=5 distinct distractors usable for this dimension, so
-  // selection (and the plausibility ranking) has real choice. Thin pools warn — a signal the
-  // upstream generator's repair loop can use to regenerate more foils.
+  // Viability check: a healthy pool has >=5 distinct distractors bound to THIS question (via
+  // `targets`), so selection (and the plausibility ranking) has real choice. Thin pools warn — a
+  // signal the upstream generator's repair loop can use to regenerate more foils. (Fewer than 3
+  // targeted foils is a hard error raised earlier in validateGraph.)
+  const oid = str(outcome.id);
   const viableDistractors = new Set(
     ctx.claims
-      .filter((c: any) => str(c.status) === "distractor" && (!str(c.dimension) || str(c.dimension) === dim))
+      .filter((c: any) => str(c.status) === "distractor" && (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid))
       .map((c: any) => norm(str(c.text))),
   ).size;
   if (viableDistractors < TUNING.MIN_VIABLE_DISTRACTORS) {
-    warnings.push(`Only ${viableDistractors} viable distractor(s) for dimension '${dim}'; author at least 5 for stronger selection.`);
+    warnings.push(`Only ${viableDistractors} viable distractor(s) target outcome '${oid}'; author at least 5 for stronger selection.`);
   }
-  const distractors = selectDistractorClaims(correct, ctx, warnings);
+  const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
   item.partA = { options: partAOptions(correct, distractors, seed) };
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
   const analysis: any[] = item.partA.options
@@ -617,21 +604,13 @@ function partBRationale(s: any, status: string): string {
   return "Does not directly support the inference.";
 }
 
-function shortTextPrompt(dim: string, subject: string, mode: string, other: string): string {
-  const about = aboutPhrase(dim, subject, other);
-  const lead = mode === "conclusion" ? `What conclusion can be drawn about ${about}?`
-    : mode === "author-intent" ? `What did the author most likely mean by including ${about} in the passage?`
-      : `What inference can be made about ${about}?`;
-  return `${lead} Explain using key details from the passage to support your answer.`;
-}
-
-function stemFor(itemType: string, dim: string, subject: string, mode: string, other: string, override: string, overrideB: string) {
-  const about = aboutPhrase(dim, subject, other);
-  return {
-    partA: override || partAStem(itemType, mode, about),
-    partB: overrideB || partBStem(itemType),
-    leadIn: LEAD_IN,
-  };
+// Stems are authored on the outcome (from the guideline catalog). Part A is the authored `stem`;
+// EBSR Part B is the authored `stem-b`; Hot Text Part B is the fixed selection instruction.
+function stemFor(itemType: string, outcome: any) {
+  const stem: any = { partA: str(outcome.stem), leadIn: LEAD_IN };
+  if (itemType === "ebsr") stem.partB = str(outcome.stemB);
+  else if (itemType === "hot-text") stem.partB = HOT_TEXT_PART_B;
+  return stem;
 }
 
 function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: string, correct: any, warnings: string[]): any {
@@ -640,15 +619,14 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
     : "Both parts correct = 1 point; otherwise 0.";
   return {
     kind: "item",
-    id: `${ctx.passage.id}-${itemType}-${dim}`,
+    id: `${ctx.passage.id}-${str(outcome.id) || itemType + "-" + dim}`,
     type: itemType,
     standards: standardsFor(outcome, correct, dim),
     dok,
     dimension: dim,
     passage: ctx.passage,
     passages: null,
-    stem: stemFor(itemType, dim, str(outcome.subject),
-      str(outcome.mode) || "inference", str(outcome.other), str(outcome.stem), str(outcome.stemB)),
+    stem: stemFor(itemType, outcome),
     distractorAnalysis: [],
     answerKey: {},
     review: {

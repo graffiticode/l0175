@@ -1,9 +1,10 @@
 {
   "revised": "2026-06-18",
   "id": "0175",
-  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence) by selecting, from an authored inline superset of tagged content, the subset that best fits an intended outcome.",
+  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence) item-first: each authored question pins its correct answer (focus) and its stem, and the compiler draws that question's distractors from the foils that target it.",
   "in_scope": [
     "A single literary passage with numbered lines",
+    "Questions (outcomes) authored first, each with a unique id, a focus correct claim, and a stem from the guideline catalog; distractors bound to questions via targets",
     "An inference graph: supported and distractor claims, plus evidence sources tagged directly-supports / supports-wrong-claim / irrelevant",
     "The eight inference dimensions (character, setting, event, point-of-view, theme, topic, narrators-feelings, character-relationship)",
     "Three task models: ebsr (two-part selected response), hot-text (select text), short-text (constructed response)",

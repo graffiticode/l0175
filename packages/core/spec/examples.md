@@ -31,21 +31,21 @@ Each prompt assumes a literary passage and produces one or more composed items.
 
 ## Category 4: Authoring the inference graph
 
-14. Add a supported claim that the character cares more about the tide pool than the picnic.
-15. Add a second supported claim about the brother so composition can pick the best fit for the subject.
+14. Add a supported claim, that the character cares more about the tide pool than the picnic, and point question q1's focus at it.
+15. Add a second supported claim about the brother and build a separate question q2 around it.
 16. Tag line 1 and line 3 as directly supporting the main inference.
 17. Mark line 2 as evidence that supports a wrong claim, tied to both the correct claim and the 'anger' distractor.
 18. Mark the last two lines as irrelevant so they can serve as Part B foils.
 
 ## Category 5: Distractors by error type
 
-19. Add a misreads-detail distractor that takes the character's silence as anger.
-20. Add an erroneous-inference distractor that the character dislikes being outdoors.
-21. Add a faulty-reasoning distractor that mistakes the character's whisper for fear.
-22. Give each distractor a rationale explaining the student error it targets.
+19. Add a misreads-detail distractor for question q1 that takes the character's silence as anger.
+20. Add an erroneous-inference distractor for q1 that the character dislikes being outdoors.
+21. Add a faulty-reasoning distractor for q1 that mistakes the character's whisper for fear.
+22. Give each distractor a rationale explaining the student error it targets, and tag it with the question id(s) it foils.
 
-## Category 6: Multiple outcomes from one superset
+## Category 6: Item-first composition
 
-23. From the same passage and pool, produce an EBSR item, a short-text item, and a hot-text item.
-24. Compose one item per inference dimension the passage supports.
-25. Force a specific correct claim using focus, then compose an EBSR item around it.
+23. Compose the questions first: write an EBSR question, a short-text question, and a hot-text question, each with its stem from the guideline catalog, then author foils targeting each.
+24. Compose one question per inference dimension the passage supports, then author a targeted foil set for each.
+25. Set a question's focus to a specific correct claim and write its stem, then author the distractors that target it.

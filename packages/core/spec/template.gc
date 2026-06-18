@@ -19,27 +19,28 @@ claims [
   claim id "c5" status supported dimension character subject "the brother"
     text "Mara's brother wants her attention."
     cites ["e2"] {}
-  claim id "c2" status distractor error-type misreads-detail plausibility 0.85
+  /* Distractors target the question(s) they foil (here, all foil the Mara items q1/q2/q3). */
+  claim id "c2" status distractor error-type misreads-detail plausibility 0.85 targets ["q1" "q2" "q3"]
     text "Mara is angry at her brother for calling her."
     rationale "Misreads line 2: not turning around shows absorption, not anger."
     cites ["e2"] {}
-  claim id "c6" status distractor error-type misreads-detail plausibility 0.6
+  claim id "c6" status distractor error-type misreads-detail plausibility 0.6 targets ["q1" "q2" "q3"]
     text "Mara is bored and impatient to leave."
     rationale "Misreads her stillness as boredom; line 3 shows delight, not boredom."
     cites ["e6"] {}
-  claim id "c3" status distractor error-type erroneous-inference plausibility 0.55
+  claim id "c3" status distractor error-type erroneous-inference plausibility 0.55 targets ["q1" "q2" "q3"]
     text "Mara dislikes spending time outdoors."
     rationale "Over-generalizes from her quiet to a dislike contradicted by line 3."
     cites ["e6"] {}
-  claim id "c7" status distractor error-type erroneous-inference plausibility 0.5
+  claim id "c7" status distractor error-type erroneous-inference plausibility 0.5 targets ["q1" "q2" "q3"]
     text "Mara wishes she were somewhere else with her friends."
     rationale "Invents an off-text desire; nothing in the passage mentions friends."
     cites ["e7"] {}
-  claim id "c4" status distractor error-type faulty-reasoning plausibility 0.45
+  claim id "c4" status distractor error-type faulty-reasoning plausibility 0.45 targets ["q1" "q2" "q3"]
     text "Because Mara whispers, she must be afraid of her family."
     rationale "Whispering is treated as fear without textual support."
     cites ["e5"] {}
-  claim id "c8" status distractor error-type faulty-reasoning plausibility 0.4
+  claim id "c8" status distractor error-type faulty-reasoning plausibility 0.4 targets ["q1" "q2" "q3"]
     text "Because Mara ignores the picnic, she must not love her family."
     rationale "Leaps from one moment of focus to a sweeping claim about her feelings."
     cites ["e6"] {}
@@ -57,8 +58,12 @@ evidence [
   source id "e8" line 4 status irrelevant supports [] {}
 ]
 outcomes [
-  outcome type ebsr       dimension character subject "Mara" standard rl-1 {}
-  outcome type short-text dimension character subject "Mara" standard rl-1 {}
-  outcome type hot-text   dimension character subject "Mara" standard rl-1 {}
+  outcome id "q1" type ebsr dimension character subject "Mara" standard rl-1 focus "c1"
+    stem "Which of these inferences about Mara is supported by the passage?"
+    stem-b "Which sentence(s) from the passage best support your answer in Part A?" {}
+  outcome id "q2" type short-text dimension character subject "Mara" standard rl-1 focus "c1"
+    stem "What inference can be made about Mara? Explain using key details from the passage to support your answer." {}
+  outcome id "q3" type hot-text dimension character subject "Mara" standard rl-1 focus "c1"
+    stem "Click on the statement that best provides an inference about Mara that is supported by the passage." {}
 ]
 {}..

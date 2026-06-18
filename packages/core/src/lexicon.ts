@@ -42,6 +42,7 @@ const additions = {
   text: fn2("TEXT"),
   rationale: fn2("RATIONALE"),
   cites: fn2("CITES"), // claim -> evidence id list
+  targets: fn2("TARGETS"), // distractor claim -> outcome id list (the questions it foils)
   line: fn2("LINE"), // evidence -> passage line number
   quote: fn2("QUOTE"), // optional evidence text override
   supports: fn2("SUPPORTS"), // evidence -> claim id list
