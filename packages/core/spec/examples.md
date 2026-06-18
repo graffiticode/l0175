@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 RAG Training Examples
 
+_Revised: 2026-06-18_
+
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
 assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence).
 Each prompt assumes a literary passage and produces one or more composed items.

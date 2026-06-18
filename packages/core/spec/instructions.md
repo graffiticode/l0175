@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Dialect Extensions
 
+_Revised: 2026-06-18_
+
 L0175 composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 ·
 Target 4: Reasoning & Evidence) from an authored, inline superset of tagged content.
 
@@ -112,7 +114,7 @@ claims [
   claim id "c1" status supported dimension character subject "Mara"
     text "Mara is more interested in the tide pool than in her family's picnic."
     cites ["e1" "e3"] {},
-  | at least 5 viable distractors; the item draws 3 (one per error type, most plausible first)
+  /* at least 5 viable distractors; the item draws 3 (one per error type, most plausible first) */
   claim id "c2" status distractor error-type misreads-detail plausibility 0.85
     text "Mara is angry at her brother."
     rationale "Not turning around shows absorption, not anger." cites ["e2"] {},

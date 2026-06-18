@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 User Manual
 
+_Revised: 2026-06-18_
+
 **Introduction**
 
 *Graffiticode* is a collection of domain languages for creating task-specific web apps.
@@ -44,10 +46,19 @@ toggle.
 | **source** | 1 | `source id "e1" line 1 status directly-supports ... {}` | One passage line tagged by support role |
 | **outcomes** | 2 | `outcomes [ outcome ... {} ]` | The intended items |
 | **outcome** | 1 | `outcome type ebsr dimension character ... {}` | One item to compose |
+| **rubric** | 2 | `rubric [ band ... {} ]` | Short-text scoring bands (on an outcome) |
+| **band** | 1 | `band score 2 descriptor "..." {}` | One rubric row |
+| **title** | 2 | `title "..."` | Optional assessment title (top level) |
 
-Attribute functions (`id`, `status`, `dimension`, `error-type`, `text`, `rationale`,
-`cites`, `line`, `quote`, `supports`, `subject`, `standard`, `focus`, `dok`, `stem`,
-`rubric`) are arity-2 and merge one key into the element's record.
+Attribute functions (arity-2, merge one key into the element's record):
+
+- **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (force the correct claim)
+- **claim** — `status`, `dimension`, `text`, `error-type`*, `rationale`*, `plausibility` (0–1 distractor temptingness override), `subject`, `standard`, `dok`
+- **evidence** — `status`, `line` (or `quote`), `supports`, `rationale`
+- **outcome / stem** — `type`, `dimension`, `subject`, `standard`, `dok`, `mode` (inference/conclusion/author-intent), `other` (second subject), `stem` (Part A override), `stem-b` (Part B override)
+- **rubric band** — `score`, `descriptor`
+
+\* required on distractor claims. See `spec.md` for the full per-function reference.
 
 ### Enumerations
 
@@ -55,4 +66,5 @@ Attribute functions (`id`, `status`, `dimension`, `error-type`, `text`, `rationa
 - `dimension`: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
 - `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
+- `mode`: `inference`, `conclusion`, `author-intent`
 - `standard`: `rl-1`, `rl-3`, `rl-6`, `rl-9` · `dok`: `r-dok3`

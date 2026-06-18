@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Specifications and Documentation
 
+_Revised: 2026-06-18_
+
 This directory contains the language specification, authoring instructions, examples,
 and training data for this Graffiticode language.
 

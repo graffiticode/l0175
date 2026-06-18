@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Usage Guide
 
+_Revised: 2026-06-18_
+
 Agent-facing guide for authoring L0175 programs. Read this before composing a `create_item` prompt or an `update_item` modification.
 
 ## Overview

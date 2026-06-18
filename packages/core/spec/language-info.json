@@ -1,4 +1,5 @@
 {
+  "revised": "2026-06-18",
   "id": "0175",
   "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence). A program authors an inline superset of tagged content for one literary passage — candidate inference claims and evidence sources — plus intended outcomes; the compiler selects the best-fitting content and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate it.",
   "supported_item_types": ["ebsr", "hot-text", "short-text"],
