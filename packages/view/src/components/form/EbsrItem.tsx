@@ -16,7 +16,7 @@ export function EbsrItem({
   const [partA, setPartA] = useState<string | undefined>();
   const [partB, setPartB] = useState<string | undefined>();
   const ax = analysisIndex(item);
-  const preview = mode === "student";
+  const preview = mode === "preview";
   const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
   const bOk = !!item.partB.options.find((o: any) => o.key === partB)?.correct;
   const answered = partA !== undefined && partB !== undefined;

@@ -18,7 +18,7 @@ export function HotTextItem({
   const [picked, setPicked] = useState<number[]>([]);
   const ax = analysisIndex(item);
   const review = mode === "review";
-  const preview = mode === "student";
+  const preview = mode === "preview";
   const previewB = preview && picked.length > 0; // Part B feedback active once a line is clicked
   const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
   const correctLines = item.selectable.filter((s: any) => s.correct).map((s: any) => s.lineId);

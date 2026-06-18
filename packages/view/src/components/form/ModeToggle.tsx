@@ -2,7 +2,7 @@
 // Review / Preview toggle. The compiled item carries BOTH the answerable (preview) payload and the
 // review metadata (correct answers, distractor analysis), so toggling is local-only — no
 // recompile. Mirrors ThemeToggle's published-component styling constraints (preflight off).
-export type Mode = "student" | "review";
+export type Mode = "preview" | "review";
 
 export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const opt = (m: Mode, label: string) => (
@@ -22,8 +22,8 @@ export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) =
   );
   return (
     <div className="inline-flex gap-1 self-end">
+      {opt("preview", "Preview")}
       {opt("review", "Review")}
-      {opt("student", "Preview")}
     </div>
   );
 }

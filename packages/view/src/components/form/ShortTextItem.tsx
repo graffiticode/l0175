@@ -27,7 +27,7 @@ export function ShortTextItem({
         placeholder="Type your answer here…"
         className="appearance-none w-full rounded-md border border-zinc-300 p-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none"
       />
-      {mode === "student" && text.trim() !== "" && (
+      {mode === "preview" && text.trim() !== "" && (
         <p className="text-xs text-zinc-500">
           This constructed response is hand-scored against a 0–2 rubric — switch to Review to see it.
         </p>

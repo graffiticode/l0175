@@ -24,6 +24,11 @@ function renderErrors(errors: CompileError[]) {
   );
 }
 
+const PAGE_BTN =
+  "appearance-none cursor-pointer inline-flex items-center justify-center gap-x-2 rounded-lg " +
+  "border border-transparent bg-transparent px-3 py-1.5 text-sm font-semibold text-zinc-700 " +
+  "transition hover:bg-zinc-950/5 disabled:opacity-40 disabled:pointer-events-none";
+
 function Pagination({
   count,
   current,
@@ -34,24 +39,49 @@ function Pagination({
   setPage: (p: number) => void;
 }) {
   return (
-    <nav className="inline-flex flex-wrap gap-1 self-center" aria-label="Question pagination">
-      {Array.from({ length: count }, (_, i) => (
+    <nav className="flex gap-x-2" aria-label="Question pagination">
+      <span className="grow basis-0">
         <button
-          key={i}
           type="button"
-          onClick={() => setPage(i)}
-          aria-current={i === current ? "page" : undefined}
-          aria-label={`Question ${i + 1}`}
-          className={
-            "appearance-none cursor-pointer w-7 h-7 text-xs font-medium rounded-md border transition " +
-            (i === current
-              ? "bg-zinc-900 text-white border-zinc-900"
-              : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100")
-          }
+          onClick={() => setPage(current - 1)}
+          disabled={current === 0}
+          aria-label="Previous question"
+          className={PAGE_BTN}
         >
-          {i + 1}
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="w-4 h-4 stroke-current">
+            <path d="M2.75 8H13.25M2.75 8L5.25 5.5M2.75 8L5.25 10.5" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Previous
         </button>
-      ))}
+      </span>
+      <span className="hidden items-baseline gap-x-2 sm:flex">
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setPage(i)}
+            aria-current={i === current ? "page" : undefined}
+            aria-label={`Question ${i + 1}`}
+            className={PAGE_BTN + " min-w-9" + (i === current ? " bg-zinc-950/5" : "")}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </span>
+      <span className="flex grow basis-0 justify-end">
+        <button
+          type="button"
+          onClick={() => setPage(current + 1)}
+          disabled={current === count - 1}
+          aria-label="Next question"
+          className={PAGE_BTN}
+        >
+          Next
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="w-4 h-4 stroke-current">
+            <path d="M13.25 8L2.75 8M13.25 8L10.75 10.5M13.25 8L10.75 5.5" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </span>
     </nav>
   );
 }
@@ -59,14 +89,14 @@ function Pagination({
 export const Form = ({ state }: FormProps) => {
   const errors: CompileError[] = state.errors ?? [];
   const data: any = state.data;
-  const [mode, setMode] = useState<Mode>("review");
+  const [mode, setMode] = useState<Mode>("preview");
   const [page, setPage] = useState(0);
 
   const isItem = data && (data.kind === "item" || data.kind === "items");
   const items: any[] = data?.kind === "items" ? data.items : isItem ? [data] : [];
 
   // In preview mode multiple questions are paginated one at a time; review mode stays stacked.
-  const paginated = mode === "student" && items.length > 1;
+  const paginated = mode === "preview" && items.length > 1;
   const current = Math.min(page, items.length - 1);
   const visibleItems = paginated ? [items[current]] : items;
 
