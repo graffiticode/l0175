@@ -54,6 +54,7 @@ evidence [
     rationale "Her whisper is real, but it shows focus, not fear." {}
   source id "e6" line 7 status irrelevant supports [] {}
   source id "e7" line 8 status irrelevant supports [] {}
+  source id "e8" line 4 status irrelevant supports [] {}
 ]
 outcomes [
   outcome type ebsr       dimension character subject "Mara" standard rl-1 {}

@@ -46,8 +46,9 @@ const ERROR_TYPE_PRIOR: Record<string, number> = {
 // Hand-tuned thresholds — located here for later calibration (the IRT/response-data track in
 // the backlog would replace these and the plausibility/rankClaims weights with learned values).
 const TUNING = {
-  MIN_VIABLE_DISTRACTORS: 5, // below this, warn — a richer pool gives selection real choice
-  DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A)
+  MIN_VIABLE_DISTRACTORS: 5, // below this, warn — a richer Part A pool gives selection real choice
+  MIN_VIABLE_PART_B: 5, // below this many Part B foil sources, warn (item draws 3 of them)
+  DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A or Part B)
   PART_OPTIONS: 4, // options per part (EBSR Part A/B)
   HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
   SHORT_TEXT_MIN_LINES: 6, // shorter literary passage → warn
@@ -549,7 +550,10 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
 
   // EBSR Part B — curated 4 line options.
   const correctSrc = directSources[0];
-  const distractorSrcs = pickPartBDistractors(correct, distractors, ctx);
+  const { pool: partBPool, chosen: distractorSrcs } = pickPartBDistractors(correct, distractors, ctx);
+  if (partBPool < TUNING.MIN_VIABLE_PART_B) {
+    warnings.push(`Only ${partBPool} Part B foil source(s) available; author at least ${TUNING.MIN_VIABLE_PART_B} non-supporting evidence lines (supports-wrong-claim + irrelevant) so the best 3 can be chosen.`);
+  }
   const bOpts = [
     ...(correctSrc ? [{ line: correctSrc.line, text: sourceText(correctSrc, ctx.passage), correct: true, sourceId: str(correctSrc.id) }] : []),
     ...distractorSrcs.map((s: any) => ({
@@ -558,7 +562,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
     })),
   ];
   if (!correctSrc) warnings.push("No directly-supporting evidence for the correct claim; EBSR Part B has no correct option.");
-  if (bOpts.length < TUNING.PART_OPTIONS) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4.`);
+  if (bOpts.length < TUNING.PART_OPTIONS) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4. Add irrelevant or supports-wrong-claim evidence sources.`);
   item.partB = { options: labelize(seededShuffle(bOpts, seed + ":B")) };
   const bKey = item.partB.options.find((o: any) => o.correct)?.key;
 
@@ -581,21 +585,25 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
   return item;
 }
 
-function pickPartBDistractors(correct: any, distractors: any[], ctx: any): any[] {
+// Part B foils come from sources that don't directly support the correct claim:
+// `supports-wrong-claim` (real text backing an erroneous inference) and `irrelevant` lines.
+// Rank so the most tempting win — a wrong-claim source tied to a CHOSEN distractor AND to the
+// correct claim (plausibly supports more than one Part A option) scores highest; irrelevant
+// lines lowest. Returns the full candidate `pool` size (for the viability floor) + the best 3.
+function pickPartBDistractors(correct: any, distractors: any[], ctx: any): { pool: number; chosen: any[] } {
   const distractorIds = new Set(distractors.map((d) => str(d.id)));
-  const wrong = ctx.sources.filter((s: any) =>
-    str(s.status) === "supports-wrong-claim" &&
-    (Array.isArray(s.supports) ? s.supports.map(str) : []).some((id: string) => distractorIds.has(id)));
-  const irrelevant = ctx.sources.filter((s: any) => str(s.status) === "irrelevant");
-  const out: any[] = [];
-  const seen = new Set<string>();
-  for (const s of [...wrong, ...irrelevant]) {
-    if (out.length >= 3) break;
-    if (seen.has(str(s.id))) continue;
-    seen.add(str(s.id));
-    out.push(s);
-  }
-  return out;
+  const correctId = str(correct.id);
+  const candidates = ctx.sources.filter((s: any) => {
+    const st = str(s.status);
+    return st === "supports-wrong-claim" || st === "irrelevant";
+  });
+  const score = (s: any): number => {
+    if (str(s.status) !== "supports-wrong-claim") return 0; // irrelevant
+    const sup = Array.isArray(s.supports) ? s.supports.map(str) : [];
+    return 0.5 + (sup.some((id: string) => distractorIds.has(id)) ? 2 : 0) + (sup.includes(correctId) ? 1 : 0);
+  };
+  const ranked = candidates.slice().sort((a: any, b: any) => score(b) - score(a) || str(a.id).localeCompare(str(b.id)));
+  return { pool: candidates.length, chosen: ranked.slice(0, TUNING.DISTRACTOR_SLOTS) };
 }
 
 function firstWrongClaim(s: any, correct: any): string {

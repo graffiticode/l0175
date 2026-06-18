@@ -79,8 +79,10 @@ and out of scope.
   plausible foil per error type from this scored pool; if a score is omitted the compiler
   computes one from the inference graph (evidence overlap, dimension match, structure, error type).
 - Tag evidence so Part B has material: mark the lines that **directly support** the correct
-  claim, give a few **supports-wrong-claim** foils (ideally also tied to the correct claim so
-  they plausibly support more than one Part A option), and a couple of **irrelevant** lines.
+  claim, and author **at least 5 non-supporting foil sources** — `supports-wrong-claim` lines
+  (ideally also tied to the correct claim so they plausibly support more than one Part A option)
+  plus `irrelevant` lines. EBSR Part B draws 3 foils + the correct line; a pool of ≥5 lets the
+  compiler pick the most tempting 3. Fewer than 5 triggers a composition warning.
 - Distractor rationales must state *why a student would plausibly choose the foil* (the error
   it targets). They appear in the item's `distractorAnalysis` output.
 - The same passage + superset can drive several outcomes; add one `outcome` per item you want.
