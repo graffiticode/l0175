@@ -2,7 +2,7 @@
 // EBSR (Task Model 1): two-part evidence-based selected response. Part A = inference
 // statement (4 options); Part B = supporting line (4 options). Both correct = 1 point.
 import { useState } from "react";
-import { OptionRow, StemLine, analysisIndex, type Mode } from "./itemKit";
+import { OptionRow, StemLine, ResultBanner, analysisIndex, type Mode } from "./itemKit";
 
 export function EbsrItem({
   item,
@@ -16,6 +16,10 @@ export function EbsrItem({
   const [partA, setPartA] = useState<string | undefined>();
   const [partB, setPartB] = useState<string | undefined>();
   const ax = analysisIndex(item);
+  const preview = mode === "student";
+  const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
+  const bOk = !!item.partB.options.find((o: any) => o.key === partB)?.correct;
+  const answered = partA !== undefined && partB !== undefined;
 
   const pick = (part: "A" | "B", key: string) => {
     if (part === "A") setPartA(key);
@@ -37,6 +41,7 @@ export function EbsrItem({
             mode={mode}
             correct={o.correct}
             analysis={ax[`A:${o.key}`]}
+            feedback={preview && partA !== undefined}
           >
             {o.text}
           </OptionRow>
@@ -54,11 +59,19 @@ export function EbsrItem({
             mode={mode}
             correct={o.correct}
             analysis={ax[`B:${o.key}`]}
+            feedback={preview && partB !== undefined}
           >
             <span className="italic">“{o.text}”</span>
           </OptionRow>
         ))}
       </div>
+      {preview && answered && (
+        <ResultBanner correct={aOk && bOk}>
+          {aOk && bOk
+            ? "Correct — 1 / 1 point."
+            : `Not quite — 0 / 1 point.  (Part A ${aOk ? "✓" : "✗"} · Part B ${bOk ? "✓" : "✗"})`}
+        </ResultBanner>
+      )}
     </div>
   );
 }

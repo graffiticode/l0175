@@ -3,7 +3,7 @@
 // sentence(s) that support it. The whole passage is the selectable set (correct = the
 // correct claim's directly-supporting lines).
 import { useState } from "react";
-import { OptionRow, StemLine, analysisIndex, cx, type Mode } from "./itemKit";
+import { OptionRow, StemLine, ResultBanner, analysisIndex, cx, type Mode } from "./itemKit";
 
 export function HotTextItem({
   item,
@@ -18,6 +18,12 @@ export function HotTextItem({
   const [picked, setPicked] = useState<number[]>([]);
   const ax = analysisIndex(item);
   const review = mode === "review";
+  const preview = mode === "student";
+  const previewB = preview && picked.length > 0; // Part B feedback active once a line is clicked
+  const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
+  const correctLines = item.selectable.filter((s: any) => s.correct).map((s: any) => s.lineId);
+  const bOk = correctLines.length === picked.length && correctLines.every((l: number) => picked.includes(l));
+  const answered = partA !== undefined && picked.length > 0;
 
   const pickA = (key: string) => {
     setPartA(key);
@@ -43,6 +49,7 @@ export function HotTextItem({
             mode={mode}
             correct={o.correct}
             analysis={ax[`A:${o.key}`]}
+            feedback={preview && partA !== undefined}
           >
             {o.text}
           </OptionRow>
@@ -53,6 +60,8 @@ export function HotTextItem({
         <div className="flex flex-col gap-1 leading-relaxed">
           {item.selectable.map((s: any) => {
             const on = picked.includes(s.lineId);
+            const reveal = review || previewB; // show correctness
+            const wrong = previewB && on && !s.correct;
             return (
               <button
                 key={s.lineId}
@@ -60,21 +69,31 @@ export function HotTextItem({
                 onClick={() => toggleLine(s.lineId)}
                 className={cx(
                   "appearance-none text-left text-sm rounded px-2 py-1 border cursor-pointer transition",
-                  review && s.correct
+                  reveal && s.correct
                     ? "border-green-400 bg-green-50"
-                    : on
-                      ? "border-sky-400 bg-sky-50"
-                      : "border-transparent hover:bg-zinc-50",
+                    : wrong
+                      ? "border-red-400 bg-red-50"
+                      : on
+                        ? "border-sky-400 bg-sky-50"
+                        : "border-transparent hover:bg-zinc-50",
                 )}
               >
                 <span className="text-zinc-400 mr-2">{s.lineId}</span>
                 {s.text}
-                {review && s.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
+                {reveal && s.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
+                {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
               </button>
             );
           })}
         </div>
       </div>
+      {preview && answered && (
+        <ResultBanner correct={aOk && bOk}>
+          {aOk && bOk
+            ? "Correct — 1 / 1 point."
+            : `Not quite — 0 / 1 point.  (Part A ${aOk ? "✓" : "✗"} · Part B ${bOk ? "✓" : "✗"})`}
+        </ResultBanner>
+      )}
     </div>
   );
 }

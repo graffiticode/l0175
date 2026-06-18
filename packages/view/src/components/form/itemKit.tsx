@@ -28,8 +28,23 @@ export function StemLine({ children }: { children: any }) {
   return <p className="text-sm font-semibold text-zinc-900">{children}</p>;
 }
 
-// A selectable option row (radio for single-select). In review mode the correct option is
-// tinted green and any distractor analysis is shown beneath it.
+// Immediate-feedback / score banner shown in Preview once an auto-scored part is answered.
+export function ResultBanner({ correct, children }: { correct: boolean; children: any }) {
+  return (
+    <div
+      className={cx(
+        "rounded-md border px-3 py-2 text-sm font-medium",
+        correct ? "border-green-400 bg-green-50 text-green-800" : "border-red-300 bg-red-50 text-red-800",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+// A selectable option row (radio for single-select). Correctness is revealed in Review mode
+// (every correct option), and in Preview mode once `feedback` is on (the part has been
+// answered): the correct option is tinted green and the user's wrong pick red.
 export function OptionRow({
   name,
   optKey,
@@ -39,6 +54,7 @@ export function OptionRow({
   correct,
   children,
   analysis,
+  feedback,
 }: {
   name: string;
   optKey: string;
@@ -48,18 +64,25 @@ export function OptionRow({
   correct?: boolean;
   children: any;
   analysis?: any;
+  feedback?: boolean;
 }) {
   const review = mode === "review";
+  const reveal = review || !!feedback; // correctness visible
+  const showCorrect = reveal && correct;
+  const showWrong = !!feedback && selected && !correct;
+  const showAnalysis = analysis && (review || showWrong);
   return (
     <div>
       <label
         className={cx(
           "flex items-start gap-2 rounded-md border px-3 py-2 cursor-pointer transition text-sm",
-          review && correct
+          showCorrect
             ? "border-green-400 bg-green-50"
-            : selected
-              ? "border-zinc-400 bg-zinc-50"
-              : "border-zinc-200 hover:bg-zinc-50",
+            : showWrong
+              ? "border-red-400 bg-red-50"
+              : selected
+                ? "border-zinc-400 bg-zinc-50"
+                : "border-zinc-200 hover:bg-zinc-50",
         )}
       >
         <input
@@ -71,16 +94,20 @@ export function OptionRow({
         />
         <span className="font-medium text-zinc-500 w-4">{optKey}</span>
         <span className="flex-1 text-zinc-900">{children}</span>
-        {review && correct && <span className="text-green-600 font-semibold">✓</span>}
+        {showCorrect && <span className="text-green-600 font-semibold">✓</span>}
+        {showWrong && <span className="text-red-600 font-semibold">✗</span>}
       </label>
-      {review && analysis && (
-        <p className="ml-9 mt-1 text-xs text-amber-700">
-          <span className="font-semibold">{analysis.errorType || analysis.status}</span>
-          {typeof analysis.plausibility === "number" ? ` · p=${analysis.plausibility}` : ""}
-          {analysis.tiesTo && Array.isArray(analysis.tiesTo) ? "" : analysis.tiesTo ? ` → ${analysis.tiesTo}` : ""}
-          {analysis.rationale ? ` — ${analysis.rationale}` : ""}
-        </p>
-      )}
+      {showAnalysis &&
+        (review ? (
+          <p className="ml-9 mt-1 text-xs text-amber-700">
+            <span className="font-semibold">{analysis.errorType || analysis.status}</span>
+            {typeof analysis.plausibility === "number" ? ` · p=${analysis.plausibility}` : ""}
+            {analysis.tiesTo && Array.isArray(analysis.tiesTo) ? "" : analysis.tiesTo ? ` → ${analysis.tiesTo}` : ""}
+            {analysis.rationale ? ` — ${analysis.rationale}` : ""}
+          </p>
+        ) : (
+          analysis.rationale && <p className="ml-9 mt-1 text-xs text-red-700">{analysis.rationale}</p>
+        ))}
     </div>
   );
 }

@@ -27,6 +27,11 @@ export function ShortTextItem({
         placeholder="Type your answer here…"
         className="appearance-none w-full rounded-md border border-zinc-300 p-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none"
       />
+      {mode === "student" && text.trim() !== "" && (
+        <p className="text-xs text-zinc-500">
+          This constructed response is hand-scored against a 0–2 rubric — switch to Review to see it.
+        </p>
+      )}
       {mode === "review" && (
         <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
           <p className="text-xs font-semibold text-zinc-700 mb-2">Scoring rubric (hand-scored)</p>
