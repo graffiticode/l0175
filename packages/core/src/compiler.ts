@@ -50,12 +50,45 @@ const DIM_STANDARD: Record<string, string> = {
   "theme": "rl-9", "topic": "rl-9",
 };
 
-const DIM_PHRASE: Record<string, string> = {
-  "character": "the character", "setting": "the setting", "event": "the events",
-  "point-of-view": "the point of view", "theme": "the theme", "topic": "the topic",
-  "narrators-feelings": "the narrator's feelings",
-  "character-relationship": "the characters' relationship",
-};
+// --- Appropriate Stems (Smarter Balanced · Grade 5 · Claim 1 · Target 4) -------------------
+// Encoded directly from the guideline's "Appropriate Stems" lists. Hardcoded to T4 for now; a
+// future version would load these from a per-guideline parameter source (there are 100s of
+// targets). Stems vary by item type, by `mode` (inference | conclusion | author-intent), and by
+// the dimension's "about" phrase. Authors can override the Part A stem / prompt via `stem`.
+const MODES = new Set(["inference", "conclusion", "author-intent"]);
+const LEAD_IN = "This question has two parts. First, answer Part A. Then, answer Part B.";
+
+// Resolves the guideline's "[provide character's name / setting / ...]" slot.
+function aboutPhrase(dim: string, subject: string, other: string): string {
+  const subj = subject || "the character";
+  switch (dim) {
+    case "narrators-feelings": return `the narrator's feelings toward ${subj}`;
+    case "character-relationship": return `${subj}'s relationship with ${other || "another character"}`;
+    case "point-of-view": return "the author's point of view";
+    case "setting": return "the setting";
+    case "event": return "the events";
+    case "theme": return "the theme";
+    case "topic": return "the topic";
+    default: return subj; // character
+  }
+}
+
+function partAStem(itemType: string, mode: string, about: string): string {
+  if (itemType === "hot-text") {
+    if (mode === "conclusion") return `Click on the statement that best provides a conclusion that can be drawn about ${about}.`;
+    if (mode === "author-intent") return `Click on the statement that best describes what the author most likely meant by including ${about} in the passage.`;
+    return `Click on the statement that best provides an inference about ${about} that is supported by the passage.`;
+  }
+  if (mode === "conclusion") return `Which of these conclusions about ${about} is supported by the passage?`;
+  if (mode === "author-intent") return `What did the author most likely mean by including ${about} in the passage?`;
+  return `Which of these inferences about ${about} is supported by the passage?`;
+}
+
+function partBStem(itemType: string): string {
+  return itemType === "hot-text"
+    ? "Click the sentence(s) from the passage that best support your answer in Part A. Choose one option."
+    : "Which sentence(s) from the passage best support your answer in Part A?";
+}
 
 const DEFAULT_RUBRIC = [
   { score: 2, descriptor: "Makes a valid inference and supports it with specific, relevant details from the passage." },
@@ -72,7 +105,7 @@ const ATTR_KEYS: Record<string, string> = {
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
   FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
-  RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility",
+  RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
 };
 
@@ -231,6 +264,9 @@ function validateOutcome(o: any, errors: any[]) {
   }
   if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) {
     errors.push({ message: `outcome: invalid standard '${str(o.standard)}'.` });
+  }
+  if (o.mode !== undefined && !MODES.has(str(o.mode))) {
+    errors.push({ message: `outcome: invalid mode '${str(o.mode)}'. Expected inference, conclusion, or author-intent.` });
   }
 }
 
@@ -398,7 +434,7 @@ function composeOutcome(outcome: any, ctx: any): any {
     .filter((s: any) => s && str(s.status) === "directly-supports");
 
   if (itemType === "short-text") {
-    item.prompt = shortTextPrompt(dim, subject);
+    item.prompt = str(outcome.stem) || shortTextPrompt(dim, subject, str(outcome.mode) || "inference", str(outcome.other));
     item.rubric = Array.isArray(outcome.rubric) && outcome.rubric.length ? outcome.rubric : DEFAULT_RUBRIC;
     item.distractorAnalysis = [];
     item.answerKey = { rationale: str(correct.rationale) };
@@ -509,25 +545,20 @@ function partBRationale(s: any, status: string): string {
   return "Does not directly support the inference.";
 }
 
-function shortTextPrompt(dim: string, subject: string): string {
-  const about = subject || DIM_PHRASE[dim] || "the passage";
-  return `What inference can you make about ${about}? Use specific details from the passage to support your answer.`;
+function shortTextPrompt(dim: string, subject: string, mode: string, other: string): string {
+  const about = aboutPhrase(dim, subject, other);
+  const lead = mode === "conclusion" ? `What conclusion can be drawn about ${about}?`
+    : mode === "author-intent" ? `What did the author most likely mean by including ${about} in the passage?`
+      : `What inference can be made about ${about}?`;
+  return `${lead} Explain using key details from the passage to support your answer.`;
 }
 
-function stemFor(itemType: string, dim: string, subject: string) {
-  const about = subject || DIM_PHRASE[dim] || "the passage";
-  if (itemType === "hot-text") {
-    return {
-      partA: `Click the statement that is best supported by the passage about ${about}.`,
-      partB: "Click the sentence from the passage that best supports your answer in Part A.",
-      leadIn: "This question has two parts. First, answer Part A. Then answer Part B.",
-    };
-  }
-  // ebsr
+function stemFor(itemType: string, dim: string, subject: string, mode: string, other: string, override: string) {
+  const about = aboutPhrase(dim, subject, other);
   return {
-    partA: `Which inference about ${about} is best supported by the passage?`,
-    partB: "Which detail from the passage best supports your answer in Part A?",
-    leadIn: "This question has two parts. First, answer Part A. Then answer Part B.",
+    partA: override || partAStem(itemType, mode, about),
+    partB: partBStem(itemType),
+    leadIn: LEAD_IN,
   };
 }
 
@@ -544,7 +575,8 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
     dimension: dim,
     passage: ctx.passage,
     passages: null,
-    stem: stemFor(itemType, dim, str(outcome.subject)),
+    stem: stemFor(itemType, dim, str(outcome.subject),
+      str(outcome.mode) || "inference", str(outcome.other), str(outcome.stem)),
     distractorAnalysis: [],
     answerKey: {},
     review: {

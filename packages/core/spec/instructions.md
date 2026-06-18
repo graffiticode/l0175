@@ -29,7 +29,26 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   (`directly-supports` | `supports-wrong-claim` | `irrelevant`), `supports` (claim ids).
   Optional `rationale` explaining a foil.
 - **outcome** — `type` (`ebsr` | `hot-text` | `short-text`), `dimension`, optional `subject`,
-  `standard`, `dok`, and `focus` (force a correct-claim id).
+  `standard`, `dok`, `focus` (force a correct-claim id), `mode`
+  (`inference` (default) | `conclusion` | `author-intent`), `other` (second subject, for
+  `character-relationship` stems), and `stem` (override the auto-generated Part A stem / prompt).
+
+## Stems (Appropriate Stems, SBAC G5 · C1 · T4)
+
+The compiler **auto-generates the guideline's Appropriate Stem** for each item from
+`type` + `mode` + `dimension` (+ `subject`/`other`) — you do not normally write a stem. Pick
+`mode` to match the task:
+
+- `inference` (default) — "Which of these inferences about {about} is supported by the passage?"
+- `conclusion` — "Which of these conclusions about {about} is supported by the passage?"
+- `author-intent` — "What did the author most likely mean by including {about} in the passage?"
+
+`{about}` is resolved from the dimension: `character`→ the subject; `narrators-feelings`→
+"the narrator's feelings toward {subject}"; `character-relationship`→ "{subject}'s
+relationship with {other}"; `point-of-view`→ "the author's point of view"; `setting` /
+`event` / `theme` / `topic`→ the matching phrase. Hot Text uses the "Click on the statement…"
+forms; Short Text uses "…? Explain using key details from the passage to support your answer."
+Set `stem` only to pin an exact phrasing the auto-stem doesn't produce.
 
 ## Authoring guidance
 

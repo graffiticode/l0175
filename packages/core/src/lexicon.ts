@@ -27,6 +27,7 @@ const ENUM_VALUES = [
   "directly-supports", "supports-wrong-claim", "irrelevant",
   "misreads-detail", "erroneous-inference", "faulty-reasoning",
   "rl-1", "rl-3", "rl-6", "rl-9", "r-dok3",
+  "inference", "conclusion", "author-intent",
 ];
 const enums = Object.fromEntries(
   ENUM_VALUES.map((v) => [v, { tk: 22, name: "TAG", cls: "val", length: 0, arity: 0 }]),
@@ -55,6 +56,8 @@ const additions = {
   rubric: fn2("RUBRIC"),
   dok: fn2("DOK"),
   plausibility: fn2("PLAUSIBILITY"), // optional 0..1 author override for distractor ranking
+  mode: fn2("MODE"), // stem mode: inference | conclusion | author-intent
+  other: fn2("OTHER"), // second subject, for character-relationship stems
 
   // --- collection builders (arity-2) ---
   claims: fn2("CLAIMS"),

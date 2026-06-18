@@ -41,7 +41,7 @@ identifiers.
 | `passage` | passage heading | `type`, `lines` |
 | `claim` | inference candidate | `id`, `status`, `dimension`, `text`, `error-type`*, `rationale`*, `cites`, `subject`, `standard`, `dok`, `plausibility` |
 | `source` | evidence line | `id`, `line` (or `quote`), `status`, `supports`, `rationale` |
-| `outcome` | intended item | `type`, `dimension`, `subject`, `standard`, `dok`, `focus` |
+| `outcome` | intended item | `type`, `dimension`, `subject`, `standard`, `dok`, `focus`, `mode` (inference/conclusion/author-intent), `other`, `stem` |
 
 \* `error-type` and `rationale` are required on distractor claims.
 
