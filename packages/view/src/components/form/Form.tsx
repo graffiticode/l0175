@@ -27,7 +27,7 @@ function renderErrors(errors: CompileError[]) {
 export const Form = ({ state }: FormProps) => {
   const errors: CompileError[] = state.errors ?? [];
   const data: any = state.data;
-  const [mode, setMode] = useState<Mode>("student");
+  const [mode, setMode] = useState<Mode>("review");
 
   const isItem = data && (data.kind === "item" || data.kind === "items");
   const items: any[] = data?.kind === "items" ? data.items : isItem ? [data] : [];
