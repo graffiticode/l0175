@@ -49,22 +49,28 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 ## Stems (Appropriate Stems, SBAC G5 · C1 · T4)
 
-**You author the stem; the compiler does not generate it.** Instantiate each item's `stem`
-(Part A / short-text prompt) and, on EBSR, `stem-b` (Part B) from the guideline's Appropriate-
-Stem catalog in **`stems.md`** — the canonical phrasings by `type` × `mode` × `dimension`.
-Pick the `mode` to match the task:
+**You author the stem; the compiler does not generate it. Use the guideline's Appropriate-Stem
+templates verbatim — do not invent phrasings.** For each item, open the catalog in **`stems.md`**,
+pick the one template that matches the item type (EBSR → Task Model 1, Hot Text → Task Model 2,
+Short Text → Task Model 3) and the task (inference vs. conclusion vs. author-intent; plain
+subject vs. narrator's-feelings vs. relationship), and fill its bracketed `[...]` slot. Author
+`stem` (Part A / short-text prompt) and, on EBSR, `stem-b` (Part B). Common Part A choices:
 
-- `inference` (default) — "Which of these inferences about {about} is supported by the passage?"
-- `conclusion` — "Which of these conclusions about {about} is supported by the passage?"
-- `author-intent` — "What did the author most likely mean by including {about} in the passage?"
+- inference — "Which of these inferences about [...] is supported by the passage?"
+- conclusion — "Which of these conclusions about [...] is supported by the passage?"
+- author-intent — "What did the author most likely mean by including [...] in the passage?"
 
-Resolve `{about}` from the dimension (see `stems.md`): `character`→ the subject;
+**Specificity rule (required).** Fill the `[...]` slot — the guideline's
+`[provide character's name / setting / event / author's point of view / theme / topic]` slot —
+with the **specific** reference the question is about, the same string you put in `subject`:
+`character`→ the character's name (`"Mother"`); `point-of-view`→ `"the narrator's point of view"`;
+`setting` / `event` / `theme` / `topic`→ the specific setting/event/theme/topic;
 `narrators-feelings`→ "the narrator's feelings toward {subject}"; `character-relationship`→
-"{subject}'s relationship with {other}"; `point-of-view`→ "the author's point of view";
-`setting` / `event` / `theme` / `topic`→ the matching phrase. Hot Text uses the "Click on the
-statement…" forms; Short Text appends "Explain using key details from the passage to support
-your answer." Keep `subject` set to the noun phrase the stem is about (e.g. `"Cortez's age"`,
-`"the journey across the mountains"`) so the stem and the review metadata agree.
+"{subject}'s relationship with {other}". Do **not** leave it generic (`"the character"`) and do
+**not** pad it — write `"the theme"`, not `"the theme of the passage"` (the stem already ends
+"…supported by the passage"). A specific subject is what makes the four answer choices
+discriminating. Hot Text uses the "Click on the statement…" forms; Short Text ends with
+"Explain using key details from the passage to support your answer."
 
 The concrete answer and its foils are authored as `claim`s (the correct claim, named by the
 outcome's `focus`, states the inferred fact, e.g. "Cortez is about twelve"; its foils `targets`
