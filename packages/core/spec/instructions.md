@@ -88,9 +88,19 @@ outright is literal recall and out of scope.
   computes one from the inference graph (evidence overlap, structure, error type).
 - Tag evidence so Part B has material: mark the lines that **directly support** the correct
   claim, and author **at least 5 non-supporting foil sources** — `supports-wrong-claim` lines
-  (ideally also tied to the correct claim so they plausibly support more than one Part A option)
   plus `irrelevant` lines. EBSR Part B draws 3 foils + the correct line; a pool of ≥5 lets the
   compiler pick the most tempting 3. Fewer than 5 triggers a composition warning.
+- **No-giveaway rule (EBSR Part B): for every EBSR question, author at least one
+  `supports-wrong-claim` line whose `supports` lists BOTH the correct claim's id AND a
+  distractor's id** — a passage line that *seems* to back the correct inference but actually
+  props up a misreading. Part B asks "which line supports your Part A answer?"; if none of the
+  Part B foils also point at the correct claim, the correct line is the only one "about" the
+  right answer, so a student can back into Part A from the evidence (and the compiler warns
+  "possible A↔B giveaway"). Tie the shared line to a distractor you expect Part A to use, so it
+  is selected as a Part B foil. Do **not** make every `supports-wrong-claim` line point only at
+  distractors — that is exactly what triggers the warning.
+  Example: `source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {}` — `c1` is
+  the correct claim, `c2` one of its foils; this line tempts in both Part A and Part B.
 - Distractor rationales must state *why a student would plausibly choose the foil* (the error
   it targets). They appear in the item's `distractorAnalysis` output.
 - The same passage + superset can drive several outcomes; add one `outcome` per item you want.
