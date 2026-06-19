@@ -28,14 +28,9 @@ import {
 // ---------------------------------------------------------------------------
 const ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text"]);
 const PASSAGE_TYPES = new Set(["literary", "informational"]);
-const DIMENSIONS = new Set([
-  "character", "setting", "event", "point-of-view",
-  "theme", "topic", "narrators-feelings", "character-relationship",
-]);
 const CLAIM_STATUS = new Set(["supported", "distractor"]);
 const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irrelevant"]);
 const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"];
-const STANDARDS = new Set(["rl-1", "rl-3", "rl-6", "rl-9"]);
 
 // Small prior on distractor temptingness by error type (DOK3 rewards reasoning errors over
 // surface misreads). Used by the computed plausibility score; author `plausibility` overrides it.
@@ -54,12 +49,62 @@ const TUNING = {
   SHORT_TEXT_MIN_LINES: 6, // shorter literary passage → warn
 };
 
-// Which standard the dimension implies (rl-1 — cite evidence — is foundational to every item).
-const DIM_STANDARD: Record<string, string> = {
-  "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
-  "point-of-view": "rl-6", "narrators-feelings": "rl-6",
-  "theme": "rl-9", "topic": "rl-9",
+// --- Target profiles -----------------------------------------------------------------------
+// L0175 is one language parameterized over SBAC learning targets. The engine (task models,
+// error types, statuses, DOK, TUNING, all composition/validation) is target-INVARIANT; only the
+// vocabulary differs per target: expected text type, the standards set, the dimension/about
+// taxonomy, and the dimension→companion-standard map. A program selects its target with a
+// required top-level `target` attribute; the matching profile parameterizes validation and
+// `standardsFor`. Stems live in the served catalog (stems.md), authored per target.
+type TargetProfile = {
+  id: string;            // the `target` tag, e.g. "c1-t4"
+  label: string;
+  textType: string;      // expected passage type for this target
+  baseStandard: string;  // always added by standardsFor (the cite-evidence standard)
+  standards: Set<string>;
+  dimensions: Set<string>;
+  dimStandard: Record<string, string>; // dimension → companion standard
 };
+
+const TARGETS: Record<string, TargetProfile> = {
+  // Claim 1 · Target 4 — Reasoning & Evidence, literary texts (RL standards). The original L0175.
+  "c1-t4": {
+    id: "c1-t4",
+    label: "Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence)",
+    textType: "literary",
+    baseStandard: "rl-1",
+    standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
+    dimensions: new Set([
+      "character", "setting", "event", "point-of-view",
+      "theme", "topic", "narrators-feelings", "character-relationship",
+    ]),
+    dimStandard: {
+      "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
+      "point-of-view": "rl-6", "narrators-feelings": "rl-6",
+      "theme": "rl-9", "topic": "rl-9",
+    },
+  },
+  // Claim 1 · Target 11 — Reasoning & Evidence, informational texts (RI standards).
+  "c1-t11": {
+    id: "c1-t11",
+    label: "Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence)",
+    textType: "informational",
+    baseStandard: "ri-1",
+    standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
+    dimensions: new Set([
+      "relationships-interactions", "author-use-of-information",
+      "point-of-view", "purpose", "authors-opinion",
+    ]),
+    dimStandard: {
+      "relationships-interactions": "ri-3",
+      "author-use-of-information": "ri-8",
+      "point-of-view": "ri-6",
+      "purpose": "ri-8",
+      "authors-opinion": "ri-8",
+    },
+  },
+};
+const DEFAULT_TARGET = "c1-t4"; // best-effort fallback when `target` is missing/unknown (still a hard error)
 
 // --- Stems (Smarter Balanced · Grade 5 · Claim 1 · Target 4) --------------------------------
 // Stems are AUTHORED, not generated: the upstream code generator instantiates the guideline's
@@ -90,7 +135,7 @@ const ATTR_KEYS: Record<string, string> = {
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", TARGETS: "targets",
   LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
-  FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", STEM: "stem",
+  FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", TARGET: "target", STEM: "stem",
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
   STEM_B: "stemB", SCORE: "score", DESCRIPTOR: "descriptor",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
@@ -167,23 +212,33 @@ function slug(s: string): string {
 }
 
 function composeProgram(top: any, errors: any[]): any {
+  // Resolve the learning target first — it parameterizes validation and standards. `target` is
+  // required; when missing/unknown we record a hard error but fall back to a profile so the rest
+  // of composition still runs (best-effort, like a missing `focus`).
+  const targetTag = str(top.target);
+  const profile = TARGETS[targetTag] || TARGETS[DEFAULT_TARGET];
   const heading = str(top.passage);
-  const passageType = top.type !== undefined ? str(top.type) : "literary";
+  const passageType = top.type !== undefined ? str(top.type) : profile.textType;
   const lineTexts: string[] = Array.isArray(top.lines) ? top.lines.map(str) : [];
   const claims: any[] = Array.isArray(top.claims) ? top.claims : [];
   const sources: any[] = Array.isArray(top.evidence) ? top.evidence : [];
   const outcomes: any[] = Array.isArray(top.outcomes) ? top.outcomes : [];
 
   // --- hard validation (fails the compile) ---
+  if (!targetTag) {
+    errors.push({ message: `missing target (the SBAC learning target). Expected one of: ${Object.keys(TARGETS).join(", ")}.` });
+  } else if (!TARGETS[targetTag]) {
+    errors.push({ message: `unknown target '${targetTag}'. Expected one of: ${Object.keys(TARGETS).join(", ")}.` });
+  }
   if (passageType && !PASSAGE_TYPES.has(passageType)) {
     errors.push({ message: `Unknown passage type '${passageType}'. Expected one of: ${[...PASSAGE_TYPES].join(", ")}.` });
   }
   if (lineTexts.length === 0) {
     errors.push({ message: "Passage has no `lines`." });
   }
-  for (const c of claims) validateClaim(c, errors);
+  for (const c of claims) validateClaim(c, errors, profile);
   for (const s of sources) validateSource(s, errors);
-  for (const o of outcomes) validateOutcome(o, errors);
+  for (const o of outcomes) validateOutcome(o, errors, profile);
 
   const passageId = slug(heading);
   const passage = {
@@ -197,6 +252,7 @@ function composeProgram(top: any, errors: any[]): any {
     claims,
     sources,
     outcomes,
+    profile,
     claimById: index(claims, "id"),
     sourceById: index(sources, "id"),
     outcomeById: index(outcomes, "id"),
@@ -215,7 +271,7 @@ function composeProgram(top: any, errors: any[]): any {
   return result;
 }
 
-function validateClaim(c: any, errors: any[]) {
+function validateClaim(c: any, errors: any[], profile: TargetProfile) {
   const id = str(c.id);
   const where = id ? `claim '${id}'` : "a claim";
   const at = coordOf(c);
@@ -226,7 +282,7 @@ function validateClaim(c: any, errors: any[]) {
   // dimension is required on supported claims (it must match the outcome); on distractors the
   // binding is by `targets` (not dimension), so it is optional there but validated if present.
   if (str(c.dimension)) {
-    if (!DIMENSIONS.has(str(c.dimension))) push(`${where}: invalid dimension '${str(c.dimension)}'.`);
+    if (!profile.dimensions.has(str(c.dimension))) push(`${where}: invalid dimension '${str(c.dimension)}' for target ${profile.id}.`);
   } else if (str(c.status) === "supported") {
     push(`${where}: supported claim needs a dimension.`);
   }
@@ -261,7 +317,7 @@ function validateSource(s: any, errors: any[]) {
   }
 }
 
-function validateOutcome(o: any, errors: any[]) {
+function validateOutcome(o: any, errors: any[], profile: TargetProfile) {
   const id = str(o.id);
   const where = id ? `outcome '${id}'` : "an outcome";
   const at = coordOf(o);
@@ -270,8 +326,8 @@ function validateOutcome(o: any, errors: any[]) {
   if (!ITEM_TYPES.has(str(o.type))) {
     push(`${where}: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.`);
   }
-  if (!DIMENSIONS.has(str(o.dimension))) push(`${where}: invalid dimension '${str(o.dimension)}'.`);
-  if (o.standard !== undefined && !STANDARDS.has(str(o.standard))) push(`${where}: invalid standard '${str(o.standard)}'.`);
+  if (!profile.dimensions.has(str(o.dimension))) push(`${where}: invalid dimension '${str(o.dimension)}' for target ${profile.id}.`);
+  if (o.standard !== undefined && !profile.standards.has(str(o.standard))) push(`${where}: invalid standard '${str(o.standard)}' for target ${profile.id}.`);
   // Item-first contract: the question owns its correct answer (focus) and its stem text,
   // authored from the guideline's Appropriate-Stem catalog (the compiler no longer synthesizes stems).
   if (!str(o.focus)) push(`${where}: missing focus (the id of the supported claim this question is built around).`);
@@ -291,6 +347,10 @@ function index(arr: any[], key: string): Record<string, any> {
 function validateGraph(ctx: any, errors: any[]): string[] {
   const warnings: string[] = [];
   const lineCount = ctx.passage.lines.length;
+  // The guideline ties each target to a text type; flag a mismatch (non-fatal — dual-text is future scope).
+  if (ctx.passage.type && ctx.passage.type !== ctx.profile.textType) {
+    warnings.push(`Target ${ctx.profile.id} expects an ${ctx.profile.textType} passage, but this passage is ${ctx.passage.type}.`);
+  }
   for (const [label, arr] of [["claim", ctx.claims], ["source", ctx.sources], ["outcome", ctx.outcomes]] as const) {
     const seen = new Set<string>();
     for (const x of arr) {
@@ -347,10 +407,10 @@ function validateGraph(ctx: any, errors: any[]): string[] {
   return warnings;
 }
 
-function standardsFor(outcome: any, correct: any, dim: string): string[] {
-  const companion = str(outcome.standard) || str(correct && correct.standard) || DIM_STANDARD[dim];
-  const out = ["rl-1"];
-  if (companion && companion !== "rl-1") out.push(companion);
+function standardsFor(outcome: any, correct: any, dim: string, profile: TargetProfile): string[] {
+  const companion = str(outcome.standard) || str(correct && correct.standard) || profile.dimStandard[dim];
+  const out = [profile.baseStandard];
+  if (companion && companion !== profile.baseStandard) out.push(companion);
   return out;
 }
 
@@ -617,11 +677,13 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
   const scoring = itemType === "short-text"
     ? "0–2 points; hand-scored against the rubric."
     : "Both parts correct = 1 point; otherwise 0.";
+  const standards = standardsFor(outcome, correct, dim, ctx.profile);
   return {
     kind: "item",
     id: `${ctx.passage.id}-${str(outcome.id) || itemType + "-" + dim}`,
     type: itemType,
-    standards: standardsFor(outcome, correct, dim),
+    target: ctx.profile.id,
+    standards,
     dok,
     dimension: dim,
     passage: ctx.passage,
@@ -630,7 +692,8 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
     distractorAnalysis: [],
     answerKey: {},
     review: {
-      standards: standardsFor(outcome, correct, dim),
+      target: ctx.profile.id,
+      standards,
       dok,
       dimension: dim,
       scoring,

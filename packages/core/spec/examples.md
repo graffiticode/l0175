@@ -4,8 +4,10 @@
 _Revised: 2026-06-18_
 
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
-assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence).
-Each prompt assumes a literary passage and produces one or more composed items.
+assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for learning
+targets **T4** (`target c1-t4`, literary) and **T11** (`target c1-t11`, informational). Each
+program declares its `target` first. Categories 1–6 below are literary (T4); Category 7 is
+informational (T11).
 
 ## Category 1: EBSR items (two-part selected response)
 
@@ -49,3 +51,11 @@ Each prompt assumes a literary passage and produces one or more composed items.
 23. Compose the questions first: write an EBSR question, a short-text question, and a hot-text question, each with its stem from the guideline catalog, then author foils targeting each.
 24. Compose one question per inference dimension the passage supports, then author a targeted foil set for each.
 25. Set a question's focus to a specific correct claim and write its stem, then author the distractors that target it.
+
+## Category 7: Informational items (target c1-t11)
+
+26. From an informational article about the history of bridge design, write an EBSR item about the relationships between the successive designs (dimension relationships-interactions, standard ri-3).
+27. Make an item about how the author uses evidence to support a point in a science article (dimension author-use-of-information, standard ri-8).
+28. Compose an EBSR item about the author's point of view in an informational passage about city planning (dimension point-of-view, standard ri-6).
+29. Write a short-text item asking what conclusion can be drawn about the author's opinion of renewable energy, with key evidence (dimension authors-opinion).
+30. Make a hot-text item about the author's purpose in an informational passage (dimension purpose).

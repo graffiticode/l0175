@@ -18,15 +18,26 @@ const fn1 = (name: string) => ({ tk: 1, name, cls: "function", length: 1, arity:
 // Enum values are bare kebab-case identifiers registered as nullary tags (tk:22, name:"TAG").
 // The parser rejects undefined references, so each must be a lexicon entry; at transform time
 // a tag resolves to a `{ tag: <lexeme> }` value, which composition normalizes to its string.
+// The flat UNION of valid bare tags across all targets. Each target profile (in compiler.ts)
+// restricts which dimensions/standards are valid for that target; the lexicon only needs to
+// register every tag so the parser accepts it.
 const ENUM_VALUES = [
   "literary", "informational",
   "ebsr", "hot-text", "short-text",
+  // learning targets (the top-level `target` selector)
+  "c1-t4", "c1-t11",
+  // T4 (literary) dimensions
   "character", "setting", "event", "point-of-view",
   "theme", "topic", "narrators-feelings", "character-relationship",
+  // T11 (informational) dimensions (point-of-view shared with T4)
+  "relationships-interactions", "author-use-of-information", "purpose", "authors-opinion",
   "supported", "distractor",
   "directly-supports", "supports-wrong-claim", "irrelevant",
   "misreads-detail", "erroneous-inference", "faulty-reasoning",
-  "rl-1", "rl-3", "rl-6", "rl-9", "r-dok3",
+  // standards: RL (T4) + RI (T11)
+  "rl-1", "rl-3", "rl-6", "rl-9",
+  "ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9",
+  "r-dok3",
   "inference", "conclusion", "author-intent",
 ];
 const enums = Object.fromEntries(
@@ -53,6 +64,7 @@ const additions = {
   passage: fn2("PASSAGE"), // passage heading
   lines: fn2("LINES"), // passage line strings (auto-indexed)
   title: fn2("TITLE"),
+  target: fn2("TARGET"), // top-level SBAC learning target selector (c1-t4 | c1-t11)
   stem: fn2("STEM"),
   rubric: fn2("RUBRIC"),
   dok: fn2("DOK"),

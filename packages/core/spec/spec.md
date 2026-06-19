@@ -1,17 +1,19 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Vocabulary
 
-_Revised: 2026-06-18_
+_Revised: 2026-06-19_
 
 **L0175** is a Graffiticode dialect for composing 5th-grade English Language Arts assessment
-items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence). It is
-**item-first**: a program authors the `outcome`s (questions) first — each with a unique `id`, a
-`focus` naming its correct claim, and an explicit `stem` from the guideline catalog — then the
-supported and distractor `claim`s (each distractor `targets` the question(s) it foils) and the
-evidence `source`s for one literary passage. The compiler **composes** each outcome by taking
-its `focus` claim, drawing that question's foils from the distractors that `targets` it, and
-assembling a finished item (`ebsr`, `hot-text`, or `short-text`). It selects and validates
-authored content; it does not generate content or stems.
+items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence). One language serves
+**multiple learning targets**, selected by a required top-level `target`: `c1-t4` (literary
+texts, RL standards) or `c1-t11` (informational texts, RI standards). It is **item-first**: a
+program declares its `target`, then authors the `outcome`s (questions) first — each with a unique
+`id`, a `focus` naming its correct claim, and an explicit `stem` from that target's guideline
+catalog — then the supported and distractor `claim`s (each distractor `targets` the question(s)
+it foils) and the evidence `source`s for one passage. The compiler **composes** each outcome by
+taking its `focus` claim, drawing that question's foils from the distractors that `targets` it,
+and assembling a finished item (`ebsr`, `hot-text`, or `short-text`). It selects and validates
+authored content against the target profile; it does not generate content or stems.
 
 The core language specification (syntax, semantics, base library) is here:
 [Graffiticode Language Specification](./graffiticode-language-spec.html)
@@ -21,6 +23,7 @@ The core language specification (syntax, semantics, base library) is here:
 A program is **one flat builder chain** ending in a single `{}..`:
 
 ```
+target c1-t4
 title "Optional assessment title"
 passage "Heading"
 type literary
@@ -56,6 +59,7 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 
 | Form | Arity | Takes | Description |
 | :--- | :---: | :--- | :--- |
+| `target` | 2 | tag | **Required**, top level: the learning target — `c1-t4` (literary, RL) or `c1-t11` (informational, RI). Selects the valid dimensions/standards and the stem catalog. |
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
 | `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text`. |
@@ -134,11 +138,13 @@ composes). A `focus` that isn't a supported claim, or a `targets` to a missing o
 
 ## Enumerations
 
+- **`target`**: `c1-t4` (literary), `c1-t11` (informational) — required, top level
 - **item `type`**: `ebsr`, `hot-text`, `short-text` · **passage `type`**: `literary`, `informational`
-- **`dimension`**: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- **`dimension` (c1-t4)**: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- **`dimension` (c1-t11)**: `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - **claim `status`**: `supported`, `distractor` · **source `status`**: `directly-supports`, `supports-wrong-claim`, `irrelevant`
 - **`error-type`**: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
-- **`standard`**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **`dok`**: `r-dok3`
+- **`standard` (c1-t4)**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **(c1-t11)**: `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · **`dok`**: `r-dok3`
 
 ## How composition uses the vocabulary
 
@@ -165,6 +171,7 @@ are non-fatal and ride on the item.
 An EBSR item about a character's motivation, plus a short-text item with an authored rubric:
 
 ```
+target c1-t4
 title "The Tide Pool"
 passage "The Tide Pool"
 type literary

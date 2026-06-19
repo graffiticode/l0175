@@ -19,7 +19,7 @@ async function compile(src: string): Promise<{ errors: any[]; data: any }> {
   );
 }
 
-const PASSAGE = `passage "The Tide Pool" type literary lines [
+const PASSAGE = `target c1-t4 passage "The Tide Pool" type literary lines [
   "Mara crouched at the edge of the tide pool, ignoring the picnic behind her."
   "Her brother called twice, but she did not turn around."
   "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
@@ -235,6 +235,72 @@ describe("compose — vocabulary", () => {
       { score: 2, descriptor: "Full." },
       { score: 0, descriptor: "None." },
     ]);
+  });
+});
+
+describe("compose — learning targets (parameterization)", () => {
+  // An informational passage under Target 11 (RI standards, informational dimensions).
+  const T11 = `target c1-t11 passage "Bridges" type informational lines [
+      "Early bridges were simple logs laid across streams.",
+      "As towns grew, builders needed stronger spans, so they turned to stone arches.",
+      "The Romans perfected the arch, distributing weight outward to supports called piers.",
+      "Centuries later, iron and then steel let engineers build far longer bridges.",
+      "Suspension bridges hang the roadway from cables strung between tall towers.",
+      "Each advance solved a problem the previous design could not."
+    ]
+    claims [
+      claim id "c1" status supported dimension relationships-interactions subject "the bridge designs" text "Each new bridge design arose to solve a limitation of the earlier one." cites ["e1" "e3"] {},
+      claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "Stone arches replaced steel bridges over time." rationale "Reverses the order of developments." cites ["e2"] {},
+      claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "The Romans invented the suspension bridge." rationale "Conflates two different advances." cites ["e3"] {},
+      claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "Because logs were used first, they were the strongest material." rationale "Treats earliest as strongest without support." cites ["e1"] {}
+    ]
+    evidence [
+      source id "e1" line 1 status directly-supports supports ["c1"] {},
+      source id "e2" line 2 status supports-wrong-claim supports ["c1" "d1"] {},
+      source id "e3" line 3 status directly-supports supports ["c1"] {},
+      source id "e4" line 6 status irrelevant supports [] {}
+    ]
+    outcomes [ outcome id "q1" type ebsr dimension relationships-interactions subject "the bridge designs" focus "c1"
+      stem "Which of these inferences about the relationship between the bridge designs is supported by the passage?"
+      stem-b "Which sentence(s) from the passage best support your answer in part A?" {} ] {}..`;
+
+  it("composes a T11 item with RI standards and stamps the target", async () => {
+    const r = await compile(T11);
+    expect(r.errors).toHaveLength(0);
+    const it0 = r.data.kind === "items" ? r.data.items[0] : r.data;
+    expect(it0.target).toBe("c1-t11");
+    expect(it0.standards).toContain("ri-1");
+    expect(it0.standards).toContain("ri-3"); // relationships-interactions → ri-3
+    expect(it0.standards).not.toContain("rl-1");
+  });
+
+  it("errors when `target` is missing", async () => {
+    const { errors } = await compile(T11.replace("target c1-t11 ", ""));
+    expect(errors.some((e: any) => /missing target/.test(e.message))).toBe(true);
+  });
+
+  it("errors on a non-target tag used as the target", async () => {
+    // A truly-unknown tag is rejected by the parser; a registered-but-non-target tag (here the
+    // dimension `theme`) reaches the compiler's target check.
+    const { errors } = await compile(T11.replace("target c1-t11", "target theme"));
+    expect(errors.some((e: any) => /unknown target 'theme'/.test(e.message))).toBe(true);
+  });
+
+  it("rejects a T4 dimension under T11", async () => {
+    const { errors } = await compile(T11.replaceAll("relationships-interactions", "character"));
+    expect(errors.some((e: any) => /invalid dimension 'character' for target c1-t11/.test(e.message))).toBe(true);
+  });
+
+  it("rejects an RL standard under T11", async () => {
+    const { errors } = await compile(T11.replace(`focus "c1"`, `focus "c1" standard rl-3`));
+    expect(errors.some((e: any) => /invalid standard 'rl-3' for target c1-t11/.test(e.message))).toBe(true);
+  });
+
+  it("warns (not errors) when the passage type mismatches the target", async () => {
+    const { errors, data } = await compile(T11.replace("type informational", "type literary"));
+    expect(errors).toHaveLength(0);
+    const it0 = data.kind === "items" ? data.items[0] : data;
+    expect((it0.warnings || []).some((w: string) => /expects an informational passage/.test(w))).toBe(true);
   });
 });
 

@@ -1,19 +1,21 @@
 {
-  "revised": "2026-06-18",
+  "revised": "2026-06-19",
   "id": "0175",
-  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence) item-first: each authored question pins its correct answer (focus) and its stem, and the compiler draws that question's distractors from the foils that target it.",
+  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for multiple learning targets selected by a top-level `target`: c1-t4 (literary, RL) and c1-t11 (informational, RI). Item-first: each authored question pins its correct answer (focus) and its stem, and the compiler draws that question's distractors from the foils that target it.",
   "in_scope": [
-    "A single literary passage with numbered lines",
-    "Questions (outcomes) authored first, each with a unique id, a focus correct claim, and a stem from the guideline catalog; distractors bound to questions via targets",
+    "A required top-level target: c1-t4 (literary) or c1-t11 (informational), selecting the dimension/standard/stem vocabulary",
+    "A single passage with numbered lines",
+    "Questions (outcomes) authored first, each with a unique id, a focus correct claim, and a stem from the target's guideline catalog; distractors bound to questions via targets",
     "An inference graph: supported and distractor claims, plus evidence sources tagged directly-supports / supports-wrong-claim / irrelevant",
-    "The eight inference dimensions (character, setting, event, point-of-view, theme, topic, narrators-feelings, character-relationship)",
+    "c1-t4 dimensions: character, setting, event, point-of-view, theme, topic, narrators-feelings, character-relationship",
+    "c1-t11 dimensions: relationships-interactions, author-use-of-information, point-of-view, purpose, authors-opinion",
     "Three task models: ebsr (two-part selected response), hot-text (select text), short-text (constructed response)",
     "Authored, error-typed distractors (misreads-detail / erroneous-inference / faulty-reasoning; supports-wrong-claim / irrelevant) with rationales",
-    "Standards rl-1 / rl-3 / rl-6 / rl-9 and DOK r-dok3"
+    "Standards rl-1/rl-3/rl-6/rl-9 (c1-t4) and ri-1/ri-3/ri-6/ri-7/ri-8/ri-9 (c1-t11); DOK r-dok3"
   ],
   "out_of_scope": [
-    "Targets, claims, or grades beyond G5 · Claim 1 · Target 4 — those belong in their own dialects",
-    "Dual-text stimuli (a single literary passage only in this version)",
+    "Claims, grades, or targets beyond G5 · Claim 1 · Reasoning & Evidence (T4 & T11) — those belong in their own dialects",
+    "Dual-text stimuli (a single passage only in this version)",
     "Compile-time LLM generation — the compiler selects and validates authored content, it does not invent it",
     "Auto-scoring of short-text responses — they are hand-scored against the emitted rubric",
     "Cross-language composition via import — each item runs in exactly one dialect"

@@ -1,33 +1,54 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Dialect Extensions
 
-_Revised: 2026-06-18_
+_Revised: 2026-06-19_
 
 L0175 composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 ·
-Target 4: Reasoning & Evidence) from an authored, inline superset of tagged content.
+Reasoning & Evidence) from an authored, inline superset of tagged content. One language serves
+**multiple learning targets**; a program selects its target up front.
+
+## Step 0 — pick the learning target (required)
+
+Every program MUST declare a top-level `target` (the SBAC learning target it composes for):
+
+- **`c1-t4`** — Target 4: Reasoning & Evidence over **literary** texts (RL standards). Dimensions:
+  `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`,
+  `character-relationship`. Standards: `rl-1` (always) + `rl-3` / `rl-6` / `rl-9`.
+- **`c1-t11`** — Target 11: Reasoning & Evidence over **informational** texts (RI standards).
+  Dimensions: `relationships-interactions`, `author-use-of-information`, `point-of-view`,
+  `purpose`, `authors-opinion`. Standards: `ri-1` (always) + `ri-3` / `ri-6` / `ri-7` / `ri-8` / `ri-9`.
+
+Choose from the request: a **literary** passage about characters/theme/setting/POV → `c1-t4`;
+an **informational** passage about author's reasoning / relationships between ideas / point of
+view / purpose → `c1-t11`. Write it as the first top-level form: `target c1-t11`. Pick the
+dimensions, standards, and stem catalog (in `stems.md`) for that target; mixing targets'
+vocabularies is a compile error. The passage `type` should match the target (literary for T4,
+informational for T11).
 
 ## Authoring contract
 
-**Compose questions first (item-first).** Author the N `outcome`s you want — each with a unique
-`id`, a `focus` naming its correct claim, and an explicit `stem` (and `stem-b` on EBSR) taken
-from the guideline's Appropriate-Stem catalog (`stems.md`). THEN author the supported claims
-each `focus` names, and a superset of distractor claims, each tagged with `targets` listing the
-question id(s) it foils. The compiler draws an item's foils ONLY from the distractors that target
-that outcome — so every wrong answer is authored against that exact stem and key. (This replaces
-the old behavior where foils were matched to a question by shared `dimension`.)
+**Compose questions first (item-first).** After picking the target, author the N `outcome`s you
+want — each with a unique `id`, a `focus` naming its correct claim, and an explicit `stem` (and
+`stem-b` on EBSR) taken from the target's section of the Appropriate-Stem catalog (`stems.md`).
+THEN author the supported claims each `focus` names, and a superset of distractor claims, each
+tagged with `targets` listing the question id(s) it foils. The compiler draws an item's foils
+ONLY from the distractors that target that outcome — so every wrong answer is authored against
+that exact stem and key.
 
 A program is ONE flat builder chain ending in a single `{}..`. Top-level forms
-(`passage`, `type`, `lines`, `claims`, `evidence`, `outcomes`) chain with no `{}` between
-them. Inside the `claims` / `evidence` / `outcomes` lists, each element (`claim` / `source`
-/ `outcome`) is its own attribute chain terminated by its own `{}`; whitespace separates
+(`target`, `passage`, `type`, `lines`, `claims`, `evidence`, `outcomes`) chain with no `{}`
+between them. Inside the `claims` / `evidence` / `outcomes` lists, each element (`claim` /
+`source` / `outcome`) is its own attribute chain terminated by its own `{}`; whitespace separates
 elements (commas are optional).
 
 Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels (`id`,
-`cites`, `supports`). Write closed-enum values as bare kebab-case identifiers (`ebsr`,
+`cites`, `supports`). Write closed-enum values as bare kebab-case identifiers (`c1-t4`, `ebsr`,
 `character`, `misreads-detail`, `directly-supports`, `rl-1`, `r-dok3`).
 
 ## Forms and attributes
 
+- **target** `c1-t4` | `c1-t11` — required, top level; selects the learning-target profile
+  (dimensions, standards, stem catalog) the program composes for.
 - **passage** `"heading"` — plus `type` (`literary` | `informational`) and `lines [ "..." ... ]`.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type`, a non-empty `rationale`, and
@@ -113,11 +134,13 @@ outright is literal recall and out of scope.
 
 ## Built-in enumerations
 
-- item `type`: `ebsr`, `hot-text`, `short-text`
-- `dimension`: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- `target`: `c1-t4`, `c1-t11` (required, top level)
+- item `type`: `ebsr`, `hot-text`, `short-text` · passage `type`: `literary`, `informational`
+- `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
-- `standard`: `rl-1`, `rl-3`, `rl-6`, `rl-9` · `dok`: `r-dok3`
+- `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning` (shared across targets)
+- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · `dok`: `r-dok3`
 
 ## What composition does
 
@@ -128,9 +151,10 @@ plausibility), uses the authored `stem`/`stem-b`, builds the task-model item, an
 `answerKey`, the matched `standards` and `dok`, and `warnings` when the targeted pool is thin.
 It never generates content or stems — author them.
 
-## Example
+## Example (Target 4, literary)
 
 ```
+target c1-t4
 passage "The Tide Pool"
 type literary
 lines [

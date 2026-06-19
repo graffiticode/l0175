@@ -29,7 +29,7 @@ Vitest is installed at the root but no test runner script is wired up yet, and n
 
 ## Architecture
 
-L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Target 4: Reasoning & Evidence). It's an npm-workspaces monorepo with three packages. A program authors an inline superset of tagged content (a literary passage, candidate inference `claim`s, evidence `source`s) plus intended `outcome`s; the compiler composes each outcome into a finished item. See `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf` for the source guideline.
+L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence). One language is **parameterized over learning targets** via a required top-level `target` selector: `c1-t4` (literary texts, RL standards) and `c1-t11` (informational texts, RI standards); each target is a profile (dimensions, standards, stem catalog) in `packages/core/src/compiler.ts` (`TARGETS`), while the composition engine is target-invariant. It's an npm-workspaces monorepo with three packages. A program declares its `target`, then authors an inline superset of tagged content (a passage, candidate inference `claim`s, evidence `source`s) plus intended `outcome`s; the compiler composes each outcome into a finished item. Source guidelines: `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf` and `E.G5.C1.T11 Reasoning & Evidence.pdf`.
 
 ### Structure
 

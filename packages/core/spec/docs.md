@@ -7,20 +7,23 @@ _Revised: 2026-06-18_
 
 *Graffiticode* is a collection of domain languages for creating task-specific web apps.
 **L0175** composes 5th-grade English Language Arts assessment items conforming to the
-Smarter Balanced specification ELA · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning &
-Evidence.
+Smarter Balanced specification ELA · Grade 5 · Claim 1 (Reading) · Reasoning & Evidence,
+for learning targets **T4** (literary) and **T11** (informational).
 
-It is **item-first**: a program authors the `outcome`s (questions) first — each with a unique
-`id`, a `focus` correct claim, and an explicit `stem` — then the supported and distractor
-`claim`s (each distractor `targets` the question(s) it foils) and the evidence `source`s for
-one literary passage. The compiler *composes* each outcome from its `focus` and the foils that
-target it, assembling a finished item (EBSR, Hot Text, or Short Text).
+One language serves **multiple learning targets**, chosen by a required top-level `target`:
+`c1-t4` (literary, RL standards) or `c1-t11` (informational, RI standards). It is **item-first**:
+a program declares its `target`, then authors the `outcome`s (questions) first — each with a
+unique `id`, a `focus` correct claim, and an explicit `stem` — then the supported and distractor
+`claim`s (each distractor `targets` the question(s) it foils) and the evidence `source`s for one
+passage. The compiler *composes* each outcome from its `focus` and the foils that target it,
+assembling a finished item (EBSR, Hot Text, or Short Text).
 
 ### Overview
 
 The program
 
 ```
+target c1-t4
 passage "The Tide Pool"
 type literary
 lines [ "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." ]
@@ -42,6 +45,7 @@ toggle.
 
 | Form | Arity | Example | Description |
 | ---- | :---: | ------- | ----------- |
+| **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11`) |
 | **passage** | 2 | `passage "Title"` | Sets the passage heading; chains with `type` and `lines` |
 | **type** | 2 | `type literary` | Passage type (`literary` / `informational`) or, on an outcome, the item type |
 | **lines** | 2 | `lines [ "..." "..." ]` | Passage sentences, auto-numbered from 1 |
@@ -57,6 +61,7 @@ toggle.
 
 Attribute functions (arity-2, merge one key into the element's record):
 
+- **top level** — `target` (required: `c1-t4` | `c1-t11`), `title` (optional)
 - **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (outcome→correct claim id), `targets` (distractor→outcome ids)
 - **claim** — `status`, `dimension`, `text`, `error-type`*, `rationale`*, `targets`*, `plausibility` (0–1 distractor temptingness override), `subject`, `standard`, `dok`
 - **evidence** — `status`, `line` (or `quote`), `supports`, `rationale`
@@ -67,8 +72,10 @@ Attribute functions (arity-2, merge one key into the element's record):
 
 ### Enumerations
 
+- `target`: `c1-t4` (literary), `c1-t11` (informational)
 - item `type`: `ebsr`, `hot-text`, `short-text`
-- `dimension`: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- `dimension` (c1-t4): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
+- `dimension` (c1-t11): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
 - `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
-- `standard`: `rl-1`, `rl-3`, `rl-6`, `rl-9` · `dok`: `r-dok3`
+- `standard` (c1-t4): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (c1-t11): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · `dok`: `r-dok3`

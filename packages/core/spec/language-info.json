@@ -1,13 +1,18 @@
 {
   "revised": "2026-06-18",
   "id": "0175",
-  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 (Reading) · Target 4: Reasoning & Evidence). Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one literary passage. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems.",
+  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for multiple learning targets: c1-t4 (literary texts, RL standards) and c1-t11 (informational texts, RI standards). Every program declares a top-level `target` selecting the dimension/standard/stem vocabulary. Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the target's guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one passage. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems.",
   "supported_item_types": ["ebsr", "hot-text", "short-text"],
   "example_prompts": [
     {
       "prompt": "From a short story about a girl named Mara at a tide pool, write an EBSR item about what Mara cares about, standard rl-1.",
       "produces": "ebsr",
-      "notes": "Two-part selected response: Part A inference statement, Part B supporting line; needs a supported claim plus at least 5 viable error-typed distractor claims (the item draws 3; a deeper pool gives selection real choice)."
+      "notes": "Literary text -> target c1-t4. Two-part selected response: Part A inference statement, Part B supporting line; needs a supported claim plus at least 5 viable error-typed distractor claims (the item draws 3; a deeper pool gives selection real choice)."
+    },
+    {
+      "prompt": "From an informational article about the history of bridge design, write an EBSR item about how each design solved a problem the previous one could not.",
+      "produces": "ebsr",
+      "notes": "Informational text -> target c1-t11, dimension relationships-interactions, RI standards (ri-1 + ri-3). Same item-first structure; pick stems from the T11 section of stems.md."
     },
     {
       "prompt": "From the same tide-pool passage, also produce a short-text constructed-response item asking for an inference about Mara with evidence.",
