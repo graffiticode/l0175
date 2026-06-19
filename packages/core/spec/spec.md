@@ -59,7 +59,7 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 
 | Form | Arity | Takes | Description |
 | :--- | :---: | :--- | :--- |
-| `target` | 2 | tag | **Required**, top level: the learning target — `c1-t4` (literary, RL) or `c1-t11` (informational, RI). Selects the valid dimensions/standards and the stem catalog. |
+| `target` | 2 | tag | Top level: the learning target — `c1-t4` (literary, RL) or `c1-t11` (informational, RI). Selects the valid dimensions/standards and the stem catalog. Always author one; defaults to `c1-t4` if omitted. |
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
 | `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text`. |

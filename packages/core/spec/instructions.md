@@ -7,9 +7,9 @@ L0175 composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Cl
 Reasoning & Evidence) from an authored, inline superset of tagged content. One language serves
 **multiple learning targets**; a program selects its target up front.
 
-## Step 0 — pick the learning target (required)
+## Step 0 — pick the learning target
 
-Every program MUST declare a top-level `target` (the SBAC learning target it composes for):
+Always declare a top-level `target` (the SBAC learning target the program composes for):
 
 - **`c1-t4`** — Target 4: Reasoning & Evidence over **literary** texts (RL standards). Dimensions:
   `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`,
@@ -18,12 +18,17 @@ Every program MUST declare a top-level `target` (the SBAC learning target it com
   Dimensions: `relationships-interactions`, `author-use-of-information`, `point-of-view`,
   `purpose`, `authors-opinion`. Standards: `ri-1` (always) + `ri-3` / `ri-6` / `ri-7` / `ri-8` / `ri-9`.
 
-Choose from the request: a **literary** passage about characters/theme/setting/POV → `c1-t4`;
-an **informational** passage about author's reasoning / relationships between ideas / point of
-view / purpose → `c1-t11`. Write it as the first top-level form: `target c1-t11`. Pick the
-dimensions, standards, and stem catalog (in `stems.md`) for that target; mixing targets'
-vocabularies is a compile error. The passage `type` should match the target (literary for T4,
-informational for T11).
+**Infer the target — the user need not state it.** Decide from the passage itself: a **literary**
+text (a story, poem, or narrative with characters, setting, plot, theme) → `c1-t4`; an
+**informational** text (an article, report, or expository piece about real events, ideas,
+procedures, or an author's argument) → `c1-t11`. The skill asked also signals it (character /
+theme / narrator's point of view → T4; relationships between ideas / author's use of evidence /
+author's purpose or opinion → T11). When the text type is genuinely ambiguous, prefer `c1-t4`.
+Write the choice as the first top-level form: `target c1-t11`. Use the dimensions, standards, and
+stem catalog (in `stems.md`) for that target; mixing targets' vocabularies is a compile error,
+and the passage `type` should match the target (literary for T4, informational for T11). If
+`target` is omitted entirely the compiler defaults to `c1-t4` and warns — so always emit one
+explicitly rather than relying on the default.
 
 ## Authoring contract
 
@@ -47,8 +52,8 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 ## Forms and attributes
 
-- **target** `c1-t4` | `c1-t11` — required, top level; selects the learning-target profile
-  (dimensions, standards, stem catalog) the program composes for.
+- **target** `c1-t4` | `c1-t11` — top level; selects the learning-target profile (dimensions,
+  standards, stem catalog). Always author one; if omitted, the compiler defaults to `c1-t4`.
 - **passage** `"heading"` — plus `type` (`literary` | `informational`) and `lines [ "..." ... ]`.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type`, a non-empty `rationale`, and
@@ -134,7 +139,7 @@ outright is literal recall and out of scope.
 
 ## Built-in enumerations
 
-- `target`: `c1-t4`, `c1-t11` (required, top level)
+- `target`: `c1-t4`, `c1-t11` (top level; always author one — defaults to `c1-t4` if omitted)
 - item `type`: `ebsr`, `hot-text`, `short-text` · passage `type`: `literary`, `informational`
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`

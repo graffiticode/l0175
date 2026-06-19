@@ -274,9 +274,14 @@ describe("compose — learning targets (parameterization)", () => {
     expect(it0.standards).not.toContain("rl-1");
   });
 
-  it("errors when `target` is missing", async () => {
-    const { errors } = await compile(T11.replace("target c1-t11 ", ""));
-    expect(errors.some((e: any) => /missing target/.test(e.message))).toBe(true);
+  it("defaults to c1-t4 with a warning when `target` is omitted (keeps generation/back-compat working)", async () => {
+    // Drop both the target and the now-mismatched T11 dimensions so the default-T4 profile validates.
+    const noTarget = T11.replace("target c1-t11 ", "").replaceAll("relationships-interactions", "character");
+    const { errors, data } = await compile(noTarget);
+    expect(errors).toHaveLength(0);
+    const it0 = data.kind === "items" ? data.items[0] : data;
+    expect(it0.target).toBe("c1-t4");
+    expect((it0.warnings || []).some((w: string) => /No target declared; defaulting to c1-t4/.test(w))).toBe(true);
   });
 
   it("errors on a non-target tag used as the target", async () => {

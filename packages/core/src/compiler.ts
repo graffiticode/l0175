@@ -225,9 +225,11 @@ function composeProgram(top: any, errors: any[]): any {
   const outcomes: any[] = Array.isArray(top.outcomes) ? top.outcomes : [];
 
   // --- hard validation (fails the compile) ---
-  if (!targetTag) {
-    errors.push({ message: `missing target (the SBAC learning target). Expected one of: ${Object.keys(TARGETS).join(", ")}.` });
-  } else if (!TARGETS[targetTag]) {
+  // `target` should be authored explicitly (the instructions tell the generator to always pick
+  // one), but an OMITTED target defaults to c1-t4 with a warning rather than a hard error — so
+  // minimal/template generation and legacy programs still compile. An explicit but UNKNOWN tag is
+  // a genuine mistake and stays a hard error.
+  if (targetTag && !TARGETS[targetTag]) {
     errors.push({ message: `unknown target '${targetTag}'. Expected one of: ${Object.keys(TARGETS).join(", ")}.` });
   }
   if (passageType && !PASSAGE_TYPES.has(passageType)) {
@@ -258,7 +260,10 @@ function composeProgram(top: any, errors: any[]): any {
     outcomeById: index(outcomes, "id"),
   };
 
-  const graphWarnings = validateGraph(ctx, errors);
+  const targetWarnings = !targetTag
+    ? [`No target declared; defaulting to ${DEFAULT_TARGET}. Author a top-level 'target' (${Object.keys(TARGETS).join(" | ")}).`]
+    : [];
+  const graphWarnings = [...targetWarnings, ...validateGraph(ctx, errors)];
   const title = str(top.title);
 
   const items = outcomes.map((o) => composeOutcome(o, ctx, graphWarnings));
