@@ -1,0 +1,212 @@
+// SPDX-License-Identifier: MIT
+// Serializes a composed assessment item into clean, portable rich text (HTML + plain text) for
+// the "Copy" button, so teachers can paste a WYSIWYG question/answer-key into Google Docs or Word.
+// We serialize from the item DATA MODEL (not the rendered Tailwind DOM) so the output is
+// self-contained, inline-styled, and free of class names and form controls.
+//
+//   - Preview mode -> the question only.
+//   - Review mode  -> the question PLUS a clean teacher answer key (correct option marked, the
+//     answer key, the short-text rubric, and the exemplar/correct inference). It deliberately
+//     omits author QA noise: per-distractor error types, plausibility scores, and warnings.
+import type { Mode } from "./ModeToggle";
+
+const esc = (s: any): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const P = (html: string, style = "margin:0 0 4px"): string => `<p style="${style}">${html}</p>`;
+const NUM = (n: any): string => `<span style="color:#9ca3af">${esc(n)}</span>`;
+
+function passageHtml(p: any): string {
+  if (!p) return "";
+  const heading = p.heading ? P(`<strong>${esc(p.heading)}</strong>`) : "";
+  const lines = (p.lines ?? []).map((l: any) => P(`${NUM(l.id)} ${esc(l.text)}`)).join("");
+  return heading + lines;
+}
+
+// One option line: "A. text" (Part B EBSR options are quoted). Correct options are bolded with a ✓
+// in review mode only.
+function optionsHtml(options: any[], mode: Mode, quote: boolean): string {
+  return (options ?? [])
+    .map((o: any) => {
+      const correct = mode === "review" && o.correct;
+      const txt = quote ? `<em>&ldquo;${esc(o.text)}&rdquo;</em>` : esc(o.text);
+      const body = `${esc(o.key)}. ${txt}${correct ? " ✓" : ""}`;
+      return P(correct ? `<strong>${body}</strong>` : body);
+    })
+    .join("");
+}
+
+function selectableHtml(selectable: any[], mode: Mode): string {
+  return (selectable ?? [])
+    .map((s: any) => {
+      const correct = mode === "review" && s.correct;
+      const body = `${NUM(s.lineId)} ${esc(s.text)}${correct ? " ✓" : ""}`;
+      return P(correct ? `<strong>${body}</strong>` : body);
+    })
+    .join("");
+}
+
+// HTML for one composed item (passage + question, plus a clean answer key in review mode).
+export function itemToHtml(item: any, mode: Mode): string {
+  if (!item) return "";
+  const review = mode === "review";
+  const out: string[] = [passageHtml(item.passage)];
+  if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
+
+  if (item.type === "ebsr" || item.type === "hot-text") {
+    out.push(P(`<strong>Part A.</strong> ${esc(item.stem?.partA)}`, "margin:8px 0 4px"));
+    out.push(optionsHtml(item.partA?.options, mode, false));
+    out.push(P(`<strong>Part B.</strong> ${esc(item.stem?.partB)}`, "margin:8px 0 4px"));
+    out.push(item.type === "ebsr" ? optionsHtml(item.partB?.options, mode, true) : selectableHtml(item.selectable, mode));
+  } else if (item.type === "short-text") {
+    out.push(P(`<strong>${esc(item.prompt)}</strong>`, "margin:8px 0 4px"));
+    if (!review) out.push(P("Answer: ___________________________________________", "margin:8px 0;color:#9ca3af"));
+  }
+
+  if (review) {
+    const key: string[] = [];
+    if (item.answerKey?.partA) key.push(`Part A &mdash; ${esc(item.answerKey.partA)}`);
+    if (item.answerKey?.partB) key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
+    if (item.type === "hot-text") {
+      const lines = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.lineId);
+      if (lines.length) key.push(`Part B &mdash; line(s) ${esc(lines.join(", "))}`);
+    }
+    if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
+
+    if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
+      out.push(P("<strong>Scoring rubric:</strong>", "margin:8px 0 4px"));
+      out.push(
+        `<ul style="margin:0 0 4px;padding-left:20px">${item.rubric
+          .map((r: any) => `<li><strong>${esc(r.score)}</strong> &mdash; ${esc(r.descriptor)}</li>`)
+          .join("")}</ul>`,
+      );
+    }
+
+    // Short Text shows the answer-key rationale ("Exemplar inference"); EBSR / Hot Text show the
+    // correct claim's statement ("Correct inference") — mirroring the on-screen renderers.
+    const shortText = item.type === "short-text";
+    const exemplar = shortText
+      ? item.answerKey?.rationale || item.review?.correctClaim?.text
+      : item.review?.correctClaim?.text || item.answerKey?.rationale;
+    if (exemplar) {
+      out.push(P(`<strong>${shortText ? "Exemplar inference" : "Correct inference"}:</strong> ${esc(exemplar)}`, "margin:8px 0 4px"));
+    }
+  }
+
+  return out.filter(Boolean).join("");
+}
+
+// Plain-text fallback (mirrors itemToHtml, no markup).
+export function itemToText(item: any, mode: Mode): string {
+  if (!item) return "";
+  const review = mode === "review";
+  const out: string[] = [];
+  const p = item.passage;
+  if (p) {
+    if (p.heading) out.push(p.heading);
+    for (const l of p.lines ?? []) out.push(`${l.id} ${l.text}`);
+    out.push("");
+  }
+  if (item.stem?.leadIn) out.push(item.stem.leadIn, "");
+
+  const opt = (o: any, quote: boolean) => {
+    const mark = mode === "review" && o.correct ? " ✓" : "";
+    return `${o.key}. ${quote ? `“${o.text}”` : o.text}${mark}`;
+  };
+
+  if (item.type === "ebsr" || item.type === "hot-text") {
+    out.push(`Part A. ${item.stem?.partA ?? ""}`);
+    for (const o of item.partA?.options ?? []) out.push(opt(o, false));
+    out.push("", `Part B. ${item.stem?.partB ?? ""}`);
+    if (item.type === "ebsr") {
+      for (const o of item.partB?.options ?? []) out.push(opt(o, true));
+    } else {
+      for (const s of item.selectable ?? []) {
+        const mark = mode === "review" && s.correct ? " ✓" : "";
+        out.push(`${s.lineId} ${s.text}${mark}`);
+      }
+    }
+  } else if (item.type === "short-text") {
+    out.push(item.prompt ?? "");
+    if (!review) out.push("", "Answer: ___________________________________________");
+  }
+
+  if (review) {
+    const key: string[] = [];
+    if (item.answerKey?.partA) key.push(`Part A — ${item.answerKey.partA}`);
+    if (item.answerKey?.partB) key.push(`Part B — ${item.answerKey.partB}`);
+    if (item.type === "hot-text") {
+      const lines = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.lineId);
+      if (lines.length) key.push(`Part B — line(s) ${lines.join(", ")}`);
+    }
+    if (key.length) out.push("", `Answer key: ${key.join("; ")}`);
+    if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
+      out.push("", "Scoring rubric:");
+      for (const r of item.rubric) out.push(`  ${r.score} — ${r.descriptor}`);
+    }
+    const shortText = item.type === "short-text";
+    const exemplar = shortText
+      ? item.answerKey?.rationale || item.review?.correctClaim?.text
+      : item.review?.correctClaim?.text || item.answerKey?.rationale;
+    if (exemplar) out.push("", `${shortText ? "Exemplar inference" : "Correct inference"}: ${exemplar}`);
+  }
+
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+// Joins the currently visible item(s) for copying, wrapped in a base-font container.
+export function itemsToHtml(items: any[], mode: Mode, title?: string): string {
+  const body = (items ?? [])
+    .map((it) => `<div>${itemToHtml(it, mode)}</div>`)
+    .join('<p style="margin:14px 0"></p>');
+  const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
+}
+
+export function itemsToText(items: any[], mode: Mode, title?: string): string {
+  const body = (items ?? []).map((it) => itemToText(it, mode)).join("\n\n———\n\n");
+  return (title ? `${title}\n\n` : "") + body;
+}
+
+// Writes rich text (HTML + plain) to the clipboard. Primary path: the async Clipboard API with a
+// ClipboardItem (both flavors, so Docs/Word take the HTML and a plain editor takes the text).
+// Fallback: a hidden contenteditable + execCommand("copy") for older browsers.
+export async function copyRichText(html: string, text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard && typeof ClipboardItem !== "undefined") {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" }),
+        }),
+      ]);
+      return true;
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  try {
+    const el = document.createElement("div");
+    el.setAttribute("contenteditable", "true");
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    el.style.opacity = "0";
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    const ok = document.execCommand("copy");
+    sel?.removeAllRanges();
+    document.body.removeChild(el);
+    return ok;
+  } catch {
+    return false;
+  }
+}

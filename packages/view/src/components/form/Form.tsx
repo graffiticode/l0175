@@ -8,6 +8,7 @@ import { useState } from "react";
 import type { FormProps, CompileError } from "@graffiticode/l0000-view";
 import { ModeToggle, type Mode } from "./ModeToggle";
 import { ItemView } from "./ItemView";
+import { CopyButton } from "./CopyButton";
 
 function renderErrors(errors: CompileError[]) {
   return (
@@ -106,7 +107,10 @@ export const Form = ({ state }: FormProps) => {
         renderErrors(errors)
       ) : isItem ? (
         <>
-          <ModeToggle mode={mode} setMode={setMode} />
+          <div className="flex items-center justify-between gap-2">
+            <CopyButton items={visibleItems} mode={mode} title={data.title} />
+            <ModeToggle mode={mode} setMode={setMode} />
+          </div>
           {paginated && <Pagination count={items.length} current={current} setPage={setPage} />}
           <div className="flex flex-col gap-8">
             {visibleItems.map((item, i) => (

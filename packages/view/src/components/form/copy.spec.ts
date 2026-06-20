@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: MIT
+// Unit tests for the rich-text serializer behind the Copy button. Pure functions over the item
+// data model — no DOM. Run via the root `npm test` (vitest).
+import { describe, it, expect } from "vitest";
+import { itemToHtml, itemToText, itemsToHtml } from "./copy";
+
+const EBSR: any = {
+  type: "ebsr",
+  id: "q1",
+  standards: ["ri-1", "ri-3"],
+  dok: "r-dok3",
+  dimension: "relationships-interactions",
+  passage: { heading: "The Story of Bridges", lines: [{ id: 1, text: "Logs spanned streams." }, { id: 2, text: "Then came stone arches." }] },
+  stem: { leadIn: "This question has two parts.", partA: "Which inference about the designs is supported?", partB: "Which sentence best supports your answer?" },
+  partA: { options: [{ key: "A", text: "Each design solved a limit of the last.", correct: true }, { key: "B", text: "Stone replaced steel.", correct: false }] },
+  partB: { options: [{ key: "A", text: "Logs spanned streams.", correct: false }, { key: "B", text: "Then came stone arches.", correct: true }] },
+  distractorAnalysis: [{ part: "A", key: "B", errorType: "misreads-detail", plausibility: 0.8, rationale: "reverses the order" }],
+  answerKey: { partA: "A", partB: "B", rationale: "each solved a limit" },
+  review: { correctClaim: { id: "c1", text: "Each new design solved a limitation." }, scoring: "1 point", alternativeClaims: 0 },
+  warnings: ["Part B options do not overlap the correct Part A option."],
+};
+
+const HOTTEXT: any = {
+  type: "hot-text",
+  id: "q2",
+  passage: { heading: "Bridges", lines: [{ id: 1, text: "A." }, { id: 2, text: "B." }, { id: 3, text: "C." }] },
+  stem: { partA: "Click the best inference.", partB: "Click the supporting sentence(s)." },
+  partA: { options: [{ key: "A", text: "right", correct: true }, { key: "B", text: "wrong", correct: false }] },
+  selectable: [{ lineId: 1, text: "A.", correct: true }, { lineId: 2, text: "B.", correct: false }, { lineId: 3, text: "C.", correct: true }],
+  distractorAnalysis: [],
+  answerKey: { partA: "A" },
+  review: { correctClaim: { id: "c1", text: "the inference" } },
+  warnings: [],
+};
+
+const SHORTTEXT: any = {
+  type: "short-text",
+  id: "q3",
+  passage: { heading: "Bridges", lines: [{ id: 1, text: "A." }] },
+  prompt: "What inference can be made about the author's purpose? Explain.",
+  rubric: [{ score: 2, descriptor: "Full and specific." }, { score: 0, descriptor: "None." }],
+  answerKey: { rationale: "The author shows that designs improve." },
+  review: { correctClaim: { id: "c1", text: "designs improve" } },
+  warnings: [],
+};
+
+describe("copy serializer — question (preview)", () => {
+  const html = itemToHtml(EBSR, "preview");
+  it("includes passage, lead-in, both parts and options", () => {
+    expect(html).toContain("The Story of Bridges");
+    expect(html).toContain("This question has two parts.");
+    expect(html).toContain("Part A.");
+    expect(html).toContain("A. Each design solved a limit of the last.");
+    expect(html).toContain("Part B.");
+    expect(html).toContain("Then came stone arches.");
+  });
+  it("does NOT reveal the answer in preview", () => {
+    expect(html).not.toContain("Answer key");
+    expect(html).not.toContain("✓");
+    expect(html).not.toContain("Correct inference");
+  });
+});
+
+describe("copy serializer — answer key (review)", () => {
+  const html = itemToHtml(EBSR, "review");
+  it("marks the correct option and emits the answer key + correct inference", () => {
+    expect(html).toContain("✓");
+    expect(html).toMatch(/<strong>A\. Each design solved a limit of the last\. ✓<\/strong>/);
+    expect(html).toContain("Answer key:");
+    expect(html).toContain("Part A");
+    expect(html).toContain("Part B");
+    expect(html).toContain("Correct inference:");
+    expect(html).toContain("Each new design solved a limitation.");
+  });
+  it("excludes author QA noise (error types, plausibility, warnings)", () => {
+    expect(html).not.toContain("misreads-detail");
+    expect(html).not.toContain("0.8");
+    expect(html).not.toContain("do not overlap");
+  });
+  it("emits clean inline-styled HTML — no class names, balanced strong/p tags", () => {
+    expect(html).not.toContain("class=");
+    expect((html.match(/<strong>/g) ?? []).length).toBe((html.match(/<\/strong>/g) ?? []).length);
+    expect((html.match(/<p[ >]/g) ?? []).length).toBe((html.match(/<\/p>/g) ?? []).length);
+  });
+});
+
+describe("copy serializer — hot text & short text", () => {
+  it("hot text review marks correct lines and lists them in the key", () => {
+    const html = itemToHtml(HOTTEXT, "review");
+    expect(html).toContain("Part B");
+    expect(html).toContain("line(s) 1, 3");
+    expect(html).toContain("✓");
+  });
+  it("short text review emits the prompt, rubric and exemplar; preview shows a blank", () => {
+    const review = itemToHtml(SHORTTEXT, "review");
+    expect(review).toContain("Scoring rubric:");
+    expect(review).toContain("Full and specific.");
+    expect(review).toContain("Exemplar inference:");
+    expect(review).toContain("The author shows that designs improve.");
+    const preview = itemToHtml(SHORTTEXT, "preview");
+    expect(preview).toContain("Answer:");
+    expect(preview).not.toContain("Scoring rubric");
+  });
+});
+
+describe("copy serializer — plain text & multi-item", () => {
+  it("plain text mirrors content and omits QA noise", () => {
+    const text = itemToText(EBSR, "review");
+    expect(text).toContain("Answer key:");
+    expect(text).toContain("A. Each design solved a limit of the last. ✓");
+    expect(text).not.toContain("misreads-detail");
+    expect(text).not.toContain("do not overlap");
+  });
+  it("itemsToHtml wraps items in a base-font container and joins them", () => {
+    const html = itemsToHtml([EBSR, SHORTTEXT], "preview", "My Assessment");
+    expect(html).toContain("font-family:Arial");
+    expect(html).toContain("My Assessment");
+    expect(html).toContain("The Story of Bridges");
+    expect(html).toContain("author's purpose");
+  });
+});
