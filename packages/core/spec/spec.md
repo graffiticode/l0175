@@ -27,7 +27,7 @@ target c1-t4
 title "Optional assessment title"
 passage "Heading"
 type literary
-lines [ "Sentence one." "Sentence two." ]
+lines [ "First paragraph…" "Second paragraph…" ]   /* one entry per paragraph */
 claims [ claim ... {} claim ... {} ]
 evidence [ source ... {} source ... {} ]
 outcomes [ outcome ... {} outcome ... {} ]
@@ -63,7 +63,7 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
 | `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text`. |
-| `lines` | 2 | string list | The passage sentences, **auto-numbered from 1** (the numbers `source.line` refers to). |
+| `lines` | 2 | string list | The passage **paragraphs** (one entry per paragraph by default), **auto-numbered from 1** (the numbers `source.line` refers to). Use finer units (sentences) only when a task needs them, e.g. click-the-sentence Hot Text. |
 | `claims` | 2 | list | The collection of candidate `claim`s (the inference graph's nodes). |
 | `claim` | 1 | chain | One candidate inference/conclusion statement — either the correct answer or a foil. |
 | `evidence` | 2 | list | The collection of evidence `source`s. |
@@ -107,8 +107,8 @@ composes). A `focus` that isn't a supported claim, or a `targets` to a missing o
 | Attribute | Value | Description |
 | :--- | :--- | :--- |
 | `status` | tag | The support role: `directly-supports` (real backing for its claim), `supports-wrong-claim` (real text that *seems* to back a foil), or `irrelevant` (off-point — a Part B distractor). |
-| `line` | number | The passage line (1-based) this source quotes. Must be within the passage (out-of-range → warning). |
-| `quote` | string | Alternative to `line` — a verbatim excerpt to show instead of looking up a line. |
+| `line` | number | The numbered passage entry (a paragraph by default, 1-based) this source draws on. Must be within the passage (out-of-range → warning). |
+| `quote` | string | A verbatim excerpt shown instead of the whole `line`. For EBSR Part B, set this to the exact supporting **sentence** (with `line` pointing at its paragraph) so options stay sentence-tight. |
 | `supports` | id list | See *Identity & references* — the claim(s) this evidence backs. |
 | `rationale` | string | Optional: why this line is a tempting-but-wrong Part B foil. If omitted, composition synthesizes one from the source's status. |
 

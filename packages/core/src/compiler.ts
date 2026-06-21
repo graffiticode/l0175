@@ -46,7 +46,7 @@ const TUNING = {
   DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A or Part B)
   PART_OPTIONS: 4, // options per part (EBSR Part A/B)
   HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
-  SHORT_TEXT_MIN_LINES: 6, // shorter literary passage → warn
+  SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
 };
 
 // --- Target profiles -----------------------------------------------------------------------

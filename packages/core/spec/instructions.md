@@ -54,16 +54,23 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 - **target** `c1-t4` | `c1-t11` — top level; selects the learning-target profile (dimensions,
   standards, stem catalog). Always author one; if omitted, the compiler defaults to `c1-t4`.
-- **passage** `"heading"` — plus `type` (`literary` | `informational`) and `lines [ "..." ... ]`.
+- **passage** `"heading"` — plus `type` (`literary` | `informational`) and
+  `lines [ "..." ... ]`. **By default each entry is one PARAGRAPH of the passage**, auto-numbered
+  from 1 (so the passage shows numbered paragraphs, matching SBAC). Split a passage into
+  paragraphs unless a task needs finer units — e.g. a click-the-sentence Hot Text item, where you
+  split that passage into sentences instead.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type`, a non-empty `rationale`, and
   `targets` (the outcome id(s) of the question(s) it foils). Optional: `cites` (evidence ids),
   `subject`, `standard`, `dok`, and `plausibility` (a 0–1 override for how tempting a distractor
   is — otherwise the compiler computes it from evidence overlap, structure, and error type when
   choosing among the foils of the same error type that target the outcome).
-- **source** — `id`, `line` (passage line number) or `quote`, `status`
-  (`directly-supports` | `supports-wrong-claim` | `irrelevant`), `supports` (claim ids).
-  Optional `rationale` explaining a foil.
+- **source** — `id`, `line` (the numbered passage entry — a paragraph by default) or `quote`,
+  `status` (`directly-supports` | `supports-wrong-claim` | `irrelevant`), `supports` (claim ids).
+  Optional `rationale` explaining a foil. **For EBSR Part B, give the source a `quote` with the
+  exact supporting SENTENCE** while `line` points at the paragraph that contains it — so Part B
+  options stay tight sentences even though the passage is numbered by paragraph. (Without `quote`,
+  the option text is the whole paragraph at `line`.)
 - **outcome** — `id` (required, unique — distractors target it), `type`
   (`ebsr` | `hot-text` | `short-text`), `dimension`, `focus` (required — the id of the supported
   correct claim), `stem` (required — the Part A stem / short-text prompt, authored from
@@ -118,10 +125,12 @@ outright is literal recall and out of scope.
   `plausibility` score (0–1) for how tempting it is to a partial-understander. Composition selects
   the most plausible foil per error type from this scored pool; if a score is omitted the compiler
   computes one from the inference graph (evidence overlap, structure, error type).
-- Tag evidence so Part B has material: mark the lines that **directly support** the correct
-  claim, and author **at least 5 non-supporting foil sources** — `supports-wrong-claim` lines
-  plus `irrelevant` lines. EBSR Part B draws 3 foils + the correct line; a pool of ≥5 lets the
-  compiler pick the most tempting 3. Fewer than 5 triggers a composition warning.
+- Tag evidence so Part B has material: mark the sources that **directly support** the correct
+  claim, and author **at least 5 non-supporting foil sources** — `supports-wrong-claim` sources
+  plus `irrelevant` sources. EBSR Part B draws 3 foils + the correct source; a pool of ≥5 lets the
+  compiler pick the most tempting 3. Fewer than 5 triggers a composition warning. Give each EBSR
+  Part B source a `quote` with the exact supporting **sentence** (and a `line` pointing at its
+  paragraph), so the four Part B options are tight sentences rather than whole paragraphs.
 - **No-giveaway rule (EBSR Part B): for every EBSR question, author at least one
   `supports-wrong-claim` line whose `supports` lists BOTH the correct claim's id AND a
   distractor's id** — a passage line that *seems* to back the correct inference but actually
@@ -162,10 +171,10 @@ It never generates content or stems — author them.
 target c1-t4
 passage "The Tide Pool"
 type literary
+/* lines are PARAGRAPHS, auto-numbered 1..N; EBSR Part B sources `quote` the exact sentence */
 lines [
-  "Mara crouched at the edge of the tide pool, ignoring the picnic behind her."
-  "Her brother called twice, but she did not turn around."
-  "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
+  "Mara crouched at the edge of the tide pool, ignoring the picnic behind her. Her brother called twice, but she did not turn around. A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
+  "She traced the cold water as if the pool were the only thing that mattered. Behind her, paper plates rustled and her mother laughed."
 ]
 claims [
   claim id "c1" status supported dimension character subject "Mara"
@@ -189,9 +198,10 @@ claims [
     rationale "Treats quiet as upset without textual support." cites ["e2"] {}
 ]
 evidence [
-  source id "e1" line 1 status directly-supports supports ["c1"] {}
-  source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {}
-  source id "e3" line 3 status directly-supports supports ["c1"] {}
+  /* `line` = the paragraph; `quote` = the exact supporting sentence shown as the Part B option */
+  source id "e1" line 1 quote "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." status directly-supports supports ["c1"] {}
+  source id "e2" line 1 quote "Her brother called twice, but she did not turn around." status supports-wrong-claim supports ["c1" "c2"] {}
+  source id "e3" line 1 quote "A tiny crab scuttled under a rock, and Mara smiled for the first time all day." status directly-supports supports ["c1"] {}
 ]
 outcomes [
   outcome id "q1" type ebsr dimension character subject "Mara" standard rl-1 focus "c1"

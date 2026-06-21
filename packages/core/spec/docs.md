@@ -48,7 +48,7 @@ toggle.
 | **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11`) |
 | **passage** | 2 | `passage "Title"` | Sets the passage heading; chains with `type` and `lines` |
 | **type** | 2 | `type literary` | Passage type (`literary` / `informational`) or, on an outcome, the item type |
-| **lines** | 2 | `lines [ "..." "..." ]` | Passage sentences, auto-numbered from 1 |
+| **lines** | 2 | `lines [ "..." "..." ]` | Passage paragraphs (one per entry by default), auto-numbered from 1 |
 | **claims** | 2 | `claims [ claim ... {} ]` | The candidate inference statements |
 | **claim** | 1 | `claim id "c1" status supported ... {}` | One inference candidate (supported or distractor) |
 | **evidence** | 2 | `evidence [ source ... {} ]` | The evidence sources |
