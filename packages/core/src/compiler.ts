@@ -266,7 +266,7 @@ function composeProgram(top: any, errors: any[]): any {
   const graphWarnings = [...targetWarnings, ...validateGraph(ctx, errors)];
   const title = str(top.title);
 
-  const items = outcomes.map((o) => composeOutcome(o, ctx, graphWarnings));
+  const items = outcomes.map((o, i) => composeOutcome(o, ctx, graphWarnings, i));
   if (items.length === 1) {
     if (title) items[0].title = title;
     return items[0];
@@ -511,19 +511,33 @@ function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: 
   return chosen.slice(0, TUNING.DISTRACTOR_SLOTS);
 }
 
-function partAOptions(correct: any, distractors: any[], seed: string) {
-  const opts = [
-    { text: str(correct.text), correct: true, claimId: str(correct.id) },
-    ...distractors.map((d) => ({ text: str(d.text), correct: false, claimId: str(d.id), errorType: str(d.errorType) })),
-  ];
-  return labelize(seededShuffle(opts, seed + ":A"));
-}
-
 function labelize(opts: any[]) {
   return opts.map((o, i) => ({ key: LABELS[i], ...o }));
 }
 
-function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): any {
+// Place the correct option at a balanced slot, then label. A per-item seeded shuffle distributes
+// uniformly in expectation but, over the few items in one program, can land the answer key first
+// (or last) for every item — the pattern authors noticed. Instead the distractors are seeded-
+// shuffled among themselves and the correct option is inserted at a slot that round-robins by
+// outcome index, rotated by a per-program/part offset so the key neither always starts at A nor
+// repeats the same position across items. Deterministic: same program → same labels.
+function placeCorrect(
+  correctOpt: any, distractorOpts: any[], seed: string, programSeed: string, part: string, outcomeIndex: number,
+) {
+  const opts = seededShuffle(distractorOpts, `${seed}:${part}`);
+  const n = opts.length + 1;
+  const slot = (outcomeIndex + (strHash(`${programSeed}:${part}`) % n)) % n;
+  opts.splice(slot, 0, correctOpt);
+  return labelize(opts);
+}
+
+function partAOptions(correct: any, distractors: any[], seed: string, programSeed: string, outcomeIndex: number) {
+  const correctOpt = { text: str(correct.text), correct: true, claimId: str(correct.id) };
+  const distractorOpts = distractors.map((d) => ({ text: str(d.text), correct: false, claimId: str(d.id), errorType: str(d.errorType) }));
+  return placeCorrect(correctOpt, distractorOpts, seed, programSeed, "A", outcomeIndex);
+}
+
+function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], outcomeIndex = 0): any {
   const warnings: string[] = [...graphWarnings];
   const dim = str(outcome.dimension);
   const itemType = str(outcome.type);
@@ -572,7 +586,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
     warnings.push(`Only ${viableDistractors} viable distractor(s) target outcome '${oid}'; author at least 5 for stronger selection.`);
   }
   const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
-  item.partA = { options: partAOptions(correct, distractors, seed) };
+  item.partA = { options: partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex) };
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
   const analysis: any[] = item.partA.options
     .filter((o: any) => !o.correct)
@@ -606,16 +620,21 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = []): a
   if (partBPool < TUNING.MIN_VIABLE_PART_B) {
     warnings.push(`Only ${partBPool} Part B foil source(s) available; author at least ${TUNING.MIN_VIABLE_PART_B} non-supporting evidence lines (supports-wrong-claim + irrelevant) so the best 3 can be chosen.`);
   }
-  const bOpts = [
-    ...(correctSrc ? [{ line: correctSrc.line, text: sourceText(correctSrc, ctx.passage), correct: true, sourceId: str(correctSrc.id) }] : []),
-    ...distractorSrcs.map((s: any) => ({
-      line: s.line, text: sourceText(s, ctx.passage), correct: false, sourceId: str(s.id),
-      status: str(s.status), tiesTo: firstWrongClaim(s, correct),
-    })),
-  ];
+  const correctOpt = correctSrc
+    ? { line: correctSrc.line, text: sourceText(correctSrc, ctx.passage), correct: true, sourceId: str(correctSrc.id) }
+    : null;
+  const distractorOpts = distractorSrcs.map((s: any) => ({
+    line: s.line, text: sourceText(s, ctx.passage), correct: false, sourceId: str(s.id),
+    status: str(s.status), tiesTo: firstWrongClaim(s, correct),
+  }));
+  const bCount = (correctOpt ? 1 : 0) + distractorOpts.length;
   if (!correctSrc) warnings.push("No directly-supporting evidence for the correct claim; EBSR Part B has no correct option.");
-  if (bOpts.length < TUNING.PART_OPTIONS) warnings.push(`Only ${bOpts.length} Part B option(s) available; EBSR wants 4. Add irrelevant or supports-wrong-claim evidence sources.`);
-  item.partB = { options: labelize(seededShuffle(bOpts, seed + ":B")) };
+  if (bCount < TUNING.PART_OPTIONS) warnings.push(`Only ${bCount} Part B option(s) available; EBSR wants 4. Add irrelevant or supports-wrong-claim evidence sources.`);
+  item.partB = {
+    options: correctOpt
+      ? placeCorrect(correctOpt, distractorOpts, seed, ctx.passage.id, "B", outcomeIndex)
+      : labelize(seededShuffle(distractorOpts, `${seed}:B`)),
+  };
   const bKey = item.partB.options.find((o: any) => o.correct)?.key;
 
   // A<->B no-giveaway check: at least one Part B distractor should also tie to the correct claim.
