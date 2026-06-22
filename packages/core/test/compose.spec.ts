@@ -204,6 +204,44 @@ describe("compose — warnings (non-fatal)", () => {
     const { data } = await compile(src);
     expect((data.warnings || []).some((w: string) => /e99/.test(w))).toBe(true);
   });
+
+  // The correct claim is far longer/more detailed than its foils — the length giveaway.
+  const lengthProg = (correctText: string, foilTexts: [string, string, string]) => `${PASSAGE}
+    claims [ claim id "c1" status supported dimension character text "${correctText}" cites ["e1"] {},
+      claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "${foilTexts[0]}" rationale "r" cites ["e2"] {},
+      claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "${foilTexts[1]}" rationale "r" cites ["e2"] {},
+      claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "${foilTexts[2]}" rationale "r" cites ["e2"] {} ]
+    evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {},
+      source id "e2" line 2 status irrelevant supports [] {} ]
+    outcomes [ outcome id "q1" type ebsr dimension character subject "x" focus "c1" ${STEM_A} ${STEM_B} {} ] {}..`;
+
+  it("warns when the correct option is the longest and far longer than its foils", async () => {
+    const src = lengthProg(
+      "Mara values the quiet time she spends watching the tide pool far more than she values joining her family's picnic.",
+      ["Mara is angry.", "Mara is bored.", "Mara is scared."],
+    );
+    const { errors, data } = await compile(src);
+    expect(errors).toHaveLength(0);
+    expect((data.warnings || []).some((w: string) => /length giveaway/.test(w))).toBe(true);
+  });
+
+  it("does not warn when Part A and Part B options are parallel in length", async () => {
+    // Part A claim texts are comparable; Part B draws the correct line + foil lines of similar
+    // length (passage lines 1/3/4/6), so neither part is a length outlier.
+    const src = `${PASSAGE}
+      claims [ claim id "c1" status supported dimension character text "Mara cares more about the tide pool than the family picnic." cites ["e1"] {},
+        claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "Mara is angry at her brother for calling her twice." rationale "r" cites ["e2"] {},
+        claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "Mara feels bored by the long afternoon at the beach." rationale "r" cites ["e4"] {},
+        claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "Mara is scared of the crab she saw beneath the rock." rationale "r" cites ["e5"] {} ]
+      evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {},
+        source id "e2" line 3 status supports-wrong-claim supports ["c1" "d1"] {},
+        source id "e4" line 4 status irrelevant supports [] {},
+        source id "e5" line 6 status irrelevant supports [] {} ]
+      outcomes [ outcome id "q1" type ebsr dimension character subject "x" focus "c1" ${STEM_A} ${STEM_B} {} ] {}..`;
+    const { errors, data } = await compile(src);
+    expect(errors).toHaveLength(0);
+    expect((data.warnings || []).some((w: string) => /length giveaway/.test(w))).toBe(false);
+  });
 });
 
 describe("compose — stems are authored verbatim", () => {
