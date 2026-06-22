@@ -47,6 +47,7 @@ const TUNING = {
   PART_OPTIONS: 4, // options per part (EBSR Part A/B)
   HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
   SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
+  LENGTH_BALANCE_RATIO: 1.35, // correct option longer than this × the mean distractor length → length-giveaway warn
 };
 
 // --- Target profiles -----------------------------------------------------------------------
@@ -515,6 +516,27 @@ function labelize(opts: any[]) {
   return opts.map((o, i) => ({ key: LABELS[i], ...o }));
 }
 
+// Length-giveaway guard: the correct option should not stand out as the longest/most-detailed
+// choice — a partial-understander can pick the key on heft alone. Warn (non-fatal) when the
+// correct option's text runs notably longer than the mean distractor length, so the author/
+// generator can pad the foils or trim the key until the options read as parallel in length.
+function checkLengthBalance(options: any[], part: string, warnings: string[]): void {
+  const correct = options.find((o: any) => o.correct);
+  const foils = options.filter((o: any) => !o.correct);
+  if (!correct || foils.length === 0) return;
+  const len = (o: any) => str(o.text).length;
+  const correctLen = len(correct);
+  const meanFoil = foils.reduce((sum: number, o: any) => sum + len(o), 0) / foils.length;
+  if (meanFoil === 0) return;
+  const ratio = correctLen / meanFoil;
+  const isLongest = foils.every((o: any) => len(o) <= correctLen);
+  if (isLongest && ratio >= TUNING.LENGTH_BALANCE_RATIO) {
+    warnings.push(
+      `Part ${part}: the correct option (${correctLen} chars) is ${Math.round((ratio - 1) * 100)}% longer than the average distractor (${Math.round(meanFoil)} chars) — possible length giveaway. Balance the options' length/detail.`,
+    );
+  }
+}
+
 // Place the correct option at a balanced slot, then label. A per-item seeded shuffle distributes
 // uniformly in expectation but, over the few items in one program, can land the answer key first
 // (or last) for every item — the pattern authors noticed. Instead the distractors are seeded-
@@ -587,6 +609,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
   }
   const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
   item.partA = { options: partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex) };
+  checkLengthBalance(item.partA.options, "A", warnings);
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
   const analysis: any[] = item.partA.options
     .filter((o: any) => !o.correct)
@@ -636,6 +659,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
       : labelize(seededShuffle(distractorOpts, `${seed}:B`)),
   };
   const bKey = item.partB.options.find((o: any) => o.correct)?.key;
+  checkLengthBalance(item.partB.options, "B", warnings);
 
   // A<->B no-giveaway check: at least one Part B distractor should also tie to the correct claim.
   const overlap = distractorSrcs.some((s: any) => (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id)));

@@ -142,6 +142,15 @@ outright is literal recall and out of scope.
   distractors — that is exactly what triggers the warning.
   Example: `source id "e2" line 2 status supports-wrong-claim supports ["c1" "c2"] {}` — `c1` is
   the correct claim, `c2` one of its foils; this line tempts in both Part A and Part B.
+- **Length-balance rule (no length giveaway): keep the correct claim's `text` parallel in
+  length and detail to its distractors.** A frequent tell is the key being the longest, most
+  qualified, most-detailed option — a partial-understander learns to pick "the long one." Write
+  the correct claim as tersely as it can be stated, and give the foils comparable specificity
+  (similar clause count and roughly the same length) rather than short, flat statements. The same
+  applies to the EBSR Part B `quote`s — pick supporting and non-supporting sentences of similar
+  length. The compiler flags a "possible length giveaway" warning when the correct option is the
+  longest AND notably longer than the average distractor; treat that warning as a cue to pad the
+  foils or trim the key.
 - Distractor rationales must state *why a student would plausibly choose the foil* (the error
   it targets). They appear in the item's `distractorAnalysis` output.
 - The same passage + superset can drive several outcomes; add one `outcome` per item you want.
