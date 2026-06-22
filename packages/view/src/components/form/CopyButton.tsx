@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
-// A context-aware "Copy" button beside the Preview/Review toggle. It copies the currently visible
-// item(s) in the current mode as rich text (Preview -> the question; Review -> the question + a
-// clean answer key) so a teacher can paste a WYSIWYG version into Google Docs or Word.
+// A context-aware "Copy" button beside the Questions/Review/Passage toggle. It copies the
+// currently visible content in the current mode as rich text (Questions -> the question; Review ->
+// the question + a clean answer key; Passage -> the reading passage) so a teacher can paste a
+// WYSIWYG version into Google Docs or Word.
 import { useState } from "react";
 import type { Mode } from "./ModeToggle";
-import { itemsToHtml, itemsToText, copyRichText } from "./copy";
+import { itemsToHtml, itemsToText, passagesToHtml, passagesToText, copyRichText } from "./copy";
 
 export function CopyButton({ items, mode, title }: { items: any[]; mode: Mode; title?: string }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const onCopy = async () => {
-    const html = itemsToHtml(items, mode, title);
-    const text = itemsToText(items, mode, title);
+    const passage = mode === "passage";
+    const html = passage ? passagesToHtml(items, title) : itemsToHtml(items, mode, title);
+    const text = passage ? passagesToText(items, title) : itemsToText(items, mode, title);
     const ok = await copyRichText(html, text);
     if (ok) {
       setCopied(true);
@@ -24,7 +26,15 @@ export function CopyButton({ items, mode, title }: { items: any[]; mode: Mode; t
     }
   };
 
-  const label = copied ? "Copied!" : failed ? "Copy failed" : mode === "review" ? "Copy answer key" : "Copy question";
+  const label = copied
+    ? "Copied!"
+    : failed
+      ? "Copy failed"
+      : mode === "review"
+        ? "Copy answer key"
+        : mode === "passage"
+          ? "Copy passage"
+          : "Copy question";
 
   return (
     <button

@@ -7,8 +7,9 @@ import "../../index.css";
 import { useState } from "react";
 import type { FormProps, CompileError } from "@graffiticode/l0000-view";
 import { ModeToggle, type Mode } from "./ModeToggle";
-import { ItemView } from "./ItemView";
+import { ItemView, Passage } from "./ItemView";
 import { CopyButton } from "./CopyButton";
+import { uniquePassages } from "./copy";
 
 function renderErrors(errors: CompileError[]) {
   return (
@@ -87,10 +88,26 @@ function Pagination({
   );
 }
 
+// The "Passage" view renders the reading passage(s) on their own, away from the questions.
+// A set of items typically shares one passage, so identical passages are collapsed to one.
+function PassageView({ items }: { items: any[] }) {
+  const passages = uniquePassages(items);
+  if (passages.length === 0) {
+    return <p className="text-sm text-zinc-500">No passage for this item.</p>;
+  }
+  return (
+    <div className="flex flex-col gap-8">
+      {passages.map((p, i) => (
+        <Passage key={i} passage={p} />
+      ))}
+    </div>
+  );
+}
+
 export const Form = ({ state }: FormProps) => {
   const errors: CompileError[] = state.errors ?? [];
   const data: any = state.data;
-  const [mode, setMode] = useState<Mode>("preview");
+  const [mode, setMode] = useState<Mode>("passage");
   const [page, setPage] = useState(0);
 
   const isItem = data && (data.kind === "item" || data.kind === "items");
@@ -107,16 +124,22 @@ export const Form = ({ state }: FormProps) => {
         renderErrors(errors)
       ) : isItem ? (
         <>
+          {paginated && mode !== "passage" && (
+            <Pagination count={items.length} current={current} setPage={setPage} />
+          )}
           <div className="flex items-center justify-between gap-2">
-            <CopyButton items={visibleItems} mode={mode} title={data.title} />
+            <CopyButton items={mode === "passage" ? items : visibleItems} mode={mode} title={data.title} />
             <ModeToggle mode={mode} setMode={setMode} />
           </div>
-          {paginated && <Pagination count={items.length} current={current} setPage={setPage} />}
-          <div className="flex flex-col gap-8">
-            {visibleItems.map((item, i) => (
-              <ItemView key={item.id ?? i} item={item} mode={mode} apply={state.apply} />
-            ))}
-          </div>
+          {mode === "passage" ? (
+            <PassageView items={items} />
+          ) : (
+            <div className="flex flex-col gap-8">
+              {visibleItems.map((item, i) => (
+                <ItemView key={item.id ?? i} item={item} mode={mode} apply={state.apply} />
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <pre className="text-xs">{JSON.stringify(data, null, 2)}</pre>

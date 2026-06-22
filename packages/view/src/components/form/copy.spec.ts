@@ -2,7 +2,7 @@
 // Unit tests for the rich-text serializer behind the Copy button. Pure functions over the item
 // data model — no DOM. Run via the root `npm test` (vitest).
 import { describe, it, expect } from "vitest";
-import { itemToHtml, itemToText, itemsToHtml } from "./copy";
+import { itemToHtml, itemToText, itemsToHtml, passagesToHtml, passagesToText } from "./copy";
 
 const EBSR: any = {
   type: "ebsr",
@@ -44,17 +44,16 @@ const SHORTTEXT: any = {
   warnings: [],
 };
 
-describe("copy serializer — question (preview)", () => {
+describe("copy serializer — question (Questions view)", () => {
   const html = itemToHtml(EBSR, "preview");
-  it("includes passage, lead-in, both parts and options", () => {
-    expect(html).toContain("The Story of Bridges");
+  it("includes the lead-in, both parts and options but NOT the passage", () => {
+    expect(html).not.toContain("The Story of Bridges"); // passage lives in its own view + copy
     expect(html).toContain("This question has two parts.");
     expect(html).toContain("Part A.");
     expect(html).toContain("A. Each design solved a limit of the last.");
     expect(html).toContain("Part B.");
-    expect(html).toContain("Then came stone arches.");
   });
-  it("does NOT reveal the answer in preview", () => {
+  it("does NOT reveal the answer in the Questions view", () => {
     expect(html).not.toContain("Answer key");
     expect(html).not.toContain("✓");
     expect(html).not.toContain("Correct inference");
@@ -63,6 +62,9 @@ describe("copy serializer — question (preview)", () => {
 
 describe("copy serializer — answer key (review)", () => {
   const html = itemToHtml(EBSR, "review");
+  it("omits the passage (it has its own view + Copy passage)", () => {
+    expect(html).not.toContain("The Story of Bridges");
+  });
   it("marks the correct option and emits the answer key + correct inference", () => {
     expect(html).toContain("✓");
     expect(html).toMatch(/<strong>A\. Each design solved a limit of the last\. ✓<\/strong>/);
@@ -115,7 +117,26 @@ describe("copy serializer — plain text & multi-item", () => {
     const html = itemsToHtml([EBSR, SHORTTEXT], "preview", "My Assessment");
     expect(html).toContain("font-family:Arial");
     expect(html).toContain("My Assessment");
-    expect(html).toContain("The Story of Bridges");
+    expect(html).toContain("Each design solved a limit of the last."); // question content
     expect(html).toContain("author's purpose");
+    expect(html).not.toContain("The Story of Bridges"); // passage omitted from the Questions copy
+  });
+});
+
+describe("passage serializer — Copy passage", () => {
+  it("serializes the deduped passage(s) as rich text, without any question content", () => {
+    const html = passagesToHtml([EBSR, EBSR], "My Assessment"); // shared passage → collapsed to one
+    expect(html).toContain("My Assessment");
+    expect(html).toContain("The Story of Bridges");
+    expect(html).toContain("Logs spanned streams.");
+    expect((html.match(/The Story of Bridges/g) ?? []).length).toBe(1); // deduped
+    expect(html).not.toContain("Part A"); // no question, no options, no answer key
+    expect(html).not.toContain("Each design solved a limit");
+  });
+  it("plain text mirrors the passage with numbered lines", () => {
+    const text = passagesToText([EBSR]);
+    expect(text).toContain("The Story of Bridges");
+    expect(text).toContain("1 Logs spanned streams.");
+    expect(text).toContain("2 Then came stone arches.");
   });
 });

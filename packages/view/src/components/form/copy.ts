@@ -4,10 +4,12 @@
 // We serialize from the item DATA MODEL (not the rendered Tailwind DOM) so the output is
 // self-contained, inline-styled, and free of class names and form controls.
 //
-//   - Preview mode -> the question only.
-//   - Review mode  -> the question PLUS a clean teacher answer key (correct option marked, the
+//   - Questions mode (id "preview") -> the question only.
+//   - Review/Key mode -> the question PLUS a clean teacher answer key (correct option marked, the
 //     answer key, the short-text rubric, and the exemplar/correct inference). It deliberately
-//     omits author QA noise: per-distractor error types, plausibility scores, and warnings.
+//     omits author QA noise: per-distractor error types, plausibility, warnings.
+//   - Neither mode embeds the passage — it has its own view + "Copy passage" button
+//     (passagesToHtml/passagesToText serialize just the reading passage(s)).
 import type { Mode } from "./ModeToggle";
 
 const esc = (s: any): string =>
@@ -50,11 +52,12 @@ function selectableHtml(selectable: any[], mode: Mode): string {
     .join("");
 }
 
-// HTML for one composed item (passage + question, plus a clean answer key in review mode).
+// HTML for one composed item (the question, plus a clean answer key in review/Key mode). The
+// passage is never embedded here — it is copied separately from the Passage view.
 export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
-  const out: string[] = [passageHtml(item.passage)];
+  const out: string[] = [];
   if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
 
   if (item.type === "ebsr" || item.type === "hot-text") {
@@ -105,12 +108,6 @@ export function itemToText(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
   const out: string[] = [];
-  const p = item.passage;
-  if (p) {
-    if (p.heading) out.push(p.heading);
-    for (const l of p.lines ?? []) out.push(`${l.id} ${l.text}`);
-    out.push("");
-  }
   if (item.stem?.leadIn) out.push(item.stem.leadIn, "");
 
   const opt = (o: any, quote: boolean) => {
@@ -156,6 +153,44 @@ export function itemToText(item: any, mode: Mode): string {
   }
 
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+// Dedupe the reading passage(s) across items — a set of items typically shares one passage, so
+// the Passage view (and its Copy button) collapses identical passages to one. Shared by the
+// on-screen PassageView and the passage serializers below so they never diverge.
+export function uniquePassages(items: any[]): any[] {
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const item of items ?? []) {
+    const p = item?.passage;
+    if (!p) continue;
+    const key = `${p.heading} ${(p.lines ?? []).map((l: any) => `${l.id}:${l.text}`).join("\n")}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(p);
+  }
+  return out;
+}
+
+// The Passage view's "Copy passage" button: just the reading passage(s), deduped, as rich text.
+export function passagesToHtml(items: any[], title?: string): string {
+  const body = uniquePassages(items)
+    .map((p) => `<div>${passageHtml(p)}</div>`)
+    .join('<p style="margin:14px 0"></p>');
+  const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
+}
+
+export function passagesToText(items: any[], title?: string): string {
+  const body = uniquePassages(items)
+    .map((p) => {
+      const lines: string[] = [];
+      if (p.heading) lines.push(p.heading);
+      for (const l of p.lines ?? []) lines.push(`${l.id} ${l.text}`);
+      return lines.join("\n");
+    })
+    .join("\n\n———\n\n");
+  return (title ? `${title}\n\n` : "") + body;
 }
 
 // Joins the currently visible item(s) for copying, wrapped in a base-font container.

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
-// Review / Preview toggle. The compiled item carries BOTH the answerable (preview) payload and the
-// review metadata (correct answers, distractor analysis), so toggling is local-only — no
-// recompile. Mirrors ThemeToggle's published-component styling constraints (preflight off).
-export type Mode = "preview" | "review";
+// Questions / Answers / Passage toggle. The compiled item carries BOTH the answerable (questions)
+// payload and the answer metadata (correct answers, distractor analysis), plus the reading passage,
+// so toggling is local-only — no recompile. "Passage" shows the reading passage in its own view;
+// "Questions" shows the items without the passage; "Answers" adds the answer key. Mirrors
+// ThemeToggle's published-component styling constraints (preflight off). (Mode ids stay
+// `preview`/`review`.)
+export type Mode = "preview" | "review" | "passage";
 
 export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const opt = (m: Mode, label: string) => (
@@ -22,8 +25,9 @@ export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) =
   );
   return (
     <div className="inline-flex gap-1 self-end">
-      {opt("preview", "Preview")}
-      {opt("review", "Review")}
+      {opt("passage", "Passage")}
+      {opt("preview", "Questions")}
+      {opt("review", "Answers")}
     </div>
   );
 }

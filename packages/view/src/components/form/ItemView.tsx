@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-// Renders one composed assessment item: the passage, a metadata header, the lead-in, the
-// task-model-specific body, and (in review mode) the answer key, scoring, and warnings.
+// Renders one composed assessment item: a metadata header, the lead-in, the task-model-specific
+// body, and (in review mode) the answer key, scoring, and warnings. The passage is never shown
+// here — it lives in its own "Passage" tab.
 import { Pill, type Mode } from "./itemKit";
 import { EbsrItem } from "./EbsrItem";
 import { HotTextItem } from "./HotTextItem";
@@ -13,10 +14,10 @@ const TYPE_LABEL: Record<string, string> = {
   "short-text": "Short Text",
 };
 
-function Passage({ passage }: { passage: any }) {
+export function Passage({ passage }: { passage: any }) {
   if (!passage) return null;
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+    <div className="font-sans rounded-md border border-zinc-200 bg-zinc-50 p-3">
       <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-1">{passage.heading}</p>
       <div className="flex flex-col gap-0.5">
         {passage.lines.map((l: any) => (
@@ -83,7 +84,6 @@ export function ItemView({
         {item.dok && <Pill>{item.dok}</Pill>}
         {item.dimension && <Pill>{item.dimension}</Pill>}
       </div>
-      <Passage passage={item.passage} />
       {item.stem?.leadIn && <p className="text-xs italic text-zinc-500">{item.stem.leadIn}</p>}
       {body}
       {mode === "review" && (
