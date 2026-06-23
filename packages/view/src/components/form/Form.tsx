@@ -88,8 +88,11 @@ function Pagination({
   );
 }
 
-// The "Passage" view renders the reading passage(s) on their own, away from the questions.
-// A set of items typically shares one passage, so identical passages are collapsed to one.
+// The "Passage" view renders the reading passage for the current question, away from the items
+// themselves. It receives the SAME paginated slice as the Questions/Answers views, so the passage
+// nav has one button per question and stays in sync — different questions can use different
+// passages, and switching tabs keeps you on the matching one (redundant repeats are intentional).
+// Identical passages within the shown slice are still collapsed via uniquePassages.
 function PassageView({ items }: { items: any[] }) {
   const passages = uniquePassages(items);
   if (passages.length === 0) {
@@ -124,15 +127,15 @@ export const Form = ({ state }: FormProps) => {
         renderErrors(errors)
       ) : isItem ? (
         <>
-          {paginated && mode !== "passage" && (
+          {paginated && (
             <Pagination count={items.length} current={current} setPage={setPage} />
           )}
           <div className="flex items-center justify-between gap-2">
-            <CopyButton items={mode === "passage" ? items : visibleItems} mode={mode} title={data.title} />
+            <CopyButton items={visibleItems} mode={mode} title={data.title} />
             <ModeToggle mode={mode} setMode={setMode} />
           </div>
           {mode === "passage" ? (
-            <PassageView items={items} />
+            <PassageView items={visibleItems} />
           ) : (
             <div className="flex flex-col gap-8">
               {visibleItems.map((item, i) => (
