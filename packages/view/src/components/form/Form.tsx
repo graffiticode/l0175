@@ -26,10 +26,12 @@ function renderErrors(errors: CompileError[]) {
   );
 }
 
+// Hover is applied per-button (not here) so the selected page can use a darker static background
+// than the hover tint without the two conflicting.
 const PAGE_BTN =
   "appearance-none cursor-pointer inline-flex items-center justify-center gap-x-2 rounded-lg " +
   "border border-transparent bg-transparent px-3 py-1.5 text-sm font-semibold text-zinc-700 " +
-  "transition hover:bg-zinc-950/5 disabled:opacity-40 disabled:pointer-events-none";
+  "transition disabled:opacity-40 disabled:pointer-events-none";
 
 function Pagination({
   count,
@@ -48,7 +50,7 @@ function Pagination({
           onClick={() => setPage(current - 1)}
           disabled={current === 0}
           aria-label="Previous question"
-          className={PAGE_BTN}
+          className={PAGE_BTN + " hover:bg-zinc-950/5"}
         >
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="w-4 h-4 stroke-current">
             <path d="M2.75 8H13.25M2.75 8L5.25 5.5M2.75 8L5.25 10.5" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -64,7 +66,7 @@ function Pagination({
             onClick={() => setPage(i)}
             aria-current={i === current ? "page" : undefined}
             aria-label={`Question ${i + 1}`}
-            className={PAGE_BTN + " min-w-9" + (i === current ? " bg-zinc-950/5" : "")}
+            className={PAGE_BTN + " min-w-9 " + (i === current ? "bg-zinc-950/10" : "hover:bg-zinc-950/5")}
           >
             {i + 1}
           </button>
@@ -76,7 +78,7 @@ function Pagination({
           onClick={() => setPage(current + 1)}
           disabled={current === count - 1}
           aria-label="Next question"
-          className={PAGE_BTN}
+          className={PAGE_BTN + " hover:bg-zinc-950/5"}
         >
           Next
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="w-4 h-4 stroke-current">
