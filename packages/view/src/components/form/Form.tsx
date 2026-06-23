@@ -112,7 +112,7 @@ function PassageView({ items }: { items: any[] }) {
 export const Form = ({ state }: FormProps) => {
   const errors: CompileError[] = state.errors ?? [];
   const data: any = state.data;
-  const [mode, setMode] = useState<Mode>("passage");
+  const [mode, setMode] = useState<Mode>("preview");
   const [page, setPage] = useState(0);
 
   const isItem = data && (data.kind === "item" || data.kind === "items");
