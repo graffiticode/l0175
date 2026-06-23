@@ -3,7 +3,7 @@
 // sentence(s) that support it. The passage keeps its paragraph format; each sentence within a
 // paragraph is individually selectable (correct = the correct claim's directly-supporting
 // sentences). Selectable units are grouped by `lineId` (the paragraph) and rendered inline.
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { OptionRow, StemLine, ResultBanner, analysisIndex, cx, type Mode } from "./itemKit";
 
 export function HotTextItem({
@@ -66,37 +66,52 @@ export function HotTextItem({
       </div>
       <div className="flex flex-col gap-2">
         <StemLine>Part B. {item.stem.partB}</StemLine>
-        <div className="flex flex-col gap-3 leading-relaxed">
-          {paragraphs.map((p) => (
-            <p key={p.lineId} className="text-sm">
-              {p.units.map((s: any) => {
+        {/* Mirror the Passage view (ItemView.tsx `Passage`): same panel, paragraph numbers, and
+            text styling, so the selectable passage reads exactly like the Passage tab — each
+            sentence is a selectable inline span. */}
+        <div className="font-sans rounded-md border border-zinc-200 bg-zinc-50 p-3">
+          <div className="flex flex-col gap-0.5">
+            {paragraphs.map((p) => (
+              <p key={p.lineId} className="text-sm text-zinc-800 leading-loose">
+                <span className="text-zinc-400 mr-2 select-none">{p.lineId}</span>
+                {p.units.map((s: any) => {
                 const on = picked.includes(s.id);
                 const reveal = review || previewB; // show correctness
                 const wrong = previewB && on && !s.correct;
                 return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleSentence(s.id)}
-                    className={cx(
-                      "appearance-none text-left rounded px-1 py-0.5 border cursor-pointer transition mr-1",
-                      reveal && s.correct
-                        ? "border-green-400 bg-green-50"
-                        : wrong
-                          ? "border-red-400 bg-red-50"
-                          : on
-                            ? "border-sky-400 bg-sky-50"
-                            : "border-transparent hover:bg-zinc-50",
-                    )}
-                  >
-                    {s.text}
-                    {reveal && s.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
-                    {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
-                  </button>
+                  <Fragment key={s.id}>
+                    {/* Inline span (not a block button) so sentences flow within the paragraph and
+                        wrap naturally; box-decoration-break keeps the border/background intact when a
+                        sentence wraps across lines. */}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleSentence(s.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSentence(s.id); }
+                      }}
+                      style={{ WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}
+                      className={cx(
+                        "rounded px-1 py-0.5 border cursor-pointer transition",
+                        reveal && s.correct
+                          ? "border-green-400 bg-green-50"
+                          : wrong
+                            ? "border-red-400 bg-red-50"
+                            : on
+                              ? "border-zinc-300 bg-zinc-100"
+                              : "border-zinc-300 bg-white hover:bg-zinc-100",
+                      )}
+                    >
+                      {s.text}
+                      {reveal && s.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
+                      {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
+                    </span>{" "}
+                  </Fragment>
                 );
-              })}
-            </p>
-          ))}
+                })}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
       {preview && answered && (

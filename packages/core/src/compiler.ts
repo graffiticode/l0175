@@ -725,6 +725,15 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     });
 
   if (itemType === "hot-text") {
+    // Part A asks for the best STATEMENT (an inference), authored from the Task Model 2 "Click on
+    // the statement that best…" catalog. Selecting passage sentences is Part B (fixed by the
+    // compiler). A Part A stem that asks the student to click sentences from the passage is the
+    // wrong form — warn so the generator swaps in a statement stem.
+    if (/\bsentences?\b/i.test(str(outcome.stem))) {
+      warnings.push(
+        "Hot Text Part A must ask for the best STATEMENT (an inference), not passage sentences — selecting sentences is Part B (fixed by the compiler). Use a \"Click on the statement that best…\" stem from stems.md Task Model 2.",
+      );
+    }
     // Each paragraph (`lines` entry) is segmented into sentences; every sentence is selectable,
     // grouped by paragraph so the passage keeps its paragraph format. A sentence is correct when a
     // directly-supporting source names it: a source with a `quote` marks the matching sentence

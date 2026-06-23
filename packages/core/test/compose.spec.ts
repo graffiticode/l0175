@@ -292,6 +292,19 @@ describe("compose — warnings (non-fatal)", () => {
     const { item } = await one(Q3); // "Click on the statement that best provides an inference about Mara…"
     expect((item.warnings || []).some((w: string) => /stem reuses/.test(w))).toBe(false);
   });
+
+  // A Hot Text Part A stem that asks for passage sentences (Part B's job) instead of a statement.
+  const Q3_SENTENCE_STEM = `outcome id "q3" type hot-text dimension character subject "Mara" standard rl-1 focus "c1" stem "Click on the two sentences from the passage that best show what Mara cares about." {}`;
+
+  it("warns when a Hot Text Part A stem asks for sentences instead of the best statement", async () => {
+    const { item } = await one(Q3_SENTENCE_STEM);
+    expect((item.warnings || []).some((w: string) => /Part A must ask for the best STATEMENT/.test(w))).toBe(true);
+  });
+
+  it("does not warn when the Hot Text Part A stem is a 'statement' prompt", async () => {
+    const { item } = await one(Q3); // "Click on the statement that best provides an inference…"
+    expect((item.warnings || []).some((w: string) => /must ask for the best STATEMENT/.test(w))).toBe(false);
+  });
 });
 
 describe("compose — stems are authored verbatim", () => {

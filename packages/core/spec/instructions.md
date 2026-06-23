@@ -111,6 +111,18 @@ with the **specific** reference the question is about, the same string you put i
 discriminating. Hot Text uses the "Click on the statement…" forms; Short Text ends with
 "Explain using key details from the passage to support your answer."
 
+**Hot Text Part A asks for the best STATEMENT — never for passage sentences.** The Part A `stem`
+must be a Task Model 2 "Click on the statement that best provides an inference/conclusion about
+[...]" prompt whose four options are inference `claim`s. Selecting the supporting sentences is
+**Part B**, which the compiler fixes automatically — you never author it. **Translate a request
+that says "select/click the sentences that show [X]"**: that phrasing describes the *Part B*
+target, not the Part A stem. Author Part A as "Click on the statement that best provides an
+inference about [X] that is supported by the passage." (a statement about [X]), make the correct
+`claim` that inference, and mark the sentences that show [X] as `directly-supports` evidence with
+exact `quote`s — those become Part B's correct selections. Do **not** copy "select the sentences
+that…" into the `stem`. The compiler warns ("Hot Text Part A must ask for the best STATEMENT…")
+when a Hot Text Part A stem mentions sentences.
+
 The concrete answer and its foils are authored as `claim`s (the correct claim, named by the
 outcome's `focus`, states the inferred fact, e.g. "Cortez is about twelve"; its foils `targets`
 the outcome). Remember the answer must be **inferable from evidence** (Target 4) — a fact stated
