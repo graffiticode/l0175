@@ -49,7 +49,7 @@ Three function roles make up the idiom:
 Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id labels
 (`id`, `focus`, `cites`, `supports`, `targets`) are **quoted strings**; closed-enum values
 (`ebsr`, `character`, `misreads-detail`, `rl-1`, …) are **bare kebab-case identifiers**;
-`line`, `score`, and `plausibility` are **numbers**.
+`line`, `score`, `plausibility`, and `grade` are **numbers**.
 
 ---
 
@@ -61,6 +61,7 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 | :--- | :---: | :--- | :--- |
 | `target` | 2 | tag | Top level: the learning target — `c1-t4` (literary, RL) or `c1-t11` (informational, RI). Selects the valid dimensions/standards and the stem catalog. Always author one; defaults to `c1-t4` if omitted. |
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
+| `grade` | 2 | number | Optional top-level reading-level target (e.g. `grade 5`). Defaults to the target/guideline's grade (5 for `c1-t4`/`c1-t11`); echoed on the output. The compiler estimates the passage's reading level and warns when it reads above this grade. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
 | `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text`. |
 | `lines` | 2 | string list | The passage **paragraphs** (one entry per paragraph by default), **auto-numbered from 1** (the numbers `source.line` refers to). Use finer units (sentences) only when a task needs them, e.g. click-the-sentence Hot Text. |

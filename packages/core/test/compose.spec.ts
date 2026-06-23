@@ -347,6 +347,46 @@ describe("compose — learning targets (parameterization)", () => {
   });
 });
 
+describe("compose — grade level & readability", () => {
+  // A deliberately above-grade passage: long sentences, abstract/academic vocabulary. Self-
+  // contained (claims/evidence reference only line 1) so the only warning under test is readability.
+  const DENSE = `target c1-t4 passage "The Tide Pool" type literary lines [
+      "Crouched at the littoral margin, Mara remained ostensibly impervious to the convivial picnic whose paraphernalia her relations had meticulously arranged behind her, an indifference that bordered on the deliberate and a preoccupation she could neither articulate nor entirely comprehend, the juxtaposition of her contemplative absorption against the gregarious festivity epitomizing a profound estrangement."
+    ]
+    claims [
+      claim id "c1" status supported dimension character subject "Mara" text "Mara cares about the tide pool." cites ["e1"] {},
+      claim id "c2" status distractor error-type misreads-detail targets ["q1"] text "Mara is angry." rationale "r" cites ["e1"] {},
+      claim id "c3" status distractor error-type erroneous-inference targets ["q1"] text "Mara dislikes the outdoors." rationale "r" cites ["e1"] {},
+      claim id "c4" status distractor error-type faulty-reasoning targets ["q1"] text "Mara fears her family." rationale "r" cites ["e1"] {}
+    ]
+    evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
+    outcomes [ ${Q1} ] {}..`;
+
+  it("echoes the target's grade (5) on the output by default", async () => {
+    const { item } = await one(Q1);
+    expect(item.grade).toBe(5);
+  });
+
+  it("does not warn on a grade-appropriate passage (the Tide Pool fixture)", async () => {
+    const { item } = await one(Q1);
+    expect((item.warnings || []).some((w: string) => /reads above grade/.test(w))).toBe(false);
+  });
+
+  it("warns when the passage reads well above the target grade", async () => {
+    const { errors, data } = await compile(DENSE);
+    expect(errors).toHaveLength(0); // advisory only — never blocks composition
+    const it0 = data.kind === "items" ? data.items[0] : data;
+    expect((it0.warnings || []).some((w: string) => /reads above grade 5/.test(w))).toBe(true);
+  });
+
+  it("an explicit top-level `grade` overrides the target's grade and shifts the threshold", async () => {
+    const { data } = await compile(DENSE.replace("target c1-t4", "target c1-t4 grade 8"));
+    const it0 = data.kind === "items" ? data.items[0] : data;
+    expect(it0.grade).toBe(8);
+    expect((it0.warnings || []).some((w: string) => /reads above grade 8/.test(w))).toBe(true);
+  });
+});
+
 describe("output shape", () => {
   it("a composed item carries the schema's required top-level keys", async () => {
     const required = JSON.parse(

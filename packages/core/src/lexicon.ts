@@ -65,6 +65,7 @@ const additions = {
   lines: fn2("LINES"), // passage line strings (auto-indexed)
   title: fn2("TITLE"),
   target: fn2("TARGET"), // top-level SBAC learning target selector (c1-t4 | c1-t11)
+  grade: fn2("GRADE"), // optional top-level grade override; defaults to the target's grade
   stem: fn2("STEM"),
   rubric: fn2("RUBRIC"),
   dok: fn2("DOK"),

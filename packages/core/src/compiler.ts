@@ -48,6 +48,7 @@ const TUNING = {
   HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
   SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
   LENGTH_BALANCE_RATIO: 1.35, // correct option longer than this × the mean distractor length → length-giveaway warn
+  GRADE_LEVEL_TOLERANCE: 1.5, // passage reading level may run up to this many grades above target before we warn
 };
 
 // --- Target profiles -----------------------------------------------------------------------
@@ -60,6 +61,7 @@ const TUNING = {
 type TargetProfile = {
   id: string;            // the `target` tag, e.g. "c1-t4"
   label: string;
+  grade: number;         // the guideline's grade band — the default reading-level target (overridable by a top-level `grade`)
   textType: string;      // expected passage type for this target
   baseStandard: string;  // always added by standardsFor (the cite-evidence standard)
   standards: Set<string>;
@@ -72,6 +74,7 @@ const TARGETS: Record<string, TargetProfile> = {
   "c1-t4": {
     id: "c1-t4",
     label: "Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence)",
+    grade: 5,
     textType: "literary",
     baseStandard: "rl-1",
     standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
@@ -89,6 +92,7 @@ const TARGETS: Record<string, TargetProfile> = {
   "c1-t11": {
     id: "c1-t11",
     label: "Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence)",
+    grade: 5,
     textType: "informational",
     baseStandard: "ri-1",
     standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
@@ -136,7 +140,7 @@ const ATTR_KEYS: Record<string, string> = {
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", TARGETS: "targets",
   LINE: "line", QUOTE: "quote",
   SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
-  FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", TARGET: "target", STEM: "stem",
+  FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", TARGET: "target", GRADE: "grade", STEM: "stem",
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
   STEM_B: "stemB", SCORE: "score", DESCRIPTOR: "descriptor",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
@@ -218,6 +222,9 @@ function composeProgram(top: any, errors: any[]): any {
   // of composition still runs (best-effort, like a missing `focus`).
   const targetTag = str(top.target);
   const profile = TARGETS[targetTag] || TARGETS[DEFAULT_TARGET];
+  // Resolve the grade: an explicit top-level `grade` (from the user's prompt) wins; otherwise use
+  // the guideline's grade carried on the target profile. Drives the reading-level guard below.
+  const grade = Number(top.grade) > 0 ? Number(top.grade) : profile.grade;
   const heading = str(top.passage);
   const passageType = top.type !== undefined ? str(top.type) : profile.textType;
   const lineTexts: string[] = Array.isArray(top.lines) ? top.lines.map(str) : [];
@@ -264,15 +271,18 @@ function composeProgram(top: any, errors: any[]): any {
   const targetWarnings = !targetTag
     ? [`No target declared; defaulting to ${DEFAULT_TARGET}. Author a top-level 'target' (${Object.keys(TARGETS).join(" | ")}).`]
     : [];
-  const graphWarnings = [...targetWarnings, ...validateGraph(ctx, errors)];
+  const readabilityWarnings: string[] = [];
+  checkReadability(passage, grade, readabilityWarnings);
+  const graphWarnings = [...targetWarnings, ...readabilityWarnings, ...validateGraph(ctx, errors)];
   const title = str(top.title);
 
   const items = outcomes.map((o, i) => composeOutcome(o, ctx, graphWarnings, i));
   if (items.length === 1) {
+    items[0].grade = grade;
     if (title) items[0].title = title;
     return items[0];
   }
-  const result: any = { kind: "items", items };
+  const result: any = { kind: "items", items, grade };
   if (title) result.title = title;
   return result;
 }
@@ -514,6 +524,44 @@ function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: 
 
 function labelize(opts: any[]) {
   return opts.map((o, i) => ({ key: LABELS[i], ...o }));
+}
+
+// Rough syllable count for one word — the vowel-group heuristic the classic readability formulas
+// assume: count runs of vowels, drop a silent trailing "e", floor at 1. Not linguistically exact,
+// but stable and dependency-free, which is all the grade-level estimate needs.
+function countSyllables(word: string): number {
+  const w = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (!w) return 0;
+  const groups = w.match(/[aeiouy]+/g);
+  let n = groups ? groups.length : 0;
+  if (w.length > 2 && w.endsWith("e") && !/[aeiouy]e$/.test(w)) n -= 1; // silent final e
+  return Math.max(1, n);
+}
+
+// Flesch–Kincaid grade level over a block of prose: 0.39·(words/sentence) + 11.8·(syllables/word)
+// − 15.59. A rough proxy for text complexity — enough to flag prose that reads well above the
+// target grade. Returns null when the sample is too small to be meaningful.
+function estimateGradeLevel(text: string): number | null {
+  const sentences = (text.match(/[.!?]+/g) || []).length || (text.trim() ? 1 : 0);
+  const words: string[] = text.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
+  if (sentences === 0 || words.length < 20) return null; // too little text to judge
+  const syllables = words.reduce((sum: number, w: string) => sum + countSyllables(w), 0);
+  return 0.39 * (words.length / sentences) + 11.8 * (syllables / words.length) - 15.59;
+}
+
+// Reading-level guard: estimate the passage's grade level and warn (non-fatal) when it reads
+// notably above the target grade, so the upstream generator's repair loop can simplify the prose.
+// The threshold is RELATIVE to the resolved grade (the guideline's grade, or a top-level `grade`
+// override) — not a fixed grade-5 constant — so the same check serves future grade bands.
+function checkReadability(passage: any, grade: number, warnings: string[]): void {
+  const text = (Array.isArray(passage.lines) ? passage.lines : []).map((l: any) => str(l.text)).join(" ");
+  const est = estimateGradeLevel(text);
+  if (est === null) return;
+  if (est > grade + TUNING.GRADE_LEVEL_TOLERANCE) {
+    warnings.push(
+      `Passage reads above grade ${grade} (est. grade ${est.toFixed(1)}); shorten sentences and use simpler, more concrete vocabulary to match the target reading level.`,
+    );
+  }
 }
 
 // Length-giveaway guard: the correct option should not stand out as the longest/most-detailed

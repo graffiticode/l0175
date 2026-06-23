@@ -54,6 +54,9 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 - **target** `c1-t4` | `c1-t11` — top level; selects the learning-target profile (dimensions,
   standards, stem catalog). Always author one; if omitted, the compiler defaults to `c1-t4`.
+- **grade** `<n>` — optional, top level (e.g. `grade 5`). The reading-level target the compiler
+  checks the passage against. Defaults to the guideline/target's grade (5 for `c1-t4`/`c1-t11`);
+  author one only to override when the user's prompt asks for a different grade.
 - **passage** `"heading"` — plus `type` (`literary` | `informational`) and
   `lines [ "..." ... ]`. **By default each entry is one PARAGRAPH of the passage**, auto-numbered
   from 1 (so the passage shows numbered paragraphs, matching SBAC). Split a passage into
@@ -151,6 +154,20 @@ outright is literal recall and out of scope.
   length. The compiler flags a "possible length giveaway" warning when the correct option is the
   longest AND notably longer than the average distractor; treat that warning as a cue to pad the
   foils or trim the key.
+- **Grade-appropriate text complexity: author the passage AND all question text at the target
+  grade.** The grade is the guideline/target's grade (Grade 5 for `c1-t4`/`c1-t11`) unless the
+  user asks for another, in which case set a top-level `grade <n>`. At the Grade-5 instance:
+  reading level near the CCSS grade-4–5 band (Lexile ≈ 740–1010L, Flesch–Kincaid grade ≈ 4.5–6.0);
+  sentences mostly simple/compound, averaging ~12–16 words; concrete, high-frequency vocabulary
+  with at most a few context-clear Tier-2 words (avoid abstract/academic Tier-3 diction); a single
+  passage ≈ 150–350 words; figurative language sparing and accessible. **The reasoning must be
+  grade-level too:** DOK 3 means strategic thinking *within* grade-level text, so the correct
+  inference comes from concrete textual details — what a character does or says, a stated cause and
+  effect — not college-style thematic or authorial-technique analysis. Keep distractor, option, and
+  rationale text in the same register as the passage; a wrong answer that reads more academic than
+  the text gives itself away. The compiler estimates the passage's reading level and warns when it
+  runs above the target grade — treat that warning as a cue to shorten sentences and simplify
+  vocabulary. Scale the figures with the grade for non-Grade-5 targets.
 - Distractor rationales must state *why a student would plausibly choose the foil* (the error
   it targets). They appear in the item's `distractorAnalysis` output.
 - The same passage + superset can drive several outcomes; add one `outcome` per item you want.
@@ -158,6 +175,7 @@ outright is literal recall and out of scope.
 ## Built-in enumerations
 
 - `target`: `c1-t4`, `c1-t11` (top level; always author one — defaults to `c1-t4` if omitted)
+- `grade`: a number (top level, optional; defaults to the target's grade — 5 for `c1-t4`/`c1-t11`)
 - item `type`: `ebsr`, `hot-text`, `short-text` · passage `type`: `literary`, `informational`
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`

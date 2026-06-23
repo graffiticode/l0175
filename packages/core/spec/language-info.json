@@ -1,7 +1,7 @@
 {
-  "revised": "2026-06-18",
+  "revised": "2026-06-23",
   "id": "0175",
-  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for multiple learning targets: c1-t4 (literary texts, RL standards) and c1-t11 (informational texts, RI standards). Every program declares a top-level `target` selecting the dimension/standard/stem vocabulary. Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the target's guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one passage. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems.",
+  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for multiple learning targets: c1-t4 (literary texts, RL standards) and c1-t11 (informational texts, RI standards). Every program declares a top-level `target` selecting the dimension/standard/stem vocabulary. Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the target's guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one passage. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems. Author the passage and all question text at the target reading level: the grade is the guideline/target's grade (Grade 5 for c1-t4/c1-t11), overridable with a top-level `grade <n>` when the prompt asks for another grade — keep sentences short, vocabulary concrete, and the inference grounded in specific textual details (DOK 3 is strategic reasoning within grade-level text, not harder text). The compiler estimates the passage's reading level and warns when it runs above the target grade.",
   "supported_item_types": ["ebsr", "hot-text", "short-text"],
   "example_prompts": [
     {
@@ -38,6 +38,11 @@
       "prompt": "Compose an item comparing how two characters in the story react to the same event, standard rl-3.",
       "produces": "ebsr",
       "notes": "Dimension character-relationship; the companion standard rl-3 is emitted with rl-1."
+    },
+    {
+      "prompt": "Write the tide-pool EBSR but keep it at a 4th-grade reading level.",
+      "produces": "ebsr",
+      "notes": "User named a grade -> add a top-level `grade 4`; author shorter sentences and simpler vocabulary than the Grade-5 default. The compiler checks the passage against the resolved grade and warns if it reads above it."
     }
   ]
 }

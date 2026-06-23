@@ -58,10 +58,11 @@ toggle.
 | **rubric** | 2 | `rubric [ band ... {} ]` | Short-text scoring bands (on an outcome) |
 | **band** | 1 | `band score 2 descriptor "..." {}` | One rubric row |
 | **title** | 2 | `title "..."` | Optional assessment title (top level) |
+| **grade** | 2 | `grade 5` | Optional reading-level target (top level); defaults to the guideline/target's grade |
 
 Attribute functions (arity-2, merge one key into the element's record):
 
-- **top level** — `target` (required: `c1-t4` | `c1-t11`), `title` (optional)
+- **top level** — `target` (required: `c1-t4` | `c1-t11`), `title` (optional), `grade` (optional reading-level target; defaults to the target's grade)
 - **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (outcome→correct claim id), `targets` (distractor→outcome ids)
 - **claim** — `status`, `dimension`, `text`, `error-type`*, `rationale`*, `targets`*, `plausibility` (0–1 distractor temptingness override), `subject`, `standard`, `dok`
 - **evidence** — `status`, `line` (or `quote`), `supports`, `rationale`
@@ -79,3 +80,13 @@ Attribute functions (arity-2, merge one key into the element's record):
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
 - `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
 - `standard` (c1-t4): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (c1-t11): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · `dok`: `r-dok3`
+
+### Grade-appropriate reading level
+
+Author the passage **and** every claim, option, and rationale at the grade the guideline targets
+(Grade 5 for `c1-t4` / `c1-t11`; override with a top-level `grade <n>` when the user asks for
+another grade). Keep sentences short and mostly simple/compound (≈ `2·grade + 2` words on
+average), vocabulary concrete and high-frequency, and the inference grounded in **specific
+details from the text** rather than abstract literary or rhetorical analysis — DOK 3 is strategic
+reasoning *within* grade-level text, not harder text. The compiler estimates the passage's
+reading level and emits a warning when it reads above the target grade.
