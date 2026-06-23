@@ -436,6 +436,18 @@ function sourceText(s: any, passage: any): string {
   return ln ? ln.text : "";
 }
 
+// Segment a paragraph into sentences for Hot Text selection. Heuristic: take runs ending in
+// sentence punctuation (.!?), absorbing any trailing closing quote/paren, then trim. The passage
+// keeps its paragraph structure (one `lines` entry per paragraph); Hot Text makes each sentence
+// within a paragraph individually selectable. An occasional dialogue-tag mis-split is acceptable
+// for grade-level prose, and correctness is anchored to authored `quote`s rather than the split.
+function splitSentences(text: string): string[] {
+  const t = str(text).trim();
+  if (!t) return [];
+  const parts = t.match(/[^.!?]+[.!?]+["'”’)\]]*\s*/g);
+  return parts ? parts.map((s) => s.trim()).filter(Boolean) : [t];
+}
+
 // Deterministic shuffle (seeded) so recompiling the same program yields stable option labels.
 function strHash(s: string): number {
   let h = 2166136261 >>> 0;
@@ -672,16 +684,37 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     });
 
   if (itemType === "hot-text") {
-    const directLines = new Set(directSources.map((s: any) => s.line));
-    item.selectable = ctx.passage.lines.map((l: any) => ({ lineId: l.id, text: l.text, correct: directLines.has(l.id) }));
-    if (directLines.size === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
+    // Each paragraph (`lines` entry) is segmented into sentences; every sentence is selectable,
+    // grouped by paragraph so the passage keeps its paragraph format. A sentence is correct when a
+    // directly-supporting source names it: a source with a `quote` marks the matching sentence
+    // (normalized equality, falling back to containment); a source with no `quote` marks every
+    // sentence of its paragraph (paragraph-level support, as before).
+    const directNoQuote = new Set(directSources.filter((s: any) => !str(s.quote)).map((s: any) => s.line));
+    const directQuotes = directSources.filter((s: any) => str(s.quote)).map((s: any) => norm(str(s.quote)));
+    const isCorrectSentence = (lineId: number, text: string): boolean => {
+      if (directNoQuote.has(lineId)) return true;
+      const n = norm(text);
+      return directQuotes.some((q) => q === n || q.includes(n) || n.includes(q));
+    };
+    const selectable: any[] = [];
+    for (const l of ctx.passage.lines) {
+      splitSentences(l.text).forEach((sentence: string, i: number) => {
+        selectable.push({
+          id: `${l.id}.${i + 1}`, lineId: l.id, sentence: i + 1, text: sentence,
+          correct: isCorrectSentence(l.id, sentence),
+        });
+      });
+    }
+    item.selectable = selectable;
+    const correctUnits = selectable.filter((s: any) => s.correct);
+    if (correctUnits.length === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
     // Defensible-options guard: direct support + wrong-claim sources that also reference the correct claim.
     const extra = ctx.sources.filter((s: any) =>
       str(s.status) === "supports-wrong-claim" &&
       (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id))).length;
-    if (extra >= TUNING.HOT_TEXT_DEFENSIBLE_EXTRA) warnings.push(`Hot Text: ${directLines.size + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
+    if (extra >= TUNING.HOT_TEXT_DEFENSIBLE_EXTRA) warnings.push(`Hot Text: ${correctUnits.length + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
     item.distractorAnalysis = analysis;
-    item.answerKey = { partA: aKey, rationale: str(correct.rationale) };
+    item.answerKey = { partA: aKey, partB: correctUnits.map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
     return item;
   }
 

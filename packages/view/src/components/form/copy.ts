@@ -42,14 +42,35 @@ function optionsHtml(options: any[], mode: Mode, quote: boolean): string {
     .join("");
 }
 
+// Hot Text Part B: the passage keeps its paragraph format, with each sentence individually
+// selectable. Group the selectable sentences by paragraph (lineId) — one <p> per paragraph,
+// sentences inline; correct sentences are bolded with a ✓ in review mode only.
 function selectableHtml(selectable: any[], mode: Mode): string {
-  return (selectable ?? [])
-    .map((s: any) => {
-      const correct = mode === "review" && s.correct;
-      const body = `${NUM(s.lineId)} ${esc(s.text)}${correct ? " ✓" : ""}`;
-      return P(correct ? `<strong>${body}</strong>` : body);
-    })
+  const groups = groupByLine(selectable ?? []);
+  return groups
+    .map((g) =>
+      P(
+        g.units
+          .map((s: any) => {
+            const correct = mode === "review" && s.correct;
+            const sent = `${esc(s.text)}${correct ? " ✓" : ""}`;
+            return correct ? `<strong>${sent}</strong>` : sent;
+          })
+          .join(" "),
+      ),
+    )
     .join("");
+}
+
+// Group selectable sentence units into their paragraphs, preserving order.
+function groupByLine(selectable: any[]): { lineId: number; units: any[] }[] {
+  const groups: { lineId: number; units: any[] }[] = [];
+  for (const s of selectable) {
+    const last = groups[groups.length - 1];
+    if (last && last.lineId === s.lineId) last.units.push(s);
+    else groups.push({ lineId: s.lineId, units: [s] });
+  }
+  return groups;
 }
 
 // HTML for one composed item (the question, plus a clean answer key in review/Key mode). The
@@ -73,10 +94,10 @@ export function itemToHtml(item: any, mode: Mode): string {
   if (review) {
     const key: string[] = [];
     if (item.answerKey?.partA) key.push(`Part A &mdash; ${esc(item.answerKey.partA)}`);
-    if (item.answerKey?.partB) key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
+    if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
     if (item.type === "hot-text") {
-      const lines = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.lineId);
-      if (lines.length) key.push(`Part B &mdash; line(s) ${esc(lines.join(", "))}`);
+      const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
+      if (ids.length) key.push(`Part B &mdash; sentence(s) ${esc(ids.join(", "))}`);
     }
     if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
 
@@ -122,9 +143,13 @@ export function itemToText(item: any, mode: Mode): string {
     if (item.type === "ebsr") {
       for (const o of item.partB?.options ?? []) out.push(opt(o, true));
     } else {
-      for (const s of item.selectable ?? []) {
-        const mark = mode === "review" && s.correct ? " ✓" : "";
-        out.push(`${s.lineId} ${s.text}${mark}`);
+      // Hot Text: one line per paragraph, sentences inline; correct sentences marked in review.
+      for (const g of groupByLine(item.selectable ?? [])) {
+        out.push(
+          g.units
+            .map((s: any) => `${s.text}${mode === "review" && s.correct ? " ✓" : ""}`)
+            .join(" "),
+        );
       }
     }
   } else if (item.type === "short-text") {
@@ -135,10 +160,10 @@ export function itemToText(item: any, mode: Mode): string {
   if (review) {
     const key: string[] = [];
     if (item.answerKey?.partA) key.push(`Part A — ${item.answerKey.partA}`);
-    if (item.answerKey?.partB) key.push(`Part B — ${item.answerKey.partB}`);
+    if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B — ${item.answerKey.partB}`);
     if (item.type === "hot-text") {
-      const lines = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.lineId);
-      if (lines.length) key.push(`Part B — line(s) ${lines.join(", ")}`);
+      const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
+      if (ids.length) key.push(`Part B — sentence(s) ${ids.join(", ")}`);
     }
     if (key.length) out.push("", `Answer key: ${key.join("; ")}`);
     if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {

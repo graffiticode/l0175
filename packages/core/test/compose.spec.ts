@@ -72,9 +72,38 @@ describe("compose — task models", () => {
     expect(item.partB.options.filter((o: any) => o.correct)).toHaveLength(1);
   });
 
-  it("Hot Text marks the directly-supporting lines as the correct selection", async () => {
+  it("Hot Text exposes one selectable sentence per paragraph and marks the directly-supporting ones", async () => {
     const { item } = await one(Q3);
-    expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.lineId)).toEqual([1, 4]);
+    // PASSAGE lines are single sentences, so each paragraph yields one selectable unit "<lineId>.1".
+    expect(item.selectable.map((s: any) => s.id)).toEqual(["1.1", "2.1", "3.1", "4.1", "5.1", "6.1"]);
+    expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.id)).toEqual(["1.1", "4.1"]);
+    expect(item.answerKey.partB).toBe("1.1, 4.1");
+  });
+
+  it("Hot Text segments a multi-sentence paragraph and marks the quoted sentence, keeping paragraph grouping", async () => {
+    const MULTI = `target c1-t4 passage "P" type literary lines [
+      "Mara watched the tide pool. Her brother called twice, but she did not turn around."
+      "She smiled at a small crab."
+    ]
+    claims [
+      claim id "c1" status supported dimension character subject "Mara" text "Mara is focused on the pool." cites ["e1"] {},
+      claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "Mara is angry." rationale "r" cites ["e2"] {},
+      claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "Mara dislikes the outdoors." rationale "r" cites ["e2"] {},
+      claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "Mara fears her brother." rationale "r" cites ["e2"] {}
+    ]
+    evidence [
+      source id "e1" line 1 quote "Mara watched the tide pool." status directly-supports supports ["c1"] {},
+      source id "e2" line 1 quote "Her brother called twice, but she did not turn around." status supports-wrong-claim supports ["c1" "d1"] {}
+    ]
+    outcomes [ outcome id "q1" type hot-text dimension character subject "Mara" standard rl-1 focus "c1" stem "Click on the statement that best provides an inference about Mara that is supported by the passage." {} ] {}..`;
+    const { errors, data } = await compile(MULTI);
+    expect(errors).toHaveLength(0);
+    const item = data.kind === "items" ? data.items[0] : data;
+    // Paragraph 1 splits into 2 sentences; paragraph 2 stays one — grouped by lineId.
+    expect(item.selectable.map((s: any) => s.id)).toEqual(["1.1", "1.2", "2.1"]);
+    expect(item.selectable.filter((s: any) => s.lineId === 1)).toHaveLength(2);
+    // Only the sentence matching the directly-supporting quote is correct.
+    expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.id)).toEqual(["1.1"]);
   });
 
   it("Short Text emits the authored prompt and a default 0/1/2 rubric, no distractors", async () => {

@@ -26,7 +26,11 @@ const HOTTEXT: any = {
   passage: { heading: "Bridges", lines: [{ id: 1, text: "A." }, { id: 2, text: "B." }, { id: 3, text: "C." }] },
   stem: { partA: "Click the best inference.", partB: "Click the supporting sentence(s)." },
   partA: { options: [{ key: "A", text: "right", correct: true }, { key: "B", text: "wrong", correct: false }] },
-  selectable: [{ lineId: 1, text: "A.", correct: true }, { lineId: 2, text: "B.", correct: false }, { lineId: 3, text: "C.", correct: true }],
+  selectable: [
+    { id: "1.1", lineId: 1, sentence: 1, text: "A.", correct: true },
+    { id: "1.2", lineId: 1, sentence: 2, text: "B.", correct: false },
+    { id: "2.1", lineId: 2, sentence: 1, text: "C.", correct: true },
+  ],
   distractorAnalysis: [],
   answerKey: { partA: "A" },
   review: { correctClaim: { id: "c1", text: "the inference" } },
@@ -87,10 +91,10 @@ describe("copy serializer — answer key (review)", () => {
 });
 
 describe("copy serializer — hot text & short text", () => {
-  it("hot text review marks correct lines and lists them in the key", () => {
+  it("hot text review marks correct sentences and lists them in the key", () => {
     const html = itemToHtml(HOTTEXT, "review");
     expect(html).toContain("Part B");
-    expect(html).toContain("line(s) 1, 3");
+    expect(html).toContain("sentence(s) 1.1, 2.1");
     expect(html).toContain("✓");
   });
   it("short text review emits the prompt, rubric and exemplar; preview shows a blank", () => {

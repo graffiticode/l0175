@@ -61,9 +61,10 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   `lines [ "..." ... ]`. **By default each entry is one PARAGRAPH of the passage**, auto-numbered
   from 1 (so the passage shows numbered paragraphs, matching SBAC). **Preserve the paragraph breaks
   the request supplies** — emit one `lines` entry per source paragraph; do not merge the passage
-  into a single entry or re-chunk it. Split a passage into paragraphs unless a task needs finer
-  units — e.g. a click-the-sentence Hot Text item, where you split that passage into sentences
-  instead.
+  into a single entry or re-chunk it. Split by paragraph for **every** task model, including Hot
+  Text: the compiler segments each paragraph into sentences and makes each sentence individually
+  selectable in Hot Text Part B, so the passage keeps its paragraph layout — do **not** author the
+  passage as one sentence per line.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type`, a non-empty `rationale`, and
   `targets` (the outcome id(s) of the question(s) it foils). Optional: `cites` (evidence ids),
@@ -136,6 +137,13 @@ outright is literal recall and out of scope.
   compiler pick the most tempting 3. Fewer than 5 triggers a composition warning. Give each EBSR
   Part B source a `quote` with the exact supporting **sentence** (and a `line` pointing at its
   paragraph), so the four Part B options are tight sentences rather than whole paragraphs.
+- **Hot Text Part B selects sentences, not paragraphs.** Keep the passage split by paragraph; the
+  compiler segments each paragraph into sentences and exposes every sentence as a selectable Part B
+  option, preserving the paragraph layout. Mark the correct sentence(s) by giving each
+  `directly-supports` source a `quote` with the exact supporting **sentence** (and a `line` at its
+  paragraph) — the sentence matching that quote is the correct selection. A `directly-supports`
+  source with no `quote` marks every sentence of its `line` correct, so quote precisely when only
+  part of a paragraph supports the claim.
 - **No-giveaway rule (EBSR Part B): for every EBSR question, author at least one
   `supports-wrong-claim` line whose `supports` lists BOTH the correct claim's id AND a
   distractor's id** — a passage line that *seems* to back the correct inference but actually

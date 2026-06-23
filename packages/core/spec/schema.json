@@ -58,7 +58,9 @@
           "items": {
             "type": "object",
             "properties": {
+              "id": { "type": "string" },
               "lineId": { "type": "number" },
+              "sentence": { "type": "number" },
               "text": { "type": "string" },
               "correct": { "type": "boolean" }
             }

@@ -48,7 +48,7 @@ toggle.
 | **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11`) |
 | **passage** | 2 | `passage "Title"` | Sets the passage heading; chains with `type` and `lines` |
 | **type** | 2 | `type literary` | Passage type (`literary` / `informational`) or, on an outcome, the item type |
-| **lines** | 2 | `lines [ "..." "..." ]` | Passage paragraphs (one entry per source paragraph by default), auto-numbered from 1 — preserve the request's paragraph breaks; don't merge into one block |
+| **lines** | 2 | `lines [ "..." "..." ]` | Passage paragraphs (one entry per source paragraph), auto-numbered from 1 — preserve the request's paragraph breaks; don't merge into one block. Hot Text selects at the sentence level automatically, so split by paragraph (not by sentence) for every task model |
 | **claims** | 2 | `claims [ claim ... {} ]` | The candidate inference statements |
 | **claim** | 1 | `claim id "c1" status supported ... {}` | One inference candidate (supported or distractor) |
 | **evidence** | 2 | `evidence [ source ... {} ]` | The evidence sources |
