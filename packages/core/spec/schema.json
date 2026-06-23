@@ -66,6 +66,7 @@
             }
           }
         },
+        "selectMax": { "type": "number" },
         "prompt": { "type": "string" },
         "rubric": {
           "type": "array",

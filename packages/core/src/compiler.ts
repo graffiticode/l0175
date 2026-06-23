@@ -45,7 +45,7 @@ const TUNING = {
   MIN_VIABLE_PART_B: 5, // below this many Part B foil sources, warn (item draws 3 of them)
   DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A or Part B)
   PART_OPTIONS: 4, // options per part (EBSR Part A/B)
-  HOT_TEXT_DEFENSIBLE_EXTRA: 2, // extra defensible lines before recommending EBSR over Hot Text
+  HOT_TEXT_SELECT_MAX: 3, // absolute cap on Part B sentence selections (per-item cap is min(this, validCount - 1))
   SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
   LENGTH_BALANCE_RATIO: 1.35, // correct option longer than this × the mean distractor length → length-giveaway warn
   GRADE_LEVEL_TOLERANCE: 1.5, // passage reading level may run up to this many grades above target before we warn
@@ -117,10 +117,18 @@ const DEFAULT_TARGET = "c1-t4"; // best-effort fallback when `target` is missing
 // Stems are AUTHORED, not generated: the upstream code generator instantiates the guideline's
 // "Appropriate Stems" catalog (spec/stems.md) and emits each item's `stem` (and `stem-b` on
 // EBSR) on the outcome. The compiler trusts the authored text — it does not synthesize stems.
-// The two invariants below are not per-item question text: the EBSR lead-in and the fixed
-// Hot-Text Part B selection instruction (Hot Text has no authored Part B stem).
+// The lead-in below is not per-item question text. The Hot-Text Part B instruction is synthesized
+// per item from the selection cap (Hot Text has no authored Part B stem) — see hotTextPartB.
 const LEAD_IN = "This question has two parts. First, answer Part A. Then, answer Part B.";
-const HOT_TEXT_PART_B = "Click the sentence(s) from the passage that best support your answer in Part A. Choose one option.";
+const HOT_TEXT_PART_B_PLACEHOLDER = "Click the sentence(s) from the passage that support your answer in Part A.";
+
+// Hot Text Part B asks for up to `max` supporting sentences (the per-item proper-subset cap). The
+// student picks 1..max; any selection drawn from the valid set is correct (composeOutcome).
+function hotTextPartB(max: number): string {
+  return max <= 1
+    ? "Click 1 sentence from the passage that supports your answer in Part A."
+    : `Click 1 to ${max} sentences from the passage that support your answer in Part A.`;
+}
 
 const DEFAULT_RUBRIC = [
   { score: 2, descriptor: "Makes a valid inference and supports it with specific, relevant details from the passage." },
@@ -757,12 +765,15 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     }
     item.selectable = selectable;
     const correctUnits = selectable.filter((s: any) => s.correct);
-    if (correctUnits.length === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
-    // Defensible-options guard: direct support + wrong-claim sources that also reference the correct claim.
-    const extra = ctx.sources.filter((s: any) =>
-      str(s.status) === "supports-wrong-claim" &&
-      (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id))).length;
-    if (extra >= TUNING.HOT_TEXT_DEFENSIBLE_EXTRA) warnings.push(`Hot Text: ${correctUnits.length + extra} defensible supporting selections — recommend EBSR (Task Model 1).`);
+    const valid = correctUnits.length;
+    if (valid === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
+    // The valid supporting sentences are a SUPERSET; the student selects 1..selectMax and any
+    // selection drawn from the set is correct. The expected count is a proper subset of the valid
+    // set (so they never must find every one) — except when there is only one valid sentence.
+    const selectMax = valid <= 1 ? 1 : Math.min(TUNING.HOT_TEXT_SELECT_MAX, valid - 1);
+    item.selectMax = selectMax;
+    item.stem.partB = hotTextPartB(selectMax);
+    if (valid === 1) warnings.push("Only 1 valid supporting sentence; author a superset (2+ directly-supporting sentences) so the expected answer is a subset of the valid responses.");
     item.distractorAnalysis = analysis;
     item.answerKey = { partA: aKey, partB: correctUnits.map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
     return item;
@@ -850,7 +861,7 @@ function partBRationale(s: any, status: string): string {
 function stemFor(itemType: string, outcome: any) {
   const stem: any = { partA: str(outcome.stem) };
   if (itemType === "ebsr") { stem.leadIn = LEAD_IN; stem.partB = str(outcome.stemB); }
-  else if (itemType === "hot-text") { stem.leadIn = LEAD_IN; stem.partB = HOT_TEXT_PART_B; }
+  else if (itemType === "hot-text") { stem.leadIn = LEAD_IN; stem.partB = HOT_TEXT_PART_B_PLACEHOLDER; }
   return stem;
 }
 

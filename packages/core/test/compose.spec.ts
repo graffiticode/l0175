@@ -78,6 +78,29 @@ describe("compose — task models", () => {
     expect(item.selectable.map((s: any) => s.id)).toEqual(["1.1", "2.1", "3.1", "4.1", "5.1", "6.1"]);
     expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.id)).toEqual(["1.1", "4.1"]);
     expect(item.answerKey.partB).toBe("1.1, 4.1");
+    // 2 valid sentences → cap is a proper subset: min(3, 2-1) = 1.
+    expect(item.selectMax).toBe(1);
+    expect(item.stem.partB).toBe("Click 1 sentence from the passage that supports your answer in Part A.");
+  });
+
+  it("Hot Text caps Part B selection at a proper subset of the valid supporting sentences", async () => {
+    // One paragraph of 4 sentences; a no-quote directly-supports source marks all 4 valid.
+    const FOUR = `target c1-t4 passage "P" type literary lines [
+      "Mara watched the pool. She ignored the picnic. She traced the water. She smiled at a crab."
+    ]
+    claims [
+      claim id "c1" status supported dimension character subject "Mara" text "Mara is focused on the pool." cites ["e1"] {},
+      claim id "d1" status distractor error-type misreads-detail targets ["q1"] text "Mara is angry." rationale "r" cites ["e1"] {},
+      claim id "d2" status distractor error-type erroneous-inference targets ["q1"] text "Mara dislikes the outdoors." rationale "r" cites ["e1"] {},
+      claim id "d3" status distractor error-type faulty-reasoning targets ["q1"] text "Mara fears her brother." rationale "r" cites ["e1"] {}
+    ]
+    evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
+    outcomes [ outcome id "q1" type hot-text dimension character subject "Mara" standard rl-1 focus "c1" stem "Click on the statement that best provides an inference about Mara that is supported by the passage." {} ] {}..`;
+    const { data } = await compile(FOUR);
+    const item = data.kind === "items" ? data.items[0] : data;
+    expect(item.selectable.filter((s: any) => s.correct)).toHaveLength(4); // V = 4
+    expect(item.selectMax).toBe(3); // min(3, 4-1) = 3
+    expect(item.stem.partB).toBe("Click 1 to 3 sentences from the passage that support your answer in Part A.");
   });
 
   it("Hot Text segments a multi-sentence paragraph and marks the quoted sentence, keeping paragraph grouping", async () => {
@@ -314,10 +337,10 @@ describe("compose — stems are authored verbatim", () => {
     expect(item.stem.partB).toBe("Which sentence(s) from the passage best support your answer in Part A?");
   });
 
-  it("uses the fixed Hot-Text Part B instruction (no authored Part B stem)", async () => {
+  it("synthesizes the Hot-Text Part B instruction from the selection cap (no authored Part B stem)", async () => {
     const { item } = await one(Q3);
     expect(item.stem.partA).toMatch(/Click on the statement that best provides an inference about Mara/);
-    expect(item.stem.partB).toMatch(/Click the sentence\(s\)/);
+    expect(item.stem.partB).toMatch(/Click 1 sentence from the passage/); // Q3 has 2 valid → cap 1
   });
 });
 

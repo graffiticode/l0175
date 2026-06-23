@@ -26,6 +26,7 @@ const HOTTEXT: any = {
   passage: { heading: "Bridges", lines: [{ id: 1, text: "A." }, { id: 2, text: "B." }, { id: 3, text: "C." }] },
   stem: { partA: "Click the best inference.", partB: "Click the supporting sentence(s)." },
   partA: { options: [{ key: "A", text: "right", correct: true }, { key: "B", text: "wrong", correct: false }] },
+  selectMax: 2,
   selectable: [
     { id: "1.1", lineId: 1, sentence: 1, text: "A.", correct: true },
     { id: "1.2", lineId: 1, sentence: 2, text: "B.", correct: false },
@@ -94,7 +95,7 @@ describe("copy serializer — hot text & short text", () => {
   it("hot text review marks correct sentences and lists them in the key", () => {
     const html = itemToHtml(HOTTEXT, "review");
     expect(html).toContain("Part B");
-    expect(html).toContain("sentence(s) 1.1, 2.1");
+    expect(html).toContain("any 1&ndash;2 of: 1.1, 2.1");
     expect(html).toContain("✓");
   });
   it("short text review emits the prompt, rubric and exemplar; preview shows a blank", () => {

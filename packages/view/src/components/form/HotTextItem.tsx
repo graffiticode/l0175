@@ -23,7 +23,10 @@ export function HotTextItem({
   const previewB = preview && picked.length > 0; // Part B feedback active once a sentence is clicked
   const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
   const correctIds = item.selectable.filter((s: any) => s.correct).map((s: any) => s.id);
-  const bOk = correctIds.length === picked.length && correctIds.every((id: string) => picked.includes(id));
+  // The valid sentences are a superset; selecting any 1..max of them (and nothing outside the set)
+  // is correct. `max` is the per-item proper-subset cap from the compiler.
+  const max = item.selectMax ?? 3;
+  const bOk = picked.length >= 1 && picked.length <= max && picked.every((id: string) => correctIds.includes(id));
   const answered = partA !== undefined && picked.length > 0;
 
   // Group the selectable sentences by their paragraph (lineId), preserving order.
@@ -39,7 +42,9 @@ export function HotTextItem({
     respond({ partA: key, selected: picked });
   };
   const toggleSentence = (id: string) => {
-    const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
+    const has = picked.includes(id);
+    if (!has && picked.length >= max) return; // cap selections at the per-item max (deselect always allowed)
+    const next = has ? picked.filter((x) => x !== id) : [...picked, id];
     setPicked(next);
     respond({ partA, selected: next });
   };

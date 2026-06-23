@@ -66,12 +66,15 @@ theme / topic / etc.]`.)
 - Click on the statement that best provides a conclusion that can be drawn about [character's name]'s relationship with [character's name].
 - Click on the statement that best describes what the author most likely meant by including [...] in the passage.
 
-**Part B:** fixed by the compiler (you do not author it) — "Click the sentence(s) from the
-passage that best support your answer in Part A. Choose one option." **Author only the Part A
-*statement* stem above; never author a "click/select the sentences…" instruction as the Part A
-`stem`** (that is Part B's job). If a request says "select the sentences that show [X]", that
-describes the Part B selection — author Part A as a statement prompt about [X] and mark the
-sentences that show [X] as `directly-supports` evidence (with exact `quote`s).
+**Part B:** fixed by the compiler (you do not author it) — "Click 1 to N sentences from the
+passage that support your answer in Part A," where N is the per-item cap. Part B accepts **1–3
+sentences and any selection from the valid set is correct** (a superset); the expected count is a
+proper subset of the valid responses, so **author ≥2 (ideally 3–4) `directly-supports` sentences
+with exact `quote`s**. **Author only the Part A *statement* stem above; never author a
+"click/select the sentences…" instruction as the Part A `stem`** (that is Part B's job). If a
+request says "select the sentences that show [X]", that describes the Part B selection — author
+Part A as a statement prompt about [X] and mark the sentences that show [X] as `directly-supports`
+evidence (with exact `quote`s).
 
 ## Task Model 3 — Short Text (constructed response)
 
@@ -141,12 +144,15 @@ concepts / author's use of information / point of view / purpose]` (or, for an o
 - Click on the statement that best provides a conclusion that can be drawn about the author's opinion of [idea/concept in the text].
 - Click on the statement that best describes what the author most likely meant by using [target detail] in the text.
 
-**Part B:** fixed by the compiler (you do not author it) — "Click the sentence(s) from the
-passage that best support your answer in Part A. Choose one option." **Author only the Part A
-*statement* stem above; never author a "click/select the sentences…" instruction as the Part A
-`stem`** (that is Part B's job). If a request says "select the sentences that show [X]", that
-describes the Part B selection — author Part A as a statement prompt about [X] and mark the
-sentences that show [X] as `directly-supports` evidence (with exact `quote`s).
+**Part B:** fixed by the compiler (you do not author it) — "Click 1 to N sentences from the
+passage that support your answer in Part A," where N is the per-item cap. Part B accepts **1–3
+sentences and any selection from the valid set is correct** (a superset); the expected count is a
+proper subset of the valid responses, so **author ≥2 (ideally 3–4) `directly-supports` sentences
+with exact `quote`s**. **Author only the Part A *statement* stem above; never author a
+"click/select the sentences…" instruction as the Part A `stem`** (that is Part B's job). If a
+request says "select the sentences that show [X]", that describes the Part B selection — author
+Part A as a statement prompt about [X] and mark the sentences that show [X] as `directly-supports`
+evidence (with exact `quote`s).
 
 ## Task Model 3 — Short Text (constructed response)
 
