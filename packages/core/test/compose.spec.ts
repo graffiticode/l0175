@@ -112,6 +112,14 @@ describe("compose — task models", () => {
     expect(item.rubric.map((r: any) => r.score)).toEqual([2, 1, 0]);
     expect(item.distractorAnalysis).toHaveLength(0);
   });
+
+  it("Short Text carries no two-part lead-in (single answer box, not Part A/B)", async () => {
+    const { item } = await one(Q2);
+    expect(item.stem.leadIn).toBeUndefined();
+    // EBSR and Hot Text, which do have two parts, still carry it.
+    expect((await one(Q1)).item.stem.leadIn).toMatch(/two parts/);
+    expect((await one(Q3)).item.stem.leadIn).toMatch(/two parts/);
+  });
 });
 
 describe("compose — selection binds foils by `targets`", () => {

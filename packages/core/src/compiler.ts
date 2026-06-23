@@ -794,11 +794,13 @@ function partBRationale(s: any, status: string): string {
 }
 
 // Stems are authored on the outcome (from the guideline catalog). Part A is the authored `stem`;
-// EBSR Part B is the authored `stem-b`; Hot Text Part B is the fixed selection instruction.
+// EBSR Part B is the authored `stem-b`; Hot Text Part B is the fixed selection instruction. The
+// two-part lead-in is added ONLY for the two-part models (EBSR, Hot Text); Short Text is a single
+// constructed-response prompt with one answer box, so it carries no Part A/B lead-in.
 function stemFor(itemType: string, outcome: any) {
-  const stem: any = { partA: str(outcome.stem), leadIn: LEAD_IN };
-  if (itemType === "ebsr") stem.partB = str(outcome.stemB);
-  else if (itemType === "hot-text") stem.partB = HOT_TEXT_PART_B;
+  const stem: any = { partA: str(outcome.stem) };
+  if (itemType === "ebsr") { stem.leadIn = LEAD_IN; stem.partB = str(outcome.stemB); }
+  else if (itemType === "hot-text") { stem.leadIn = LEAD_IN; stem.partB = HOT_TEXT_PART_B; }
   return stem;
 }
 
