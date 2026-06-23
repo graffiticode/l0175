@@ -59,9 +59,11 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   author one only to override when the user's prompt asks for a different grade.
 - **passage** `"heading"` — plus `type` (`literary` | `informational`) and
   `lines [ "..." ... ]`. **By default each entry is one PARAGRAPH of the passage**, auto-numbered
-  from 1 (so the passage shows numbered paragraphs, matching SBAC). Split a passage into
-  paragraphs unless a task needs finer units — e.g. a click-the-sentence Hot Text item, where you
-  split that passage into sentences instead.
+  from 1 (so the passage shows numbered paragraphs, matching SBAC). **Preserve the paragraph breaks
+  the request supplies** — emit one `lines` entry per source paragraph; do not merge the passage
+  into a single entry or re-chunk it. Split a passage into paragraphs unless a task needs finer
+  units — e.g. a click-the-sentence Hot Text item, where you split that passage into sentences
+  instead.
 - **claim** — `id`, `status` (`supported` | `distractor`), `dimension` (required on supported
   claims), `text`. A `distractor` also requires `error-type`, a non-empty `rationale`, and
   `targets` (the outcome id(s) of the question(s) it foils). Optional: `cites` (evidence ids),
