@@ -49,6 +49,8 @@ const TUNING = {
   SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
   LENGTH_BALANCE_RATIO: 1.35, // correct option longer than this × the mean distractor length → length-giveaway warn
   GRADE_LEVEL_TOLERANCE: 1.5, // passage reading level may run up to this many grades above target before we warn
+  STEM_GIVEAWAY_RATIO: 0.5, // Part A stem shares ≥ this fraction of the correct option's content words → giveaway warn
+  STEM_GIVEAWAY_MIN: 4, // …and at least this many shared content words (ignore tiny overlaps)
 };
 
 // --- Target profiles -----------------------------------------------------------------------
@@ -597,6 +599,44 @@ function checkLengthBalance(options: any[], part: string, warnings: string[]): v
   }
 }
 
+// Function words + stem boilerplate excluded when comparing a stem against the answer — only
+// distinctive content words should count toward an overlap.
+const STEM_STOPWORDS = new Set([
+  "the", "a", "an", "of", "to", "in", "on", "at", "for", "and", "or", "but", "that", "this", "these",
+  "those", "is", "are", "was", "were", "be", "been", "being", "it", "its", "as", "by", "with", "from",
+  "into", "about", "which", "what", "how", "who", "whose", "why", "where", "when", "your", "their",
+  "them", "they", "had", "has", "have", "do", "does", "did", "will", "would", "can", "could", "more",
+  "than", "then", "so", "such", "best", "most", "two", "three",
+  // stem-template boilerplate
+  "passage", "sentence", "sentences", "inference", "inferences", "conclusion", "conclusions", "click",
+  "statement", "statements", "supported", "support", "supports", "answer", "part", "show", "shows",
+  "select", "provides", "author", "most", "likely",
+]);
+
+function contentWords(s: string, subject: string): Set<string> {
+  const subj = new Set(norm(subject).split(" ").filter(Boolean));
+  return new Set(
+    norm(s).split(" ").filter((w) => w.length > 2 && !STEM_STOPWORDS.has(w) && !subj.has(w)),
+  );
+}
+
+// Stem-giveaway guard: the Part A stem should not echo the correct answer's wording. When the stem
+// reuses most of the correct option's distinctive content words (ignoring function words, stem
+// boilerplate, and the subject), the answer is obvious without reading the options. Warn (non-fatal)
+// so the generator rewords the stem into a neutral question. The subject is excluded so a stem that
+// merely names what the question is about (e.g. the character/topic) is not flagged.
+function checkStemGiveaway(stem: string, correctText: string, subject: string, warnings: string[]): void {
+  const stemWords = contentWords(stem, subject);
+  const ansWords = [...contentWords(correctText, subject)];
+  if (ansWords.length < TUNING.STEM_GIVEAWAY_MIN) return; // too short to judge
+  const shared = ansWords.filter((w) => stemWords.has(w));
+  if (shared.length >= TUNING.STEM_GIVEAWAY_MIN && shared.length / ansWords.length >= TUNING.STEM_GIVEAWAY_RATIO) {
+    warnings.push(
+      `Part A: the stem reuses much of the correct option's wording (shared: ${shared.slice(0, 8).join(", ")}) — reword the stem into a neutral question so it doesn't echo the answer.`,
+    );
+  }
+}
+
 // Place the correct option at a balanced slot, then label. A per-item seeded shuffle distributes
 // uniformly in expectation but, over the few items in one program, can land the answer key first
 // (or last) for every item — the pattern authors noticed. Instead the distractors are seeded-
@@ -670,6 +710,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
   const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
   item.partA = { options: partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex) };
   checkLengthBalance(item.partA.options, "A", warnings);
+  checkStemGiveaway(str(outcome.stem), str(correct.text), str(outcome.subject), warnings);
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
   const analysis: any[] = item.partA.options
     .filter((o: any) => !o.correct)

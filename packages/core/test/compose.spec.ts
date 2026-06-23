@@ -279,6 +279,19 @@ describe("compose — warnings (non-fatal)", () => {
     expect(errors).toHaveLength(0);
     expect((data.warnings || []).some((w: string) => /length giveaway/.test(w))).toBe(false);
   });
+
+  // A Hot Text stem that restates the correct claim's wording telegraphs the answer.
+  const Q3_GIVEAWAY = `outcome id "q3" type hot-text dimension character subject "Mara" standard rl-1 focus "c1" stem "Click the sentence that shows Mara cares more about the tide pool than the picnic." {}`;
+
+  it("warns when the Part A stem reuses the correct option's wording", async () => {
+    const { item } = await one(Q3_GIVEAWAY);
+    expect((item.warnings || []).some((w: string) => /stem reuses much of the correct option's wording/.test(w))).toBe(true);
+  });
+
+  it("does not warn when the stem is a neutral question (the catalog stems)", async () => {
+    const { item } = await one(Q3); // "Click on the statement that best provides an inference about Mara…"
+    expect((item.warnings || []).some((w: string) => /stem reuses/.test(w))).toBe(false);
+  });
 });
 
 describe("compose — stems are authored verbatim", () => {

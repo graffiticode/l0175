@@ -164,6 +164,18 @@ outright is literal recall and out of scope.
   length. The compiler flags a "possible length giveaway" warning when the correct option is the
   longest AND notably longer than the average distractor; treat that warning as a cue to pad the
   foils or trim the key.
+- **Stem-wording rule (no answer echo): the Part A stem must not reuse the correct option's
+  wording.** Keep the stem a neutral question that names only the subject/skill (fill the catalog
+  template's `[...]` slot with the subject, e.g. "the narrator's point of view" or "how the city's
+  systems helped people") — do **not** restate the correct claim's phrasing in the stem. If the
+  stem already contains the answer's distinctive words ("...that best show that the city *had
+  systems that helped people move around the city and get fresh water*", when the key says the
+  city "*had built systems … that let people move through the city and get fresh water*"), the
+  answer is obvious without reading the options. **Paraphrase** so the stem and the key share only
+  the subject, and word the correct option in the passage's own terms. This applies to **every
+  Hot Text and EBSR question, across all targets**. The compiler warns ("Part A: the stem reuses
+  much of the correct option's wording …") when the stem reuses most of the key's content words —
+  treat it as a cue to reword the stem.
 - **Grade-appropriate text complexity: author the passage AND all question text at the target
   grade.** The grade is the guideline/target's grade (Grade 5 for `c1-t4`/`c1-t11`) unless the
   user asks for another, in which case set a top-level `grade <n>`. At the Grade-5 instance:
