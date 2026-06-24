@@ -63,17 +63,20 @@ function selectableHtml(selectable: any[], mode: Mode): string {
 }
 
 // Word-select Hot Text (T10 TM3): render the excerpt inline. The candidate (clickable) words are
-// underlined so the choices survive the copy into Docs/Word — `text-decoration:underline` is
-// preserved by Google Docs (a `border-bottom` is not); in review the correct word is also bolded
-// with a ✓.
+// both underlined AND bracketed: the underline distinguishes them in rich text (Google Docs
+// preserves `text-decoration:underline`, unlike a `border-bottom`), while the brackets are literal
+// characters that survive even when a target strips formatting (e.g. Docs "paste without
+// formatting", which derives plain text from the HTML and ignores the clipboard's text/plain).
+// In review the correct word is also bolded with a ✓.
 function wordSelectHtml(wordSelect: any, mode: Mode): string {
   return (wordSelect?.tokens ?? [])
     .map((t: any) => {
       const correct = mode === "review" && t.correct;
       let word = esc(t.text);
       if (t.selectable) {
-        const styled = `<u style="text-decoration:underline;text-decoration-style:dotted">${word}</u>`;
-        word = correct ? `<strong>${styled} ✓</strong>` : styled;
+        const u = `<u style="text-decoration:underline;text-decoration-style:dotted">${word}</u>`;
+        const bracketed = `[${correct ? `${u} ✓` : u}]`;
+        word = correct ? `<strong>${bracketed}</strong>` : bracketed;
       }
       return `${esc(t.pre ?? "")}${word}${esc(t.post ?? "")}`;
     })
