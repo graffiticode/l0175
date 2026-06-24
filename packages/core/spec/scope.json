@@ -12,14 +12,14 @@
     "c1-t9 (Central Ideas) dimensions: central-idea, key-detail, summary",
     "c1-t8 (Key Details) dimension: supporting-evidence — the inference is given in the stem and the student selects supporting evidence (options are sources, not claims)",
     "c1-t10 (Word Meanings) dimension: word-meaning — the question asks the meaning of a targeted word/phrase; options are meanings authored as word/meaning (not claims)",
-    "Item types: ebsr (two-part selected response), hot-text (select text — two-part for R&E/Central-Ideas, single-part for Key Details), short-text (constructed response), multiple-choice (one correct), multi-select (exact correct set); the allowed set is per-target",
+    "Item types: ebsr (two-part selected response), hot-text (select text — sentence-level for R&E/Central-Ideas/Key Details, word-level click-the-word for Word Meanings), short-text (constructed response), multiple-choice (one correct), multi-select (exact correct set); the allowed set is per-target",
     "Authored, error-typed distractors — R&E: misreads-detail / erroneous-inference / faulty-reasoning; Central Ideas (c1-t9): too-narrow / too-broad / misreads-detail / insignificant; Key Details (c1-t8): non-supporting sources (supports-wrong-claim / irrelevant), not distractor claims; Word Meanings (c1-t10): distractor meanings other-meaning / misinterprets / wrong-context — with rationales",
     "Standards rl-1/rl-3/rl-6/rl-9 (c1-t4), ri-1/ri-3/ri-6/ri-7/ri-8/ri-9 (c1-t11), ri-1/ri-2 (c1-t9), ri-1/ri-7 (c1-t8), ri-4/l-4/l-4a/l-4b/l-4c/l-5c (c1-t10); DOK r-dok1..r-dok3 (R&E r-dok3; T9 r-dok2, written summary r-dok3; T8 & T10 r-dok2)",
     "A reading-level target set by the guideline/target's grade (Grade 5 for c1-t4/c1-t11), overridable by an optional top-level `grade`; the compiler estimates the passage's reading level and warns when it runs above the target grade"
   ],
   "out_of_scope": [
     "Claims, grades, or Claim-1 targets beyond T4, T11, T9, T8, and T10 — other Claim-1 targets belong in their own dialects",
-    "Click-the-word Hot-Text for c1-t10 (the guideline's Task Model 3) — needs word-level selection; a planned follow-up",
+    "Multi-word-phrase candidates in c1-t10 click-the-word (single words only this version)",
     "Dual-text stimuli (a single passage only in this version)",
     "Compile-time LLM generation — the compiler selects and validates authored content, it does not invent it",
     "Auto-scoring of short-text responses — they are hand-scored against the emitted rubric",

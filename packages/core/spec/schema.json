@@ -77,6 +77,25 @@
             "quote": { "type": "string" }
           }
         },
+        "wordSelect": {
+          "type": "object",
+          "description": "T10 click-the-word (TM3): the excerpt tokenized; selectable candidate words, one correct",
+          "properties": {
+            "excerpt": { "type": "string" },
+            "tokens": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "idx": { "type": "number" },
+                  "text": { "type": "string" },
+                  "selectable": { "type": "boolean" },
+                  "correct": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
         "prompt": { "type": "string" },
         "rubric": {
           "type": "array",
@@ -110,6 +129,7 @@
             "partB": { "type": "string" },
             "choice": { "type": "string" },
             "choices": { "type": "array", "items": { "type": "string" } },
+            "word": { "type": "string" },
             "rationale": { "type": "string" }
           }
         },

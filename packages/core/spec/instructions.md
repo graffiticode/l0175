@@ -39,7 +39,8 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   choices are **meanings**, authored as `word`/`meaning` (not claims). Dimension: `word-meaning`.
   Standards: `ri-4` (always) + the L-4 family by strategy (`l-4a` context, `l-4b` roots/affixes,
   `l-5c` word relationships, `l-4c` reference). **DOK 1–2**. Item types: `multiple-choice`,
-  `multi-select` (click-the-word Hot-Text not yet available). **Author a top-level `words` list: a
+  `multi-select`, and `hot-text` (click the word in the excerpt matching a given definition).
+  **Author a top-level `words` list: a
   `word` (the targeted word, with `line`/`quote` for context) holding `meanings` — one (MC) or ≥2
   (Multi-Select) `status correct` + `status distractor` meanings (each with a T10 `error-type`
   + `rationale`). The outcome's `focus` names the word; state the word + its context in the `stem`.**
@@ -123,6 +124,9 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   | `wrong-context`) + `rationale`. The outcome's `focus` names the `word`; its correct meaning(s)
   are the key, the distractor meanings the foils. Example:
   `words [ word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water." meanings [ meaning id "m1" status correct text "a water channel" {} meaning id "m2" status distractor error-type other-meaning text "a boat" rationale "another meaning, ignores context" {} ] {} ]`
+  For a **click-the-word** (`hot-text`) item the candidate `word`s have no `meanings`: the correct
+  word is the outcome's `focus` (with `line`/`quote` for the excerpt) and the distractor candidate
+  words `targets` the outcome — all candidates must appear in the excerpt; the definition goes in the `stem`.
 - A top-level **`title`** attribute (before `passage`) names the assessment; it is echoed on the output.
 
 ## Stems (Appropriate Stems, SBAC G5 · C1 · T4)
@@ -259,7 +263,7 @@ outright is literal recall and out of scope.
 - `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t8`, `c1-t10` (top level; always author one — defaults to `c1-t4` if omitted)
 - `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
-  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select)
+  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select/hot-text)
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`

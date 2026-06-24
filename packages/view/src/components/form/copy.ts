@@ -62,6 +62,17 @@ function selectableHtml(selectable: any[], mode: Mode): string {
     .join("");
 }
 
+// Word-select Hot Text (T10 TM3): render the excerpt inline; in review the correct word is bolded
+// with a ✓. The candidate words aren't otherwise distinguished in static copy.
+function wordSelectHtml(wordSelect: any, mode: Mode): string {
+  return (wordSelect?.tokens ?? [])
+    .map((t: any) => {
+      const correct = mode === "review" && t.correct;
+      return correct ? `<strong>${esc(t.text)} ✓</strong>` : esc(t.text);
+    })
+    .join(" ");
+}
+
 // Group selectable sentence units into their paragraphs, preserving order.
 function groupByLine(selectable: any[]): { lineId: number; units: any[] }[] {
   const groups: { lineId: number; units: any[] }[] = [];
@@ -86,6 +97,10 @@ export function itemToHtml(item: any, mode: Mode): string {
     out.push(optionsHtml(item.partA?.options, mode, false));
     out.push(P(`<strong>Part B.</strong> ${esc(item.stem?.partB)}`, "margin:8px 0 4px"));
     out.push(item.type === "ebsr" ? optionsHtml(item.partB?.options, mode, true) : selectableHtml(item.selectable, mode));
+  } else if (item.type === "hot-text" && item.wordSelect) {
+    // Word-select Hot Text (T10): the authored stem (definition) + the excerpt, marking the correct word.
+    out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
+    out.push(P(wordSelectHtml(item.wordSelect, mode)));
   } else if (item.type === "hot-text") {
     // Single-part Hot Text (evidence): the authored stem (which states the inference) + selectable.
     out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
@@ -106,6 +121,7 @@ export function itemToHtml(item: any, mode: Mode): string {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
       if (ids.length) key.push(`${item.partA ? "Part B" : "Answer"} &mdash; any ${item.selectCount ?? 1} of: ${esc(ids.join(", "))}`);
     }
+    if (item.answerKey?.word) key.push(`Answer &mdash; ${esc(item.answerKey.word)}`);
     if (item.answerKey?.choice) key.push(`Answer &mdash; ${esc(item.answerKey.choice)}`);
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer &mdash; ${esc(item.answerKey.choices.join(", "))}`);
     if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
@@ -160,6 +176,9 @@ export function itemToText(item: any, mode: Mode): string {
     } else {
       hotTextLines();
     }
+  } else if (item.type === "hot-text" && item.wordSelect) {
+    out.push(item.stem?.partA ?? ""); // word-select: authored stem states the definition
+    out.push((item.wordSelect.tokens ?? []).map((t: any) => `${t.text}${mode === "review" && t.correct ? " ✓" : ""}`).join(" "));
   } else if (item.type === "hot-text") {
     out.push(item.stem?.partA ?? ""); // single-part: authored stem states the inference
     hotTextLines();
@@ -179,6 +198,7 @@ export function itemToText(item: any, mode: Mode): string {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
       if (ids.length) key.push(`${item.partA ? "Part B" : "Answer"} — any ${item.selectCount ?? 1} of: ${ids.join(", ")}`);
     }
+    if (item.answerKey?.word) key.push(`Answer — ${item.answerKey.word}`);
     if (item.answerKey?.choice) key.push(`Answer — ${item.answerKey.choice}`);
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer — ${item.answerKey.choices.join(", ")}`);
     if (key.length) out.push("", `Answer key: ${key.join("; ")}`);

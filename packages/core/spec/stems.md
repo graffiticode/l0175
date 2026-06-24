@@ -316,7 +316,8 @@ so the answer choices are **meanings** (definitions/synonyms), authored as a `wo
 `meaning`s — not claims. DOK **1–2**. Standards **RI-4** (always) + the **L-4 family** by strategy:
 context → `l-4a`, Greek/Latin roots & affixes → `l-4b`, word relationships (synonyms/antonyms) →
 `l-5c`, reference materials → `l-4c`. Dimension: `word-meaning`. Item types: `multiple-choice`,
-`multi-select` (the reverse click-the-word Hot-Text, Task Model 3, is not yet available).
+`multi-select`, and `hot-text` (Task Model 3 — click the word in the excerpt that matches a given
+definition).
 
 **Authoring:** author a `word` (the targeted word, with `line`/`quote` for its context) holding a
 `meanings` list — one (MC) or ≥2 (Multi-Select) `status correct` meanings + `status distractor`
@@ -340,8 +341,21 @@ The stem shows the sentence with the targeted word and asks for its meaning:
 - Read the sentence(s). [excerpt] What does the word [word] most likely mean? Choose two answers.
 - Read the sentence(s). [excerpt] What does the use of [word] tell the reader about [idea/event] in the passage? Choose two answers.
 
-## Worked example (T10, specific slot fill)
+## Task Model 3 — Hot Text / click-the-word (`type hot-text`, single-part, DOK 1–2)
+
+The reverse: the stem gives a **definition**; the student clicks the word in the excerpt that
+matches it. Author the **correct** word as the outcome's `focus` (with `line` or `quote` giving the
+excerpt) and the **distractor candidate words** as other `word`s that `targets` the outcome — all
+candidates must appear in the excerpt. The compiler marks each candidate-word token clickable; one
+is correct. Stems:
+- Read the dictionary entry. [(part of speech) definition] Click on the word in the passage that most closely matches the definition.
+- The author uses a word that means [definition]. Click on the word in the passage that best shows that meaning.
+
+## Worked examples (T10, specific slot fills)
 
 - word-meaning / Multiple Choice →
   `word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water for miles." meanings [ meaning id "m1" status correct text "a channel built to carry water" {} meaning id "m2" status distractor error-type other-meaning text "a cargo boat" rationale "another meaning, ignores context" {} … ] {}`
   `stem "Read the sentence: \"The aqueduct carried water for miles.\" What does the word aqueduct most likely mean?"` with `focus "w1"`, `standard l-4a`
+- word-meaning / Hot Text (click the word) →
+  `words [ word id "w1" text "aqueduct" line 2 {} word id "w2" text "engineers" targets ["q1"] {} word id "w3" text "built" targets ["q1"] {} ]`
+  `stem "Read the dictionary entry: aqueduct (noun) a channel that carries water. Click the word in the passage that matches this definition."` with `focus "w1"` (the distractor candidate words `targets` the outcome)

@@ -659,9 +659,41 @@ describe("compose — Target 10 (Word Meanings): meaning selection", () => {
     expect((await compile(T10(MC, badType))).errors.some((e: any) => /valid error-type for target c1-t10/.test(e.message))).toBe(true);
   });
 
-  it("restricts item types: T10 rejects ebsr / hot-text", async () => {
+  it("restricts item types: T10 rejects ebsr / short-text", async () => {
     expect((await compile(T10(MC.replace("type multiple-choice", "type ebsr")))).errors.some((e: any) => /item type 'ebsr' is not available for target c1-t10/.test(e.message))).toBe(true);
-    expect((await compile(T10(MC.replace("type multiple-choice", "type hot-text")))).errors.some((e: any) => /item type 'hot-text' is not available for target c1-t10/.test(e.message))).toBe(true);
+    expect((await compile(T10(MC.replace("type multiple-choice", "type short-text")))).errors.some((e: any) => /item type 'short-text' is not available for target c1-t10/.test(e.message))).toBe(true);
+  });
+
+  // Task Model 3 — click the word: the correct word is `focus`; distractor candidate words `targets`
+  // the outcome; the excerpt comes from the focus word's `line`/`quote`.
+  const WORDS_HT = `words [
+      word id "w1" text "aqueduct" line 1 {},
+      word id "w2" text "engineers" targets ["q1"] {},
+      word id "w3" text "built" targets ["q1"] {},
+      word id "w4" text "across" targets ["q1"] {}
+    ]`;
+  const HT = `outcome id "q1" type hot-text dimension word-meaning subject "aqueduct" standard l-4c focus "w1" stem "Read the dictionary entry: aqueduct (noun) a channel that carries water. Click the word in the passage that matches this definition." {}`;
+
+  it("Task Model 3: tokenizes the excerpt and marks candidate words selectable with one correct", async () => {
+    const { errors, data } = await compile(T10(HT, WORDS_HT));
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.type).toBe("hot-text");
+    expect(it0.partA).toBeUndefined();
+    const sel = it0.wordSelect.tokens.filter((t: any) => t.selectable).map((t: any) => t.text.replace(/[^A-Za-z]/g, ""));
+    expect(sel.sort()).toEqual(["across", "aqueduct", "built", "engineers"]); // the 4 candidate words
+    const correct = it0.wordSelect.tokens.filter((t: any) => t.correct);
+    expect(correct).toHaveLength(1);
+    expect(correct[0].text.replace(/[^A-Za-z]/g, "")).toBe("aqueduct");
+    expect(it0.answerKey.word).toBe("aqueduct");
+    expect(it0.wordSelect.excerpt).toMatch(/aqueduct/);
+  });
+
+  it("warns when a candidate word is not in the excerpt", async () => {
+    const words = WORDS_HT.replace('word id "w4" text "across" targets ["q1"] {}', 'word id "w4" text "nonexistent" targets ["q1"] {}');
+    const { data } = await compile(T10(HT, words));
+    const it0 = item0(data);
+    expect((it0.warnings || []).some((w: string) => /"nonexistent".*not found in the excerpt/.test(w))).toBe(true);
   });
 });
 

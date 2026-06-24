@@ -197,8 +197,8 @@ const TARGETS: Record<string, TargetProfile> = {
     baseStandard: "ri-4",
     defaultDok: "r-dok2",
     answerKind: "meaning",
-    singlePartHotText: false,
-    itemTypes: new Set(["multiple-choice", "multi-select"]),
+    singlePartHotText: false, // T10 Hot Text is word-level (composeWordMeaning), not sentence-level
+    itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
     standards: new Set(["ri-4", "ri-1", "l-4", "l-4a", "l-4b", "l-4c", "l-5c"]),
     dimensions: new Set(["word-meaning"]),
     errorTypes: ["other-meaning", "misinterprets", "wrong-context"],
@@ -455,8 +455,11 @@ function validateWord(w: any, errors: any[], profile: TargetProfile) {
   const push = (message: string) => errors.push({ message, ...at });
   if (!id) push(`${where}: missing id.`);
   if (!str(w.text)) push(`${where}: missing text (the targeted word/phrase).`);
+  // `meanings` are for MC/Multi-Select (the candidate meanings of this word). A word with no
+  // meanings is a click-the-word (TM3) candidate — valid; the meaning shape is checked only when
+  // meanings are present, and the MC/MS compose path warns if a focused word has no correct meaning.
   const meanings: any[] = Array.isArray(w.meanings) ? w.meanings : [];
-  if (meanings.length === 0) { push(`${where}: needs a meanings list.`); return; }
+  if (meanings.length === 0) return;
   let nCorrect = 0;
   for (const m of meanings) {
     const mw = `${where} meaning '${str(m.id) || "?"}'`;
@@ -547,6 +550,12 @@ function validateGraph(ctx: any, errors: any[]): string[] {
       for (const ref of Array.isArray(c.targets) ? c.targets : []) {
         if (!ctx.outcomeById[str(ref)]) errors.push({ message: `distractor '${str(c.id)}' targets unknown outcome id '${str(ref)}'.`, ...coordOf(c) });
       }
+    }
+  }
+  // T10 click-the-word: a distractor candidate `word` targets the hot-text outcome it foils.
+  for (const w of ctx.words) {
+    for (const ref of Array.isArray(w.targets) ? w.targets : []) {
+      if (!ctx.outcomeById[str(ref)]) warnings.push(`word '${str(w.id)}' targets unknown outcome id '${str(ref)}'.`);
     }
   }
   // Each question must pin a real, supported correct answer, and (for option items) have enough
@@ -885,6 +894,34 @@ function composeWordMeaning(
     warnings.push(`Outcome '${str(outcome.id)}' focus '${wordId}' is not a known word; cannot compose.`);
     return item;
   }
+
+  // Task Model 3 — click the word: show the excerpt and let the student click the word that matches
+  // the definition (in the stem). The correct word is `focus`; distractor candidate words `targets`
+  // this outcome. We tokenize the excerpt and mark the candidate-word tokens selectable.
+  if (itemType === "hot-text") {
+    const oid = str(outcome.id);
+    const excerpt = str(word.quote) || str(ctx.passage.lines.find((l: any) => l.id === word.line)?.text);
+    if (!excerpt) warnings.push(`Outcome '${oid}': word '${wordId}' needs a quote or a line so there is an excerpt to select from.`);
+    const candidates = [word, ...ctx.words.filter((w: any) => (Array.isArray(w.targets) ? w.targets.map(str) : []).includes(oid))];
+    const candNorms = new Set(candidates.map((c: any) => norm(str(c.text))));
+    const correctNorm = norm(str(word.text));
+    const tokens = excerpt.split(/\s+/).filter(Boolean).map((tok: string, idx: number) => {
+      const n = norm(tok);
+      const selectable = candNorms.has(n);
+      return { idx, text: tok, selectable, correct: selectable && n === correctNorm };
+    });
+    const foundNorms = new Set(tokens.filter((t: any) => t.selectable).map((t: any) => norm(t.text)));
+    for (const c of candidates) if (!foundNorms.has(norm(str(c.text)))) warnings.push(`Word '${str(c.id)}' ("${str(c.text)}") was not found in the excerpt.`);
+    if (!tokens.some((t: any) => t.correct)) warnings.push(`Outcome '${oid}': the correct word "${str(word.text)}" is not in the excerpt.`);
+    item.wordSelect = { excerpt, tokens };
+    item.selectCount = 1;
+    item.stem = { partA: str(outcome.stem) }; // single-part: the authored definition + click instruction
+    item.review.correctClaim = { id: str(word.id), text: str(word.text) };
+    item.distractorAnalysis = [];
+    item.answerKey = { word: str(word.text), rationale: str(key0?.rationale) };
+    return item;
+  }
+
   const toOpt = (m: any, correctFlag: boolean) => ({ text: str(m.text), correct: correctFlag, meaningId: str(m.id), errorType: str(m.errorType) || undefined });
   const meaningById = index(meanings, "id");
   const analysis = (options: any[]) => options.filter((o: any) => !o.correct).map((o: any) => ({

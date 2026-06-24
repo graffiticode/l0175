@@ -82,7 +82,7 @@ Attribute functions (arity-2, merge one key into the element's record):
 ### Enumerations
 
 - `target`: `c1-t4` (literary, R&E), `c1-t11` (informational, R&E), `c1-t9` (informational, Central Ideas), `c1-t8` (informational, Key Details), `c1-t10` (informational, Word Meanings)
-- item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select)
+- item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select/hot-text)
 - `dimension` (c1-t4): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (c1-t11): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - `dimension` (c1-t9): `central-idea`, `key-detail`, `summary` · (c1-t8): `supporting-evidence` · (c1-t10): `word-meaning`

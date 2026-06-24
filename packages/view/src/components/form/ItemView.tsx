@@ -8,6 +8,7 @@ import { HotTextItem } from "./HotTextItem";
 import { ShortTextItem } from "./ShortTextItem";
 import { MultipleChoiceItem } from "./MultipleChoiceItem";
 import { MultiSelectItem } from "./MultiSelectItem";
+import { WordSelectItem } from "./WordSelectItem";
 import { Warnings } from "./Warnings";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -77,7 +78,11 @@ export function ItemView({
     item.type === "ebsr" ? (
       <EbsrItem item={item} mode={mode} respond={respond} />
     ) : item.type === "hot-text" ? (
-      <HotTextItem item={item} mode={mode} respond={respond} />
+      item.wordSelect ? (
+        <WordSelectItem item={item} mode={mode} respond={respond} />
+      ) : (
+        <HotTextItem item={item} mode={mode} respond={respond} />
+      )
     ) : item.type === "short-text" ? (
       <ShortTextItem item={item} mode={mode} respond={respond} />
     ) : item.type === "multiple-choice" ? (
