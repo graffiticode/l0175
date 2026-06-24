@@ -152,15 +152,15 @@ describe("copy serializer — hot text & short text", () => {
   });
   it("word-select (T10) underlines candidate words and brackets them in plain text", () => {
     const preview = itemToHtml(WORDSELECT, "preview");
-    // every candidate (clickable) word is dotted-underlined, in BOTH modes
-    expect(preview).toMatch(/<span style="border-bottom:1px dashed[^"]*">aqueducts<\/span>/);
-    expect(preview).toMatch(/<span style="border-bottom:1px dashed[^"]*">carried<\/span>/);
+    // every candidate (clickable) word is underlined (text-decoration survives Google Docs), both modes
+    expect(preview).toMatch(/<u style="text-decoration:underline[^"]*">aqueducts<\/u>/);
+    expect(preview).toMatch(/<u style="text-decoration:underline[^"]*">carried<\/u>/);
     expect(preview).not.toContain("✓"); // questions view hides the answer
     // non-candidate words stay plain
-    expect(preview).not.toMatch(/border-bottom[^>]*>They/);
+    expect(preview).not.toMatch(/<u[^>]*>They/);
 
     const review = itemToHtml(WORDSELECT, "review");
-    expect(review).toMatch(/<strong><span style="border-bottom:1px dashed[^"]*">aqueducts<\/span> ✓<\/strong>/);
+    expect(review).toMatch(/<strong><u style="text-decoration:underline[^"]*">aqueducts<\/u> ✓<\/strong>/);
     expect(review).toContain("Answer &mdash; aqueducts");
 
     const text = itemToText(WORDSELECT, "review");

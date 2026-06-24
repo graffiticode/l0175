@@ -63,15 +63,16 @@ function selectableHtml(selectable: any[], mode: Mode): string {
 }
 
 // Word-select Hot Text (T10 TM3): render the excerpt inline. The candidate (clickable) words are
-// dotted-underlined so the choices survive the copy into Docs/Word; in review the correct word is
-// also bolded with a ✓.
+// underlined so the choices survive the copy into Docs/Word — `text-decoration:underline` is
+// preserved by Google Docs (a `border-bottom` is not); in review the correct word is also bolded
+// with a ✓.
 function wordSelectHtml(wordSelect: any, mode: Mode): string {
   return (wordSelect?.tokens ?? [])
     .map((t: any) => {
       const correct = mode === "review" && t.correct;
       let word = esc(t.text);
       if (t.selectable) {
-        const styled = `<span style="border-bottom:1px dashed #6b7280">${word}</span>`;
+        const styled = `<u style="text-decoration:underline;text-decoration-style:dotted">${word}</u>`;
         word = correct ? `<strong>${styled} ✓</strong>` : styled;
       }
       return `${esc(t.pre ?? "")}${word}${esc(t.post ?? "")}`;
