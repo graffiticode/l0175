@@ -78,12 +78,12 @@ describe("compose — task models", () => {
     expect(item.selectable.map((s: any) => s.id)).toEqual(["1.1", "2.1", "3.1", "4.1", "5.1", "6.1"]);
     expect(item.selectable.filter((s: any) => s.correct).map((s: any) => s.id)).toEqual(["1.1", "4.1"]);
     expect(item.answerKey.partB).toBe("1.1, 4.1");
-    // 2 valid sentences → cap is a proper subset: min(3, 2-1) = 1.
-    expect(item.selectMax).toBe(1);
+    // 2 valid sentences → exact count is one less (a proper subset): min(3, 2-1) = 1.
+    expect(item.selectCount).toBe(1);
     expect(item.stem.partB).toBe("Click 1 sentence from the passage that supports your answer in Part A.");
   });
 
-  it("Hot Text caps Part B selection at a proper subset of the valid supporting sentences", async () => {
+  it("Hot Text Part B asks for an exact count = one less than the valid sentences (capped at 3)", async () => {
     // One paragraph of 4 sentences; a no-quote directly-supports source marks all 4 valid.
     const FOUR = `target c1-t4 passage "P" type literary lines [
       "Mara watched the pool. She ignored the picnic. She traced the water. She smiled at a crab."
@@ -99,8 +99,8 @@ describe("compose — task models", () => {
     const { data } = await compile(FOUR);
     const item = data.kind === "items" ? data.items[0] : data;
     expect(item.selectable.filter((s: any) => s.correct)).toHaveLength(4); // V = 4
-    expect(item.selectMax).toBe(3); // min(3, 4-1) = 3
-    expect(item.stem.partB).toBe("Click 1 to 3 sentences from the passage that support your answer in Part A.");
+    expect(item.selectCount).toBe(3); // min(3, 4-1) = 3
+    expect(item.stem.partB).toBe("Click 3 sentences from the passage that support your answer in Part A.");
   });
 
   it("Hot Text segments a multi-sentence paragraph and marks the quoted sentence, keeping paragraph grouping", async () => {

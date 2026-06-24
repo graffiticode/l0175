@@ -155,14 +155,16 @@ outright is literal recall and out of scope.
   `directly-supports` source a `quote` with the exact supporting **sentence** (and a `line` at its
   paragraph). A `directly-supports` source with no `quote` marks every sentence of its `line`
   correct.
-- **Hot Text Part B accepts 1–3 sentences from a SUPERSET of valid answers.** The valid
-  (directly-supporting) sentences are a superset: the student selects 1 to a per-item cap and **any
-  selection drawn from the valid set is correct** — they never have to find every one. The cap is a
-  *proper subset* of the valid count: `min(3, validCount − 1)` (or 1 when there is only one valid
-  sentence), and the compiler writes the matching "Click 1 to N sentences…" instruction. **Author a
-  real superset: mark every sentence that genuinely supports the inference as a `directly-supports`
-  source with an exact `quote` — aim for ≥2 (ideally 3–4).** With only one valid sentence the
-  compiler warns; the answer then must be that single sentence.
+- **Hot Text Part B asks for an EXACT number of sentences from a SUPERSET of valid answers.** The
+  valid (directly-supporting) sentences are a superset; the student must select a specific count,
+  and **any selection of that many drawn from the valid set is correct** — they never have to find
+  every one. The compiler sets the count to **one less than the valid count** (a proper subset),
+  floored at 1 (one valid sentence) and capped at 3 (so it stays ≤3 once there are more than 4
+  valid): `count = min(3, validCount − 1)`, or 1 when `validCount ≤ 1`. It writes the matching
+  "Click N sentence(s)…" instruction. **Author a real superset: mark every sentence that genuinely
+  supports the inference as a `directly-supports` source with an exact `quote` — aim for ≥3 so the
+  asked count is ≥2 and there's real choice.** With only one valid sentence the compiler warns and
+  the answer is that single sentence.
 - **No-giveaway rule (EBSR Part B): for every EBSR question, author at least one
   `supports-wrong-claim` line whose `supports` lists BOTH the correct claim's id AND a
   distractor's id** — a passage line that *seems* to back the correct inference but actually

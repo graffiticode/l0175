@@ -40,7 +40,7 @@ function ReviewPanel({ item }: { item: any }) {
         {item.answerKey?.partA && <>Part A: <span className="font-semibold">{item.answerKey.partA}</span>{" "}</>}
         {item.answerKey?.partB && (
           <>· Part B: <span className="font-semibold">
-            {item.type === "hot-text" ? `any 1–${item.selectMax ?? 3} of: ${item.answerKey.partB}` : item.answerKey.partB}
+            {item.type === "hot-text" ? `any ${item.selectCount ?? 1} of: ${item.answerKey.partB}` : item.answerKey.partB}
           </span></>
         )}
       </p>

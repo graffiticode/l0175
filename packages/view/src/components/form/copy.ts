@@ -97,7 +97,7 @@ export function itemToHtml(item: any, mode: Mode): string {
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
     if (item.type === "hot-text") {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
-      if (ids.length) key.push(`Part B &mdash; any 1&ndash;${item.selectMax ?? 3} of: ${esc(ids.join(", "))}`);
+      if (ids.length) key.push(`Part B &mdash; any ${item.selectCount ?? 1} of: ${esc(ids.join(", "))}`);
     }
     if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
 
@@ -163,7 +163,7 @@ export function itemToText(item: any, mode: Mode): string {
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B — ${item.answerKey.partB}`);
     if (item.type === "hot-text") {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
-      if (ids.length) key.push(`Part B — any 1–${item.selectMax ?? 3} of: ${ids.join(", ")}`);
+      if (ids.length) key.push(`Part B — any ${item.selectCount ?? 1} of: ${ids.join(", ")}`);
     }
     if (key.length) out.push("", `Answer key: ${key.join("; ")}`);
     if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {

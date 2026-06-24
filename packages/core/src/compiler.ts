@@ -122,12 +122,13 @@ const DEFAULT_TARGET = "c1-t4"; // best-effort fallback when `target` is missing
 const LEAD_IN = "This question has two parts. First, answer Part A. Then, answer Part B.";
 const HOT_TEXT_PART_B_PLACEHOLDER = "Click the sentence(s) from the passage that support your answer in Part A.";
 
-// Hot Text Part B asks for up to `max` supporting sentences (the per-item proper-subset cap). The
-// student picks 1..max; any selection drawn from the valid set is correct (composeOutcome).
-function hotTextPartB(max: number): string {
-  return max <= 1
+// Hot Text Part B asks for an EXACT number of supporting sentences (the per-item count). The
+// student must pick exactly `count`; any selection of that many drawn from the valid set is
+// correct (composeOutcome).
+function hotTextPartB(count: number): string {
+  return count <= 1
     ? "Click 1 sentence from the passage that supports your answer in Part A."
-    : `Click 1 to ${max} sentences from the passage that support your answer in Part A.`;
+    : `Click ${count} sentences from the passage that support your answer in Part A.`;
 }
 
 const DEFAULT_RUBRIC = [
@@ -767,12 +768,13 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     const correctUnits = selectable.filter((s: any) => s.correct);
     const valid = correctUnits.length;
     if (valid === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
-    // The valid supporting sentences are a SUPERSET; the student selects 1..selectMax and any
-    // selection drawn from the set is correct. The expected count is a proper subset of the valid
-    // set (so they never must find every one) — except when there is only one valid sentence.
-    const selectMax = valid <= 1 ? 1 : Math.min(TUNING.HOT_TEXT_SELECT_MAX, valid - 1);
-    item.selectMax = selectMax;
-    item.stem.partB = hotTextPartB(selectMax);
+    // The valid supporting sentences are a SUPERSET; the student selects an EXACT number, and any
+    // selection of that many drawn from the set is correct. The count is one less than the valid
+    // set (a proper subset, so they never must find every one), capped at HOT_TEXT_SELECT_MAX (so
+    // it stays ≤3 once there are more than 4 valid) and floored at 1 (when there is only one).
+    const selectCount = valid <= 1 ? 1 : Math.min(TUNING.HOT_TEXT_SELECT_MAX, valid - 1);
+    item.selectCount = selectCount;
+    item.stem.partB = hotTextPartB(selectCount);
     if (valid === 1) warnings.push("Only 1 valid supporting sentence; author a superset (2+ directly-supporting sentences) so the expected answer is a subset of the valid responses.");
     item.distractorAnalysis = analysis;
     item.answerKey = { partA: aKey, partB: correctUnits.map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
