@@ -40,7 +40,7 @@ L0175 also composes **`c1-t10` — Word Meanings** (informational): the question
 as a dedicated `word`/`meaning` structure (not claims). Use `c1-t10` when the request asks **what a
 word/phrase means**; dimension `word-meaning`, standards `ri-4` + the L-4 family (`l-4a` context /
 `l-4b` roots & affixes / `l-5c` word relationships / `l-4c` reference), DOK 1–2, item types
-`multiple-choice`, `multi-select`, and `hot-text` (click the word in the excerpt matching a given definition — the correct word is `focus`, distractor candidate words `targets` the outcome, the definition is in the stem). Author a top-level
+`multiple-choice`, `multi-select`, and `hot-text` (click the word matching a given definition — author the candidate `word`s: the correct one is `focus` with its paragraph's `line`, the others are distractor candidate words, ALL appearing in that one paragraph (`text` only, no `meanings`). The compiler shows the paragraph and makes the authored candidate words clickable, focus correct; author only the correct word and every content word becomes a choice. The `stem` is only the instruction + definition — never paste the paragraph into the stem). Author a top-level
 `words` list: a `word` (the targeted word, `line`/`quote` for context) with `meanings` — one (MC) or
 ≥2 (Multi-Select) `status correct` meanings + `status distractor` meanings (each with a T10
 `error-type` — `other-meaning`/`misinterprets`/`wrong-context` — and a `rationale`). The outcome's
@@ -99,7 +99,7 @@ Say this to get that:
 - *"The article says aqueducts brought water to distant cities — which detail best supports that? (multiple choice)"* → `target c1-t8`, `type multiple-choice`, `dimension supporting-evidence`; the inference goes in the `stem`, the options are `source`s
 - *"Make a click-the-sentence item where students select the evidence for a stated conclusion."* → `target c1-t8`, `type hot-text` (single-part), `dimension supporting-evidence`
 - *"What does the word 'aqueduct' mean as used in this article? (multiple choice)"* → `target c1-t10`, `type multiple-choice`, `dimension word-meaning`; a `word` with candidate `meaning`s, `focus` names the word
-- *"Click the word in the sentence that means 'a channel that carries water'."* → `target c1-t10`, `type hot-text` (click-the-word); correct word is `focus` (with `line`/`quote`), distractor candidate words `targets` the outcome, definition in the stem
+- *"Read the paragraph below. Click the word that means 'a channel that carries water'."* → `target c1-t10`, `type hot-text` (click-the-word); author the candidate `word`s (correct one is `focus` with its paragraph's `line`, plus a few distractor candidate words from the same paragraph); definition in the stem, passage NOT in the stem
 - *"Keep the passage at a 4th-grade reading level."* → top-level `grade 4`; author shorter sentences and simpler vocabulary (the default is the guideline's Grade 5)
 
 ## Out of Scope

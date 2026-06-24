@@ -343,13 +343,18 @@ The stem shows the sentence with the targeted word and asks for its meaning:
 
 ## Task Model 3 — Hot Text / click-the-word (`type hot-text`, single-part, DOK 1–2)
 
-The reverse: the stem gives a **definition**; the student clicks the word in the excerpt that
-matches it. Author the **correct** word as the outcome's `focus` (with `line` or `quote` giving the
-excerpt) and the **distractor candidate words** as other `word`s that `targets` the outcome — all
-candidates must appear in the excerpt. The compiler marks each candidate-word token clickable; one
-is correct. Stems:
-- Read the dictionary entry. [(part of speech) definition] Click on the word in the passage that most closely matches the definition.
-- The author uses a word that means [definition]. Click on the word in the passage that best shows that meaning.
+The reverse: the stem gives a **definition**; the student clicks the word in the passage that
+matches it. Author the **candidate `word`s** in a top-level `words` list (`text` only — no
+`meanings`): the correct one is the outcome's `focus` (give it the `line` of its paragraph) and the
+others are distractor candidate words. **All candidates must be words that appear in that one
+paragraph.** The compiler shows the whole paragraph (from the focus word's `line`) and makes the
+authored candidate words clickable, with the focus word correct. (Author only the correct word and
+the compiler falls back to making every content word in the paragraph clickable.) **The `stem` is
+just the instruction + definition — do NOT paste the paragraph into the stem; it is shown
+separately** (the compiler warns if the stem contains it). Candidates not in the focus word's
+paragraph are warned and dropped. Stems:
+- Read the dictionary entry. [(part of speech) definition] Click on the word in the sentence that most closely matches the definition.
+- The author uses a word that means [definition]. Click on the word in the sentence that best shows that meaning.
 
 ## Worked examples (T10, specific slot fills)
 
@@ -357,5 +362,5 @@ is correct. Stems:
   `word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water for miles." meanings [ meaning id "m1" status correct text "a channel built to carry water" {} meaning id "m2" status distractor error-type other-meaning text "a cargo boat" rationale "another meaning, ignores context" {} … ] {}`
   `stem "Read the sentence: \"The aqueduct carried water for miles.\" What does the word aqueduct most likely mean?"` with `focus "w1"`, `standard l-4a`
 - word-meaning / Hot Text (click the word) →
-  `words [ word id "w1" text "aqueduct" line 2 {} word id "w2" text "engineers" targets ["q1"] {} word id "w3" text "built" targets ["q1"] {} ]`
-  `stem "Read the dictionary entry: aqueduct (noun) a channel that carries water. Click the word in the passage that matches this definition."` with `focus "w1"` (the distractor candidate words `targets` the outcome)
+  `words [ word id "w1" text "aqueduct" line 8 {} word id "w2" text "causeways" {} word id "w3" text "canals" {} word id "w4" text "distributed" {} ]`
+  `stem "Read the dictionary entry: aqueduct (noun) a channel that carries water. Click the word in the paragraph that matches this definition."` with `focus "w1"` — line 8's paragraph is shown and the authored candidates (aqueduct, causeways, canals, distributed — all in that paragraph) are clickable; "aqueduct" is correct.

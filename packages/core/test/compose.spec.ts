@@ -664,36 +664,49 @@ describe("compose — Target 10 (Word Meanings): meaning selection", () => {
     expect((await compile(T10(MC.replace("type multiple-choice", "type short-text")))).errors.some((e: any) => /item type 'short-text' is not available for target c1-t10/.test(e.message))).toBe(true);
   });
 
-  // Task Model 3 — click the word: the correct word is `focus`; distractor candidate words `targets`
-  // the outcome; the excerpt comes from the focus word's `line`/`quote`.
-  const WORDS_HT = `words [
-      word id "w1" text "aqueduct" line 1 {},
-      word id "w2" text "engineers" targets ["q1"] {},
-      word id "w3" text "built" targets ["q1"] {},
-      word id "w4" text "across" targets ["q1"] {}
-    ]`;
-  const HT = `outcome id "q1" type hot-text dimension word-meaning subject "aqueduct" standard l-4c focus "w1" stem "Read the dictionary entry: aqueduct (noun) a channel that carries water. Click the word in the passage that matches this definition." {}`;
+  // Task Model 3 — click the word. The excerpt is the PARAGRAPH containing the focus word; the
+  // clickable CANDIDATES are the authored words in that paragraph (focus = correct). (Passage line 1
+  // is "Roman engineers built aqueducts. The aqueduct carried water across long distances.")
+  const HT = `outcome id "q1" type hot-text dimension word-meaning subject "aqueduct" standard l-4c focus "w1" stem "Read the paragraph below. Click the word that means a channel that carries water." {}`;
 
-  it("Task Model 3: tokenizes the excerpt and marks candidate words selectable with one correct", async () => {
-    const { errors, data } = await compile(T10(HT, WORDS_HT));
+  it("curated: only the authored candidate words in the paragraph are clickable, focus is correct", async () => {
+    const words = `words [ word id "w1" text "aqueduct" line 1 {}, word id "w2" text "engineers" {}, word id "w3" text "water" {} ]`;
+    const { errors, data } = await compile(T10(HT, words));
     expect(errors).toHaveLength(0);
     const it0 = item0(data);
     expect(it0.type).toBe("hot-text");
     expect(it0.partA).toBeUndefined();
-    const sel = it0.wordSelect.tokens.filter((t: any) => t.selectable).map((t: any) => t.text.replace(/[^A-Za-z]/g, ""));
-    expect(sel.sort()).toEqual(["across", "aqueduct", "built", "engineers"]); // the 4 candidate words
+    expect(it0.wordSelect.excerpt).toMatch(/^Roman engineers built aqueducts\./); // the full paragraph
+    const sel = it0.wordSelect.tokens.filter((t: any) => t.selectable).map((t: any) => t.text);
+    expect(sel.sort()).toEqual(["aqueduct", "engineers", "water"]); // exactly the authored candidates
+    expect(sel).not.toContain("built"); // a content word but not an authored candidate
     const correct = it0.wordSelect.tokens.filter((t: any) => t.correct);
     expect(correct).toHaveLength(1);
-    expect(correct[0].text.replace(/[^A-Za-z]/g, "")).toBe("aqueduct");
+    expect(correct[0].text).toBe("aqueduct");
     expect(it0.answerKey.word).toBe("aqueduct");
-    expect(it0.wordSelect.excerpt).toMatch(/aqueduct/);
   });
 
-  it("warns when a candidate word is not in the excerpt", async () => {
-    const words = WORDS_HT.replace('word id "w4" text "across" targets ["q1"] {}', 'word id "w4" text "nonexistent" targets ["q1"] {}');
-    const { data } = await compile(T10(HT, words));
-    const it0 = item0(data);
-    expect((it0.warnings || []).some((w: string) => /"nonexistent".*not found in the excerpt/.test(w))).toBe(true);
+  it("fallback: with only the correct word authored, every content word is clickable", async () => {
+    const it0 = item0((await compile(T10(HT, `words [ word id "w1" text "aqueduct" line 1 {} ]`))).data);
+    const sel = it0.wordSelect.tokens.filter((t: any) => t.selectable).map((t: any) => t.text);
+    expect(sel).toEqual(expect.arrayContaining(["aqueduct", "engineers", "carried", "water", "across"]));
+    expect(sel).not.toContain("The");
+    expect(it0.wordSelect.tokens.filter((t: any) => t.correct)).toHaveLength(1);
+  });
+
+  it("warns when an authored candidate word is not in the correct word's paragraph", async () => {
+    const words = `words [ word id "w1" text "aqueduct" line 1 {}, word id "w2" text "vessels" {} ]`;
+    const it0 = item0((await compile(T10(HT, words))).data);
+    expect((it0.warnings || []).some((w: string) => /"vessels".*not in the correct word's paragraph/.test(w))).toBe(true);
+  });
+
+  it("warns when the stem contains the excerpt (the passage was pasted into the stem)", async () => {
+    const bloated = HT.replace(
+      'that carries water."',
+      'that carries water. Roman engineers built aqueducts. The aqueduct carried water across long distances."',
+    );
+    const { data } = await compile(T10(bloated, `words [ word id "w1" text "aqueduct" line 1 {} ]`));
+    expect((item0(data).warnings || []).some((w: string) => /stem should be just the instruction/.test(w))).toBe(true);
   });
 });
 

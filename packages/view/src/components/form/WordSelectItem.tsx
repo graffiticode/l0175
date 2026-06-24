@@ -31,12 +31,13 @@ export function WordSelectItem({
       <StemLine>{item.stem.partA}</StemLine>
       <p className="font-sans rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800 leading-loose">
         {tokens.map((t: any) => {
-          if (!t.selectable) return <span key={t.idx}>{t.text} </span>;
+          if (!t.selectable) return <span key={t.idx}>{(t.pre ?? "") + t.text + (t.post ?? "")} </span>;
           const on = picked === t.idx;
           const reveal = review || (preview && answered);
           const wrong = preview && on && !t.correct;
           return (
             <span key={t.idx}>
+              {t.pre}
               <button
                 type="button"
                 onClick={() => choose(t.idx)}
@@ -54,7 +55,8 @@ export function WordSelectItem({
                 {t.text}
                 {reveal && t.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
                 {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
-              </button>{" "}
+              </button>
+              {t.post}{" "}
             </span>
           );
         })}

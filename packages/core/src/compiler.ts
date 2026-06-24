@@ -874,6 +874,12 @@ function optionAnalysis(options: any[], correct: any, ctx: any, part = "A"): any
     });
 }
 
+// Function words that are never the answer in a click-the-word item, so they aren't clickable.
+const CLICK_STOPWORDS = new Set([
+  "the", "and", "are", "was", "were", "for", "but", "with", "this", "that", "these", "those",
+  "its", "into", "their", "they", "them", "from", "has", "have", "had", "not", "you", "your",
+]);
+
 // T10 Word Meanings: compose a Multiple-Choice / Multi-Select item whose options are the candidate
 // `meaning`s of the targeted `word` named by `focus`. correct meanings are the key(s); distractor
 // meanings (with T10 error-types) are the foils. The targeted word + its context ride along on
@@ -895,24 +901,45 @@ function composeWordMeaning(
     return item;
   }
 
-  // Task Model 3 — click the word: show the excerpt and let the student click the word that matches
-  // the definition (in the stem). The correct word is `focus`; distractor candidate words `targets`
-  // this outcome. We tokenize the excerpt and mark the candidate-word tokens selectable.
+  // Task Model 3 — click the word: show the PARAGRAPH containing the target word and let the student
+  // click the word matching the definition (in the stem). The clickable CANDIDATES are the authored
+  // `word`s that appear in that paragraph (the curated, underlined choices) — the focus word is the
+  // correct one; the others are distractor candidates. If only the correct word is authored, every
+  // content word in the paragraph becomes a choice. The excerpt is the passage paragraph identified
+  // by the word's `line`, else the first paragraph that contains it, else its `quote`.
   if (itemType === "hot-text") {
     const oid = str(outcome.id);
-    const excerpt = str(word.quote) || str(ctx.passage.lines.find((l: any) => l.id === word.line)?.text);
-    if (!excerpt) warnings.push(`Outcome '${oid}': word '${wordId}' needs a quote or a line so there is an excerpt to select from.`);
-    const candidates = [word, ...ctx.words.filter((w: any) => (Array.isArray(w.targets) ? w.targets.map(str) : []).includes(oid))];
-    const candNorms = new Set(candidates.map((c: any) => norm(str(c.text))));
     const correctNorm = norm(str(word.text));
-    const tokens = excerpt.split(/\s+/).filter(Boolean).map((tok: string, idx: number) => {
-      const n = norm(tok);
-      const selectable = candNorms.has(n);
-      return { idx, text: tok, selectable, correct: selectable && n === correctNorm };
+    const byLine = str(ctx.passage.lines.find((l: any) => l.id === word.line)?.text);
+    const byContains = str(ctx.passage.lines.find((l: any) => norm(l.text).split(" ").includes(correctNorm))?.text);
+    const excerpt = byLine || byContains || str(word.quote);
+    if (!excerpt) warnings.push(`Outcome '${oid}': word '${wordId}' needs a 'line' (the paragraph it appears in) or a 'quote' so there is an excerpt to select from.`);
+    const excerptNorms = new Set(norm(excerpt).split(" ").filter(Boolean));
+    // Curated candidates = other authored words present in this paragraph. If none, fall back to
+    // every content word being a choice.
+    const otherWords = ctx.words.filter((w: any) => str(w.id) !== str(word.id));
+    const authoredCandidates = otherWords.filter((w: any) => excerptNorms.has(norm(str(w.text))));
+    const curated = authoredCandidates.length >= 1;
+    const candNorms = new Set([correctNorm, ...authoredCandidates.map((w: any) => norm(str(w.text)))]);
+    const tokens = excerpt.split(/\s+/).filter(Boolean).map((raw: string, idx: number) => {
+      const pre = (raw.match(/^[^A-Za-z0-9]+/) || [""])[0];
+      const post = (raw.match(/[^A-Za-z0-9]+$/) || [""])[0];
+      const core = raw.slice(pre.length, raw.length - post.length);
+      const n = norm(core);
+      const selectable = curated ? candNorms.has(n) : (core.length > 2 && !CLICK_STOPWORDS.has(n));
+      return { idx, pre, text: core || raw, post, selectable, correct: selectable && n === correctNorm };
     });
-    const foundNorms = new Set(tokens.filter((t: any) => t.selectable).map((t: any) => norm(t.text)));
-    for (const c of candidates) if (!foundNorms.has(norm(str(c.text)))) warnings.push(`Word '${str(c.id)}' ("${str(c.text)}") was not found in the excerpt.`);
-    if (!tokens.some((t: any) => t.correct)) warnings.push(`Outcome '${oid}': the correct word "${str(word.text)}" is not in the excerpt.`);
+    // An authored candidate word that isn't in the correct word's paragraph can't be a choice — warn
+    // (skip words that are another outcome's focus, which belong to a different item).
+    const focusedIds = new Set(ctx.outcomes.flatMap((o: any) => focusIds(o)));
+    for (const w of otherWords) {
+      if (focusedIds.has(str(w.id)) || w.meanings) continue; // another item's word, or an MC/MS word
+      if (!excerptNorms.has(norm(str(w.text)))) warnings.push(`word '${str(w.id)}' ("${str(w.text)}") is not in the correct word's paragraph, so it cannot be a click-the-word choice — keep all candidates in that paragraph.`);
+    }
+    if (!tokens.some((t: any) => t.correct)) warnings.push(`Outcome '${oid}': the correct word "${str(word.text)}" is not a selectable word in the excerpt.`);
+    const nSelectable = tokens.filter((t: any) => t.selectable).length;
+    if (nSelectable < 3) warnings.push(`Click-the-word: only ${nSelectable} selectable word(s) — author a few distractor candidate words in the correct word's paragraph (or use a fuller paragraph).`);
+    if (excerpt && norm(str(outcome.stem)).includes(norm(excerpt))) warnings.push("Click-the-word stem should be just the instruction and the definition — the paragraph is shown separately; do not paste it into the stem.");
     item.wordSelect = { excerpt, tokens };
     item.selectCount = 1;
     item.stem = { partA: str(outcome.stem) }; // single-part: the authored definition + click instruction

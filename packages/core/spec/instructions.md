@@ -124,9 +124,14 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   | `wrong-context`) + `rationale`. The outcome's `focus` names the `word`; its correct meaning(s)
   are the key, the distractor meanings the foils. Example:
   `words [ word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water." meanings [ meaning id "m1" status correct text "a water channel" {} meaning id "m2" status distractor error-type other-meaning text "a boat" rationale "another meaning, ignores context" {} ] {} ]`
-  For a **click-the-word** (`hot-text`) item the candidate `word`s have no `meanings`: the correct
-  word is the outcome's `focus` (with `line`/`quote` for the excerpt) and the distractor candidate
-  words `targets` the outcome — all candidates must appear in the excerpt; the definition goes in the `stem`.
+  For a **click-the-word** (`hot-text`) item, author the **candidate `word`s** (`text` only, no
+  `meanings`): the correct one is the outcome's `focus` (give it the `line` of its paragraph) and
+  the others are distractor candidate words. **All candidates must be words that appear in that one
+  paragraph.** The compiler shows the paragraph and makes the authored candidate words clickable,
+  with the focus word correct. (Author only the correct word and every content word in the paragraph
+  becomes a choice.) The `stem` is just the instruction + definition — do **not** paste the
+  paragraph into it (the compiler warns if you do). Candidates not in the focus word's paragraph are
+  warned and dropped.
 - A top-level **`title`** attribute (before `passage`) names the assessment; it is echoed on the output.
 
 ## Stems (Appropriate Stems, SBAC G5 · C1 · T4)

@@ -68,7 +68,8 @@ function wordSelectHtml(wordSelect: any, mode: Mode): string {
   return (wordSelect?.tokens ?? [])
     .map((t: any) => {
       const correct = mode === "review" && t.correct;
-      return correct ? `<strong>${esc(t.text)} ✓</strong>` : esc(t.text);
+      const word = correct ? `<strong>${esc(t.text)} ✓</strong>` : esc(t.text);
+      return `${esc(t.pre ?? "")}${word}${esc(t.post ?? "")}`;
     })
     .join(" ");
 }
@@ -178,7 +179,7 @@ export function itemToText(item: any, mode: Mode): string {
     }
   } else if (item.type === "hot-text" && item.wordSelect) {
     out.push(item.stem?.partA ?? ""); // word-select: authored stem states the definition
-    out.push((item.wordSelect.tokens ?? []).map((t: any) => `${t.text}${mode === "review" && t.correct ? " ✓" : ""}`).join(" "));
+    out.push((item.wordSelect.tokens ?? []).map((t: any) => `${t.pre ?? ""}${t.text}${mode === "review" && t.correct ? " ✓" : ""}${t.post ?? ""}`).join(" "));
   } else if (item.type === "hot-text") {
     out.push(item.stem?.partA ?? ""); // single-part: authored stem states the inference
     hotTextLines();
