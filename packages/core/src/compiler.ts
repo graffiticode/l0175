@@ -26,16 +26,21 @@ import {
 // ---------------------------------------------------------------------------
 // Enumerations (the closed vocabularies; bare kebab identifiers resolve to these strings).
 // ---------------------------------------------------------------------------
-const ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text"]);
+const ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text", "multiple-choice", "multi-select"]);
 const PASSAGE_TYPES = new Set(["literary", "informational"]);
 const CLAIM_STATUS = new Set(["supported", "distractor"]);
 const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irrelevant"]);
-const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"];
+// Distractor error taxonomies, per target family. Reasoning & Evidence (T4/T11) classifies foils by
+// reasoning failure; Central Ideas (T9) classifies them by SIGNIFICANCE (a true statement that just
+// isn't the central idea). Each target profile picks its taxonomy via `errorTypes`.
+const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"]; // Reasoning & Evidence
+const T9_ERROR_TYPES = ["too-narrow", "too-broad", "misreads-detail", "insignificant"]; // Central Ideas
 
-// Small prior on distractor temptingness by error type (DOK3 rewards reasoning errors over
-// surface misreads). Used by the computed plausibility score; author `plausibility` overrides it.
+// Small prior on distractor temptingness by error type. Used by the computed plausibility score;
+// author `plausibility` overrides it. Unlisted types default to 0.
 const ERROR_TYPE_PRIOR: Record<string, number> = {
   "faulty-reasoning": 0.1, "erroneous-inference": 0.08, "misreads-detail": 0.05,
+  "too-narrow": 0.1, "too-broad": 0.07, "insignificant": 0.05,
 };
 
 // Hand-tuned thresholds — located here for later calibration (the IRT/response-data track in
@@ -44,7 +49,8 @@ const TUNING = {
   MIN_VIABLE_DISTRACTORS: 5, // below this, warn — a richer Part A pool gives selection real choice
   MIN_VIABLE_PART_B: 5, // below this many Part B foil sources, warn (item draws 3 of them)
   DISTRACTOR_SLOTS: 3, // foils chosen per item (Part A or Part B)
-  PART_OPTIONS: 4, // options per part (EBSR Part A/B)
+  PART_OPTIONS: 4, // options per part (EBSR Part A/B) and Multiple Choice
+  MULTI_SELECT_OPTIONS: 6, // total options for Multi-Select (correct set + distractors)
   HOT_TEXT_SELECT_MAX: 3, // absolute cap on Part B sentence selections (per-item cap is min(this, validCount - 1))
   SHORT_TEXT_MIN_LINES: 3, // fewer than 3 passage paragraphs → warn (a constructed response wants a substantial passage)
   LENGTH_BALANCE_RATIO: 1.35, // correct option longer than this × the mean distractor length → length-giveaway warn
@@ -66,8 +72,10 @@ type TargetProfile = {
   grade: number;         // the guideline's grade band — the default reading-level target (overridable by a top-level `grade`)
   textType: string;      // expected passage type for this target
   baseStandard: string;  // always added by standardsFor (the cite-evidence standard)
+  defaultDok: string;    // DOK for this target's selected-response items (short-text bumps to r-dok3)
   standards: Set<string>;
   dimensions: Set<string>;
+  errorTypes: string[];  // the distractor taxonomy for this target (ordered for coverage selection)
   dimStandard: Record<string, string>; // dimension → companion standard
 };
 
@@ -79,11 +87,13 @@ const TARGETS: Record<string, TargetProfile> = {
     grade: 5,
     textType: "literary",
     baseStandard: "rl-1",
+    defaultDok: "r-dok3",
     standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
     dimensions: new Set([
       "character", "setting", "event", "point-of-view",
       "theme", "topic", "narrators-feelings", "character-relationship",
     ]),
+    errorTypes: ERROR_TYPES,
     dimStandard: {
       "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
       "point-of-view": "rl-6", "narrators-feelings": "rl-6",
@@ -97,17 +107,39 @@ const TARGETS: Record<string, TargetProfile> = {
     grade: 5,
     textType: "informational",
     baseStandard: "ri-1",
+    defaultDok: "r-dok3",
     standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
     dimensions: new Set([
       "relationships-interactions", "author-use-of-information",
       "point-of-view", "purpose", "authors-opinion",
     ]),
+    errorTypes: ERROR_TYPES,
     dimStandard: {
       "relationships-interactions": "ri-3",
       "author-use-of-information": "ri-8",
       "point-of-view": "ri-6",
       "purpose": "ri-8",
       "authors-opinion": "ri-8",
+    },
+  },
+  // Claim 1 · Target 9 — Central Ideas, informational texts (RI-1 + RI-2). A DIFFERENT skill from
+  // Reasoning & Evidence: whole-text synthesis and significance (the main idea, the key details that
+  // build it, and summary), DOK 2 (3 only for the written summary). Distractors are a SIGNIFICANCE
+  // taxonomy — usually true statements that just aren't the central idea.
+  "c1-t9": {
+    id: "c1-t9",
+    label: "Grade 5 · Claim 1 · Target 9 (Central Ideas)",
+    grade: 5,
+    textType: "informational",
+    baseStandard: "ri-1",
+    defaultDok: "r-dok2",
+    standards: new Set(["ri-1", "ri-2"]),
+    dimensions: new Set(["central-idea", "key-detail", "summary"]),
+    errorTypes: T9_ERROR_TYPES,
+    dimStandard: {
+      "central-idea": "ri-2",
+      "key-detail": "ri-2",
+      "summary": "ri-2",
     },
   },
 };
@@ -315,8 +347,8 @@ function validateClaim(c: any, errors: any[], profile: TargetProfile) {
   }
   if (!str(c.text)) push(`${where}: missing text.`);
   if (str(c.status) === "distractor") {
-    if (!ERROR_TYPES.includes(str(c.errorType))) {
-      push(`${where}: distractor needs a valid error-type (${ERROR_TYPES.join(", ")}).`);
+    if (!profile.errorTypes.includes(str(c.errorType))) {
+      push(`${where}: distractor needs a valid error-type for target ${profile.id} (${profile.errorTypes.join(", ")}).`);
     }
     if (!str(c.rationale)) {
       push(`${where}: distractor needs a rationale (the justification for the foil).`);
@@ -351,13 +383,17 @@ function validateOutcome(o: any, errors: any[], profile: TargetProfile) {
   const push = (message: string) => errors.push({ message, ...at });
   if (!id) push(`${where}: missing id (each question needs a unique id so distractors can target it).`);
   if (!ITEM_TYPES.has(str(o.type))) {
-    push(`${where}: invalid type '${str(o.type)}'. Expected ebsr, hot-text, or short-text.`);
+    push(`${where}: invalid type '${str(o.type)}'. Expected ${[...ITEM_TYPES].join(", ")}.`);
   }
   if (!profile.dimensions.has(str(o.dimension))) push(`${where}: invalid dimension '${str(o.dimension)}' for target ${profile.id}.`);
   if (o.standard !== undefined && !profile.standards.has(str(o.standard))) push(`${where}: invalid standard '${str(o.standard)}' for target ${profile.id}.`);
   // Item-first contract: the question owns its correct answer (focus) and its stem text,
   // authored from the guideline's Appropriate-Stem catalog (the compiler no longer synthesizes stems).
-  if (!str(o.focus)) push(`${where}: missing focus (the id of the supported claim this question is built around).`);
+  // `focus` is one claim id for single-answer items; Multi-Select needs the full correct set (≥2).
+  const focus = focusIds(o);
+  if (focus.length === 0) push(`${where}: missing focus (the id of the supported claim this question is built around).`);
+  else if (str(o.type) === "multi-select" && focus.length < 2) push(`${where}: multi-select needs at least 2 focus claims (the correct set).`);
+  else if (str(o.type) !== "multi-select" && focus.length > 1) push(`${where}: ${str(o.type)} takes a single focus claim; only multi-select takes a list.`);
   if (!str(o.stem)) push(`${where}: missing stem (author it from the guideline's Appropriate-Stem catalog).`);
   if (str(o.type) === "ebsr" && !str(o.stemB)) push(`${where}: EBSR needs a Part B stem (stem-b).`);
 }
@@ -366,6 +402,18 @@ function index(arr: any[], key: string): Record<string, any> {
   const m: Record<string, any> = {};
   for (const x of arr) if (x && x[key] !== undefined) m[str(x[key])] = x;
   return m;
+}
+
+// `focus` names the question's correct claim(s). One id for single-answer items (MC / EBSR /
+// Hot-Text / Short-Text); a list of ids for Multi-Select (the full correct set).
+function focusIds(outcome: any): string[] {
+  return (Array.isArray(outcome.focus) ? outcome.focus.map(str) : [str(outcome.focus)]).filter(Boolean);
+}
+
+// DOK for an item: an explicit `dok` wins; otherwise the target's default, with the written summary
+// (Short Text) bumped to r-dok3 (strategic reasoning) per the guidelines.
+function dokFor(profile: TargetProfile, itemType: string): string {
+  return itemType === "short-text" ? "r-dok3" : profile.defaultDok;
 }
 
 // Program-level referential integrity. Duplicate ids corrupt the indices → hard errors;
@@ -402,21 +450,25 @@ function validateGraph(ctx: any, errors: any[]): string[] {
   // foils bound to it — both hard errors, so a thin or mis-wired item fails the compile.
   for (const o of ctx.outcomes) {
     const oid = str(o.id);
-    const f = str(o.focus);
-    if (f) {
+    for (const f of focusIds(o)) {
       const fc = ctx.claimById[f];
       if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
       else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
     }
+    // Option items need enough distinct foils bound to them, or they can't be composed (hard error).
+    // EBSR / Hot-Text / Multiple-Choice want 3 (4 options); Multi-Select wants at least 2 foils
+    // beyond its correct set.
     const t = str(o.type);
-    if (oid && (t === "ebsr" || t === "hot-text")) {
+    const min = (t === "ebsr" || t === "hot-text" || t === "multiple-choice") ? TUNING.DISTRACTOR_SLOTS
+      : t === "multi-select" ? 2 : 0;
+    if (oid && min > 0) {
       const distinct = new Set(
         ctx.claims
           .filter((c: any) => str(c.status) === "distractor" && (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid))
           .map((c: any) => norm(str(c.text))),
       ).size;
-      if (distinct < TUNING.DISTRACTOR_SLOTS) {
-        errors.push({ message: `outcome '${oid}': only ${distinct} distractor(s) target it; an EBSR/Hot-Text item needs at least ${TUNING.DISTRACTOR_SLOTS}.`, ...coordOf(o) });
+      if (distinct < min) {
+        errors.push({ message: `outcome '${oid}': only ${distinct} distractor(s) target it; a ${t} item needs at least ${min}.`, ...coordOf(o) });
       }
     }
   }
@@ -516,17 +568,20 @@ export function plausibility(d: any, correct: any, ctx: any): number {
 
 // Select up to 3 foils for an item from the distractors explicitly bound to this question via
 // `targets` (NOT a dimension join) — so the foils are authored against this exact stem + key.
-function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: string[]): any[] {
+function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: string[], slots = TUNING.DISTRACTOR_SLOTS): any[] {
   const oid = str(outcome.id);
+  const errorTypes: string[] = ctx.profile.errorTypes;
+  const correctSet = new Set(focusIds(outcome)); // never let a correct claim become its own foil (multi-select)
   const pool = ctx.claims.filter((c: any) =>
-    str(c.status) === "distractor" && (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid));
+    str(c.status) === "distractor" && !correctSet.has(str(c.id)) &&
+    (Array.isArray(c.targets) ? c.targets.map(str) : []).includes(oid));
   const seen = new Set([norm(correct.text)]);
   // Rank candidates by plausibility (desc), tie-break by id for determinism.
   const byScore = (a: any, b: any) =>
     plausibility(b, correct, ctx) - plausibility(a, correct, ctx) || str(a.id).localeCompare(str(b.id));
   const byType: Record<string, any[]> = {};
   for (const c of pool) (byType[str(c.errorType)] = byType[str(c.errorType)] || []).push(c);
-  for (const t of ERROR_TYPES) byType[t]?.sort(byScore);
+  for (const t of errorTypes) byType[t]?.sort(byScore);
   const chosen: any[] = [];
   const take = (c: any) => {
     if (!c) return;
@@ -534,15 +589,19 @@ function selectDistractorClaims(outcome: any, correct: any, ctx: any, warnings: 
     if (seen.has(n)) { warnings.push(`Dropped near-duplicate distractor '${str(c.id)}'.`); return; }
     seen.add(n); chosen.push(c);
   };
-  // Coverage: take the most plausible foil of each error type.
-  for (const t of ERROR_TYPES) if (byType[t] && byType[t].length) take(byType[t].shift());
+  // Coverage: take the most plausible foil of each error type (in taxonomy order).
+  for (const t of errorTypes) if (chosen.length < slots && byType[t] && byType[t].length) take(byType[t].shift());
   // Fill remaining slots with the most plausible leftovers.
   const rest = pool.filter((c: any) => !chosen.includes(c)).sort(byScore);
-  while (chosen.length < TUNING.DISTRACTOR_SLOTS && rest.length) take(rest.shift());
-  if (chosen.length < TUNING.DISTRACTOR_SLOTS) warnings.push(`Only ${chosen.length} distractor claim(s) target this outcome; an EBSR/Hot-Text item wants 3.`);
-  const missing = ERROR_TYPES.filter((t) => !chosen.some((c) => str(c.errorType) === t));
-  if (missing.length) warnings.push(`Distractor error types not represented: ${missing.join(", ")}.`);
-  return chosen.slice(0, TUNING.DISTRACTOR_SLOTS);
+  while (chosen.length < slots && rest.length) take(rest.shift());
+  if (chosen.length < slots) warnings.push(`Only ${chosen.length} distractor claim(s) target this outcome; this item wants ${slots}.`);
+  // Only nudge for full error-type coverage when the taxonomy fits the slot count (R&E: 3 types, 3
+  // slots). Wider taxonomies (e.g. T9's 4) can't all appear in 3 options, so don't warn.
+  if (errorTypes.length <= slots) {
+    const missing = errorTypes.filter((t) => !chosen.some((c) => str(c.errorType) === t));
+    if (missing.length) warnings.push(`Distractor error types not represented: ${missing.join(", ")}.`);
+  }
+  return chosen.slice(0, slots);
 }
 
 function labelize(opts: any[]) {
@@ -591,7 +650,7 @@ function checkReadability(passage: any, grade: number, warnings: string[]): void
 // choice — a partial-understander can pick the key on heft alone. Warn (non-fatal) when the
 // correct option's text runs notably longer than the mean distractor length, so the author/
 // generator can pad the foils or trim the key until the options read as parallel in length.
-function checkLengthBalance(options: any[], part: string, warnings: string[]): void {
+function checkLengthBalance(options: any[], label: string, warnings: string[]): void {
   const correct = options.find((o: any) => o.correct);
   const foils = options.filter((o: any) => !o.correct);
   if (!correct || foils.length === 0) return;
@@ -603,7 +662,7 @@ function checkLengthBalance(options: any[], part: string, warnings: string[]): v
   const isLongest = foils.every((o: any) => len(o) <= correctLen);
   if (isLongest && ratio >= TUNING.LENGTH_BALANCE_RATIO) {
     warnings.push(
-      `Part ${part}: the correct option (${correctLen} chars) is ${Math.round((ratio - 1) * 100)}% longer than the average distractor (${Math.round(meanFoil)} chars) — possible length giveaway. Balance the options' length/detail.`,
+      `${label}: the correct option (${correctLen} chars) is ${Math.round((ratio - 1) * 100)}% longer than the average distractor (${Math.round(meanFoil)} chars) — possible length giveaway. Balance the options' length/detail.`,
     );
   }
 }
@@ -668,17 +727,46 @@ function partAOptions(correct: any, distractors: any[], seed: string, programSee
   return placeCorrect(correctOpt, distractorOpts, seed, programSeed, "A", outcomeIndex);
 }
 
+// Multi-Select options: the full correct set plus distractors, seeded-shuffled together and labelled.
+// (Unlike placeCorrect, more than one option is correct, so there is no single insertion slot.)
+function multiSelectOptions(correctClaims: any[], distractors: any[], seed: string) {
+  const opts = [
+    ...correctClaims.map((c) => ({ text: str(c.text), correct: true, claimId: str(c.id) })),
+    ...distractors.map((d) => ({ text: str(d.text), correct: false, claimId: str(d.id), errorType: str(d.errorType) })),
+  ];
+  return labelize(seededShuffle(opts, `${seed}:MS`));
+}
+
+// Per-option distractor analysis (the non-correct options), shared by Part A, Multiple Choice, and
+// Multi-Select. `part` tags the entry ("A" for the single-part selected-response items).
+function optionAnalysis(options: any[], correct: any, ctx: any, part = "A"): any[] {
+  return options
+    .filter((o: any) => !o.correct)
+    .map((o: any) => {
+      const claim = ctx.claimById[o.claimId];
+      return {
+        part, key: o.key, claimId: o.claimId, errorType: o.errorType,
+        tiesTo: [o.claimId],
+        plausibility: Math.round(plausibility(claim, correct, ctx) * 100) / 100,
+        rationale: str(claim?.rationale),
+      };
+    });
+}
+
 function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], outcomeIndex = 0): any {
   const warnings: string[] = [...graphWarnings];
   const dim = str(outcome.dimension);
   const itemType = str(outcome.type);
-  const dok = str(outcome.dok) || "r-dok3";
+  const dok = str(outcome.dok) || dokFor(ctx.profile, itemType);
   const seed = `${ctx.passage.id}:${str(outcome.id)}:${itemType}`;
 
-  // 1. The question pins its own correct answer via `focus` (validated as a supported claim).
-  const correct: any = ctx.claimById[str(outcome.focus)];
+  // 1. The question pins its correct answer(s) via `focus`. One claim for single-answer items; the
+  // full correct set for multi-select. `correct` is the primary (first) for the shared machinery.
+  const fids = focusIds(outcome);
+  const correctClaims = fids.map((id) => ctx.claimById[id]).filter(Boolean);
+  const correct: any = correctClaims[0];
   if (!correct) {
-    warnings.push(`Outcome '${str(outcome.id)}' focus '${str(outcome.focus)}' not found; cannot compose.`);
+    warnings.push(`Outcome '${str(outcome.id)}' focus '${fids.join(", ")}' not found; cannot compose.`);
     return baseItem(itemType, outcome, ctx, dim, dok, null, warnings);
   }
   const alternativeClaims = Math.max(0,
@@ -702,6 +790,35 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     return item;
   }
 
+  // Multiple Choice (single-part, 4 options, exactly one correct). The `focus` claim is the key; its
+  // `targets` distractors are the foils.
+  if (itemType === "multiple-choice") {
+    const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
+    const options = partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex);
+    checkLengthBalance(options, "Options", warnings);
+    checkStemGiveaway(str(outcome.stem), str(correct.text), str(outcome.subject), warnings);
+    item.choice = { options };
+    item.distractorAnalysis = optionAnalysis(options, correct, ctx);
+    item.answerKey = { choice: options.find((o: any) => o.correct)?.key, rationale: str(correct.rationale) };
+    return item;
+  }
+
+  // Multi-Select (single-part, 5–6 options, N correct). The full correct set is `focus`; the student
+  // must select exactly that set (guideline: "all responses correct").
+  if (itemType === "multi-select") {
+    const correctCount = correctClaims.length;
+    const slots = Math.max(1, TUNING.MULTI_SELECT_OPTIONS - correctCount);
+    const distractors = selectDistractorClaims(outcome, correct, ctx, warnings, slots);
+    const options = multiSelectOptions(correctClaims, distractors, seed);
+    checkLengthBalance(options, "Options", warnings);
+    checkStemGiveaway(str(outcome.stem), str(correct.text), str(outcome.subject), warnings);
+    item.choice = { options };
+    item.selectCount = correctCount; // how many to select (the stem says "Choose two", etc.)
+    item.distractorAnalysis = optionAnalysis(options, correct, ctx);
+    item.answerKey = { choices: options.filter((o: any) => o.correct).map((o: any) => o.key), rationale: str(correct.rationale) };
+    return item;
+  }
+
   // EBSR & Hot Text share Part A (statement options).
   // Viability check: a healthy pool has >=5 distinct distractors bound to THIS question (via
   // `targets`), so selection (and the plausibility ranking) has real choice. Thin pools warn — a
@@ -718,20 +835,10 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
   }
   const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
   item.partA = { options: partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex) };
-  checkLengthBalance(item.partA.options, "A", warnings);
+  checkLengthBalance(item.partA.options, "Part A", warnings);
   checkStemGiveaway(str(outcome.stem), str(correct.text), str(outcome.subject), warnings);
   const aKey = item.partA.options.find((o: any) => o.correct)?.key;
-  const analysis: any[] = item.partA.options
-    .filter((o: any) => !o.correct)
-    .map((o: any) => {
-      const claim = ctx.claimById[o.claimId];
-      return {
-        part: "A", key: o.key, claimId: o.claimId, errorType: o.errorType,
-        tiesTo: [o.claimId],
-        plausibility: Math.round(plausibility(claim, correct, ctx) * 100) / 100,
-        rationale: str(claim?.rationale),
-      };
-    });
+  const analysis: any[] = optionAnalysis(item.partA.options, correct, ctx);
 
   if (itemType === "hot-text") {
     // Part A asks for the best STATEMENT (an inference), authored from the Task Model 2 "Click on
@@ -803,7 +910,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
       : labelize(seededShuffle(distractorOpts, `${seed}:B`)),
   };
   const bKey = item.partB.options.find((o: any) => o.correct)?.key;
-  checkLengthBalance(item.partB.options, "B", warnings);
+  checkLengthBalance(item.partB.options, "Part B", warnings);
 
   // A<->B no-giveaway check: at least one Part B distractor should also tie to the correct claim.
   const overlap = distractorSrcs.some((s: any) => (Array.isArray(s.supports) ? s.supports.map(str) : []).includes(str(correct.id)));
@@ -867,10 +974,16 @@ function stemFor(itemType: string, outcome: any) {
   return stem;
 }
 
+const SCORING: Record<string, string> = {
+  "short-text": "0–2 points; hand-scored against the rubric.",
+  "multiple-choice": "Correct option = 1 point; otherwise 0.",
+  "multi-select": "All correct selections (and no others) = 1 point; otherwise 0.",
+  "ebsr": "Both parts correct = 1 point; otherwise 0.",
+  "hot-text": "Both parts correct = 1 point; otherwise 0.",
+};
+
 function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: string, correct: any, warnings: string[]): any {
-  const scoring = itemType === "short-text"
-    ? "0–2 points; hand-scored against the rubric."
-    : "Both parts correct = 1 point; otherwise 0.";
+  const scoring = SCORING[itemType] || "Both parts correct = 1 point; otherwise 0.";
   const standards = standardsFor(outcome, correct, dim, ctx.profile);
   return {
     kind: "item",

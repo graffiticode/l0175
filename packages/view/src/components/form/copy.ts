@@ -86,6 +86,9 @@ export function itemToHtml(item: any, mode: Mode): string {
     out.push(optionsHtml(item.partA?.options, mode, false));
     out.push(P(`<strong>Part B.</strong> ${esc(item.stem?.partB)}`, "margin:8px 0 4px"));
     out.push(item.type === "ebsr" ? optionsHtml(item.partB?.options, mode, true) : selectableHtml(item.selectable, mode));
+  } else if (item.type === "multiple-choice" || item.type === "multi-select") {
+    out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
+    out.push(optionsHtml(item.choice?.options, mode, false));
   } else if (item.type === "short-text") {
     out.push(P(`<strong>${esc(item.prompt)}</strong>`, "margin:8px 0 4px"));
     if (!review) out.push(P("Answer: ___________________________________________", "margin:8px 0;color:#9ca3af"));
@@ -99,6 +102,8 @@ export function itemToHtml(item: any, mode: Mode): string {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
       if (ids.length) key.push(`Part B &mdash; any ${item.selectCount ?? 1} of: ${esc(ids.join(", "))}`);
     }
+    if (item.answerKey?.choice) key.push(`Answer &mdash; ${esc(item.answerKey.choice)}`);
+    if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer &mdash; ${esc(item.answerKey.choices.join(", "))}`);
     if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
 
     if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
@@ -152,6 +157,9 @@ export function itemToText(item: any, mode: Mode): string {
         );
       }
     }
+  } else if (item.type === "multiple-choice" || item.type === "multi-select") {
+    out.push(item.stem?.partA ?? "");
+    for (const o of item.choice?.options ?? []) out.push(opt(o, false));
   } else if (item.type === "short-text") {
     out.push(item.prompt ?? "");
     if (!review) out.push("", "Answer: ___________________________________________");
@@ -165,6 +173,8 @@ export function itemToText(item: any, mode: Mode): string {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
       if (ids.length) key.push(`Part B — any ${item.selectCount ?? 1} of: ${ids.join(", ")}`);
     }
+    if (item.answerKey?.choice) key.push(`Answer — ${item.answerKey.choice}`);
+    if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer — ${item.answerKey.choices.join(", ")}`);
     if (key.length) out.push("", `Answer key: ${key.join("; ")}`);
     if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
       out.push("", "Scoring rubric:");

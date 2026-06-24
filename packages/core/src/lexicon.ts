@@ -24,20 +24,26 @@ const fn1 = (name: string) => ({ tk: 1, name, cls: "function", length: 1, arity:
 const ENUM_VALUES = [
   "literary", "informational",
   "ebsr", "hot-text", "short-text",
+  // single-part item types (Multiple Choice / Multi-Select) — used by T9 and the later T8/T10
+  "multiple-choice", "multi-select",
   // learning targets (the top-level `target` selector)
-  "c1-t4", "c1-t11",
+  "c1-t4", "c1-t11", "c1-t9",
   // T4 (literary) dimensions
   "character", "setting", "event", "point-of-view",
   "theme", "topic", "narrators-feelings", "character-relationship",
   // T11 (informational) dimensions (point-of-view shared with T4)
   "relationships-interactions", "author-use-of-information", "purpose", "authors-opinion",
+  // T9 (Central Ideas) dimensions
+  "central-idea", "key-detail", "summary",
   "supported", "distractor",
   "directly-supports", "supports-wrong-claim", "irrelevant",
+  // error taxonomies: Reasoning & Evidence (T4/T11) + Central Ideas (T9, significance-based)
   "misreads-detail", "erroneous-inference", "faulty-reasoning",
-  // standards: RL (T4) + RI (T11)
+  "too-narrow", "too-broad", "insignificant",
+  // standards: RL (T4) + RI (T11/T9)
   "rl-1", "rl-3", "rl-6", "rl-9",
-  "ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9",
-  "r-dok3",
+  "ri-1", "ri-2", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9",
+  "r-dok1", "r-dok2", "r-dok3",
   "inference", "conclusion", "author-intent",
 ];
 const enums = Object.fromEntries(

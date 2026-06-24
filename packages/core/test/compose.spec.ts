@@ -433,6 +433,94 @@ describe("compose — learning targets (parameterization)", () => {
   });
 });
 
+describe("compose — Target 9 (Central Ideas) + Multiple-Choice / Multi-Select", () => {
+  const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
+  const T9_PASSAGE = `target c1-t9 passage "Honeybees" type informational lines [
+      "Honeybees live together in large groups called colonies. Worker bees gather nectar and build the hive. The queen bee lays all the eggs. By working together, the colony survives and grows."
+    ]`;
+
+  // Multiple Choice — pick the central idea; distractors use T9's significance taxonomy.
+  const T9_MC = `${T9_PASSAGE}
+    claims [
+      claim id "c1" status supported dimension central-idea subject "the colony" text "Honeybees survive by living and working together, each bee with its own job." cites ["e1"] {},
+      claim id "d1" status distractor error-type too-narrow targets ["q1"] text "The queen bee lays all the eggs." rationale "A true supporting detail, not the central idea." cites ["e1"] {},
+      claim id "d2" status distractor error-type too-broad targets ["q1"] text "Insects are the most important animals on Earth." rationale "An overgeneralization beyond the passage." cites ["e1"] {},
+      claim id "d3" status distractor error-type misreads-detail targets ["q1"] text "Each bee in the colony does every job by itself." rationale "Misreads the division of labor." cites ["e1"] {}
+    ]
+    evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
+    outcomes [ outcome id "q1" type multiple-choice dimension central-idea subject "the colony" standard ri-2 focus "c1" stem "Which sentence best shows the main idea of the passage?" {} ] {}..`;
+
+  it("composes a Multiple-Choice item: 4 options, exactly one correct, RI-1+RI-2, DOK r-dok2", async () => {
+    const { errors, data } = await compile(T9_MC);
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t9");
+    expect(it0.type).toBe("multiple-choice");
+    expect(it0.standards).toEqual(expect.arrayContaining(["ri-1", "ri-2"]));
+    expect(it0.standards).not.toContain("rl-1");
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.choice.options).toHaveLength(4);
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(1);
+    expect(it0.answerKey.choice).toMatch(/^[A-D]$/);
+  });
+
+  // Multi-Select — choose the two sentences that belong in a summary; focus is the correct SET.
+  const T9_MS = `${T9_PASSAGE}
+    claims [
+      claim id "s1" status supported dimension summary subject "the colony" text "Worker bees gather nectar and build the hive." cites ["e1"] {},
+      claim id "s2" status supported dimension summary subject "the colony" text "The queen bee lays all the eggs." cites ["e1"] {},
+      claim id "d1" status distractor error-type insignificant targets ["q1"] text "Bees are a kind of insect." rationale "True but too minor for a summary." cites ["e1"] {},
+      claim id "d2" status distractor error-type too-broad targets ["q1"] text "All animals live in groups." rationale "Overgeneralization beyond the passage." cites ["e1"] {},
+      claim id "d3" status distractor error-type misreads-detail targets ["q1"] text "The queen gathers all the nectar." rationale "Misreads who does which job." cites ["e1"] {},
+      claim id "d4" status distractor error-type insignificant targets ["q1"] text "A hive is made of wax." rationale "Minor detail, not summary-worthy." cites ["e1"] {}
+    ]
+    evidence [ source id "e1" line 1 status directly-supports supports ["s1" "s2"] {} ]
+    outcomes [ outcome id "q1" type multi-select dimension summary subject "the colony" standard ri-2 focus ["s1" "s2"] stem "Choose two sentences that should be included in a summary of the passage." {} ] {}..`;
+
+  it("composes a Multi-Select item: the correct SET via focus list, answerKey.choices, selectCount", async () => {
+    const { errors, data } = await compile(T9_MS);
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.type).toBe("multi-select");
+    expect(it0.choice.options.length).toBeGreaterThanOrEqual(5);
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(2);
+    expect(it0.answerKey.choices).toHaveLength(2);
+    expect(it0.selectCount).toBe(2);
+    expect(it0.dok).toBe("r-dok2");
+  });
+
+  it("Short Text under T9 is DOK r-dok3; selected-response is r-dok2", async () => {
+    const st = T9_MC
+      .replace('type multiple-choice', 'type short-text')
+      .replace('stem "Which sentence best shows the main idea of the passage?"', 'stem "Determine the main idea of the passage. Explain using key details from the passage to support your answer."');
+    expect(item0((await compile(st)).data).dok).toBe("r-dok3");
+  });
+
+  it("uses T9's significance error taxonomy: accepts too-narrow, rejects an R&E error-type", async () => {
+    // T9_MC already uses too-narrow/too-broad/misreads-detail and composes cleanly (above).
+    const bad = T9_MC.replace("error-type too-broad", "error-type erroneous-inference");
+    const { errors } = await compile(bad);
+    expect(errors.some((e: any) => /valid error-type for target c1-t9/.test(e.message))).toBe(true);
+  });
+
+  it("rejects a T9 error-type under T11 (the taxonomy is per-target)", async () => {
+    const bad = T9_MC
+      .replace("target c1-t9", "target c1-t11")
+      .replace("dimension central-idea", "dimension purpose").replace("dimension central-idea", "dimension purpose")
+      .replace("standard ri-2", "standard ri-8")
+      .replace("error-type too-narrow", "error-type misreads-detail"); // leave one valid-for-T11 + the rest still T9-only
+    const { errors } = await compile(bad);
+    expect(errors.some((e: any) => /valid error-type for target c1-t11/.test(e.message))).toBe(true);
+  });
+
+  it("multi-select requires at least 2 focus claims; single-focus items reject a list", async () => {
+    const oneFocus = T9_MS.replace('focus ["s1" "s2"]', 'focus "s1"');
+    expect((await compile(oneFocus)).errors.some((e: any) => /multi-select needs at least 2 focus/.test(e.message))).toBe(true);
+    const listOnMc = T9_MC.replace('focus "c1"', 'focus ["c1" "d1"]');
+    expect((await compile(listOnMc)).errors.some((e: any) => /takes a single focus claim/.test(e.message))).toBe(true);
+  });
+});
+
 describe("compose — grade level & readability", () => {
   // A deliberately above-grade passage: long sentences, abstract/academic vocabulary. Self-
   // contained (claims/evidence reference only line 1) so the only warning under test is readability.

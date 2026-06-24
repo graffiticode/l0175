@@ -1,8 +1,8 @@
 {
-  "revised": "2026-06-23",
+  "revised": "2026-06-24",
   "id": "0175",
-  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for multiple learning targets: c1-t4 (literary texts, RL standards) and c1-t11 (informational texts, RI standards). Every program declares a top-level `target` selecting the dimension/standard/stem vocabulary. Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim, and a stem from the target's guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one passage. Supply the passage text already split into paragraphs (keep the paragraph breaks) — each paragraph becomes one numbered `lines` entry and the rendered passage preserves that structure; the generator maintains the paragraphs you provide rather than reflowing one block. The compiler takes each outcome's focus and the foils that target it and assembles EBSR, Hot Text, or Short Text items. It selects and validates authored content; it does not generate content or stems. Author the passage and all question text at the target reading level: the grade is the guideline/target's grade (Grade 5 for c1-t4/c1-t11), overridable with a top-level `grade <n>` when the prompt asks for another grade — keep sentences short, vocabulary concrete, and the inference grounded in specific textual details (DOK 3 is strategic reasoning within grade-level text, not harder text). The compiler estimates the passage's reading level and warns when it runs above the target grade.",
-  "supported_item_types": ["ebsr", "hot-text", "short-text"],
+  "description": "Composes 5th-grade English Language Arts assessment items (Smarter Balanced · Grade 5 · Claim 1) for multiple learning targets — DIFFERENT reading skills: c1-t4 (Reasoning & Evidence, literary, RL) and c1-t11 (Reasoning & Evidence, informational, RI) ask students to infer/conclude and justify with evidence; c1-t9 (Central Ideas, informational, RI-1/RI-2) asks them to determine the main idea, the key details that build it, or summarize. Every program declares a top-level `target` selecting the dimension/standard/error-type/DOK/stem vocabulary. Item-first: a program authors the questions (outcomes) first — each with a unique id, a focus correct claim (a list on multi-select), and a stem from the target's guideline catalog — then supported and distractor claims (each distractor targets the question(s) it foils) and evidence sources for one passage. Item types: ebsr (two-part), hot-text, short-text, multiple-choice (one correct), multi-select (exact correct set). T9 distractors are a significance taxonomy (too-narrow/too-broad/misreads-detail/insignificant) — usually true statements that just aren't central — vs R&E's reasoning-error taxonomy. Supply the passage text already split into paragraphs (keep the paragraph breaks). The compiler takes each outcome's focus and the foils that target it and assembles the item; it selects and validates authored content, it does not generate content or stems. Author the passage and all question text at the target reading level (Grade 5; overridable with a top-level `grade <n>`); the compiler estimates the passage's reading level and warns when it runs above the target grade.",
+  "supported_item_types": ["ebsr", "hot-text", "short-text", "multiple-choice", "multi-select"],
   "example_prompts": [
     {
       "prompt": "From a short story about a girl named Mara at a tide pool, write an EBSR item about what Mara cares about, standard rl-1.",
@@ -48,6 +48,16 @@
       "prompt": "Here is the passage (4 paragraphs, blank-line separated): <text>. Write an EBSR item about the narrator's feelings.",
       "produces": "ebsr",
       "notes": "The request supplies paragraph-chunked text -> emit one `lines` entry per paragraph, preserving the breaks, so the rendered passage keeps its 4 numbered paragraphs. Do not merge the text into a single line."
+    },
+    {
+      "prompt": "From an informational article about honeybees, write a multiple-choice item asking for the main idea.",
+      "produces": "multiple-choice",
+      "notes": "Central Ideas -> target c1-t9, type multiple-choice, dimension central-idea, standards ri-1+ri-2, DOK r-dok2. The focus claim is the central idea; distractors use the significance taxonomy (too-narrow: a true supporting detail; too-broad: an overgeneralization; insignificant: a minor detail), i.e. true statements that aren't the main idea."
+    },
+    {
+      "prompt": "Make a multi-select asking which two sentences belong in a summary of the article.",
+      "produces": "multi-select",
+      "notes": "target c1-t9, type multi-select, dimension summary. `focus` is a LIST of the two correct claims; the compiler emits 5-6 options and the student must select exactly the correct set."
     }
   ]
 }

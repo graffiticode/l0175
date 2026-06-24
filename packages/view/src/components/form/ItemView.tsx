@@ -6,12 +6,16 @@ import { Pill, type Mode } from "./itemKit";
 import { EbsrItem } from "./EbsrItem";
 import { HotTextItem } from "./HotTextItem";
 import { ShortTextItem } from "./ShortTextItem";
+import { MultipleChoiceItem } from "./MultipleChoiceItem";
+import { MultiSelectItem } from "./MultiSelectItem";
 import { Warnings } from "./Warnings";
 
 const TYPE_LABEL: Record<string, string> = {
   "ebsr": "EBSR",
   "hot-text": "Hot Text",
   "short-text": "Short Text",
+  "multiple-choice": "Multiple Choice",
+  "multi-select": "Multi-Select",
 };
 
 export function Passage({ passage }: { passage: any }) {
@@ -76,6 +80,10 @@ export function ItemView({
       <HotTextItem item={item} mode={mode} respond={respond} />
     ) : item.type === "short-text" ? (
       <ShortTextItem item={item} mode={mode} respond={respond} />
+    ) : item.type === "multiple-choice" ? (
+      <MultipleChoiceItem item={item} mode={mode} respond={respond} />
+    ) : item.type === "multi-select" ? (
+      <MultiSelectItem item={item} mode={mode} respond={respond} />
     ) : null;
 
   return (

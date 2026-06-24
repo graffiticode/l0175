@@ -4,9 +4,11 @@
 _Revised: 2026-06-19_
 
 **L0175** is a Graffiticode dialect for composing 5th-grade English Language Arts assessment
-items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence). One language serves
-**multiple learning targets**, selected by a required top-level `target`: `c1-t4` (literary
-texts, RL standards) or `c1-t11` (informational texts, RI standards). It is **item-first**: a
+items (Smarter Balanced · Grade 5 · Claim 1). One language serves **multiple learning targets**,
+selected by a required top-level `target`: `c1-t4` (Reasoning & Evidence, literary, RL standards),
+`c1-t11` (Reasoning & Evidence, informational, RI standards), or `c1-t9` (Central Ideas,
+informational, RI-1/RI-2) — different reading skills, each with its own dimensions, distractor
+taxonomy, DOK, and stem catalog. It is **item-first**: a
 program declares its `target`, then authors the `outcome`s (questions) first — each with a unique
 `id`, a `focus` naming its correct claim, and an explicit `stem` from that target's guideline
 catalog — then the supported and distractor `claim`s (each distractor `targets` the question(s)
@@ -59,11 +61,11 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 
 | Form | Arity | Takes | Description |
 | :--- | :---: | :--- | :--- |
-| `target` | 2 | tag | Top level: the learning target — `c1-t4` (literary, RL) or `c1-t11` (informational, RI). Selects the valid dimensions/standards and the stem catalog. Always author one; defaults to `c1-t4` if omitted. |
+| `target` | 2 | tag | Top level: the learning target — `c1-t4` (R&E literary, RL), `c1-t11` (R&E informational, RI), or `c1-t9` (Central Ideas informational, RI-1/RI-2). Selects the valid dimensions/standards, distractor taxonomy, DOK, and stem catalog. Always author one; defaults to `c1-t4` if omitted. |
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
 | `grade` | 2 | number | Optional top-level reading-level target (e.g. `grade 5`). Defaults to the target/guideline's grade (5 for `c1-t4`/`c1-t11`); echoed on the output. The compiler estimates the passage's reading level and warns when it reads above this grade. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
-| `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text`. |
+| `type` | 2 | tag | On the passage: `literary` \| `informational`. On an `outcome`: the item type `ebsr` \| `hot-text` \| `short-text` \| `multiple-choice` \| `multi-select`. |
 | `lines` | 2 | string list | The passage **paragraphs** (one entry per paragraph by default), **auto-numbered from 1** (the numbers `source.line` refers to). Use finer units (sentences) only when a task needs them, e.g. click-the-sentence Hot Text. |
 | `claims` | 2 | list | The collection of candidate `claim`s (the inference graph's nodes). |
 | `claim` | 1 | chain | One candidate inference/conclusion statement — either the correct answer or a foil. |
@@ -118,14 +120,14 @@ composes). A `focus` that isn't a supported claim, or a `targets` to a missing o
 | Attribute | Value | Req. | Description |
 | :--- | :--- | :---: | :--- |
 | `id` | string | ✓ | Unique question id; distractors `targets` it. |
-| `type` | tag | ✓ | The task model: `ebsr`, `hot-text`, or `short-text`. |
-| `dimension` | tag | ✓ | The inference target the item assesses (must match the focus claim's dimension). |
-| `focus` | id | ✓ | The supported claim that is the correct answer (see *Identity & references*). |
-| `stem` | string | ✓ | The Part A stem (or, for `short-text`, the prompt), authored from the guideline's Appropriate-Stem catalog (`stems.md`). |
+| `type` | tag | ✓ | The task model: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, or `multi-select`. |
+| `dimension` | tag | ✓ | The skill facet the item assesses (must match the focus claim's dimension). |
+| `focus` | id \| id list | ✓ | The supported claim that is the correct answer; on `multi-select` a **list** of ids = the correct set (see *Identity & references*). |
+| `stem` | string | ✓ | The Part A / single-question stem (or, for `short-text`, the prompt), authored from the guideline's Appropriate-Stem catalog (`stems.md`). |
 | `stem-b` | string | ✓ on ebsr | The EBSR Part B stem, authored from the catalog. (Hot Text's Part B instruction is fixed; Short Text has no Part B.) |
 | `subject` | string | — | The noun phrase the stem is about, e.g. `"Mara"` or `"the letter Cortez burned"`; echoed in review metadata. |
 | `standard` | tag | — | The primary RL standard; `rl-1` (cite evidence) is added automatically, and the dimension's companion standard is inferred. |
-| `dok` | tag | — | Target cognitive demand (default `r-dok3`). |
+| `dok` | tag | — | Target cognitive demand (default: the target's — `r-dok3` for R&E, `r-dok2` for T9; a `short-text` summary is `r-dok3`). |
 | `rubric` | band list | — | `short-text` only — replace the default 0/1/2 rubric with authored `band`s. |
 
 ## Rubric band
@@ -139,13 +141,14 @@ composes). A `focus` that isn't a supported claim, or a `targets` to a missing o
 
 ## Enumerations
 
-- **`target`**: `c1-t4` (literary), `c1-t11` (informational) — required, top level
-- **item `type`**: `ebsr`, `hot-text`, `short-text` · **passage `type`**: `literary`, `informational`
+- **`target`**: `c1-t4` (R&E literary), `c1-t11` (R&E informational), `c1-t9` (Central Ideas informational) — required, top level
+- **item `type`**: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · **passage `type`**: `literary`, `informational`
 - **`dimension` (c1-t4)**: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - **`dimension` (c1-t11)**: `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
+- **`dimension` (c1-t9)**: `central-idea`, `key-detail`, `summary`
 - **claim `status`**: `supported`, `distractor` · **source `status`**: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- **`error-type`**: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
-- **`standard` (c1-t4)**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **(c1-t11)**: `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · **`dok`**: `r-dok3`
+- **`error-type` (c1-t4 / c1-t11)**: `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · **(c1-t9)**: `too-narrow`, `too-broad`, `misreads-detail`, `insignificant`
+- **`standard` (c1-t4)**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **(c1-t11)**: `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · **(c1-t9)**: `ri-1`, `ri-2` · **`dok`**: `r-dok1`, `r-dok2`, `r-dok3`
 
 ## How composition uses the vocabulary
 

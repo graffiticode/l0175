@@ -1,13 +1,14 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 RAG Training Examples
 
-_Revised: 2026-06-18_
+_Revised: 2026-06-24_
 
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
-assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence) for learning
-targets **T4** (`target c1-t4`, literary) and **T11** (`target c1-t11`, informational). Each
-program declares its `target` first. Categories 1–6 below are literary (T4); Category 7 is
-informational (T11).
+assessment items (Smarter Balanced · Grade 5 · Claim 1) for learning targets **T4**
+(`target c1-t4`, Reasoning & Evidence, literary), **T11** (`target c1-t11`, Reasoning & Evidence,
+informational), and **T9** (`target c1-t9`, Central Ideas, informational). Each program declares
+its `target` first. Categories 1–6 below are literary (T4); Category 7 is informational R&E (T11);
+Category 8 is Central Ideas (T9).
 
 ## Category 1: EBSR items (two-part selected response)
 
@@ -59,3 +60,13 @@ informational (T11).
 28. Compose an EBSR item about the author's point of view in an informational passage about city planning (dimension point-of-view, standard ri-6).
 29. Write a short-text item asking what conclusion can be drawn about the author's opinion of renewable energy, with key evidence (dimension authors-opinion).
 30. Make a hot-text item about the author's purpose in an informational passage (dimension purpose).
+
+## Category 8: Central Ideas items (target c1-t9)
+
+A DIFFERENT skill from Reasoning & Evidence — the main idea, the key details that build it, and summary (DOK 2; standards ri-1+ri-2). Distractors are usually TRUE statements that just aren't central: too-narrow (a supporting detail), too-broad (an overgeneralization), insignificant (a minor detail), or misreads-detail.
+
+31. From an informational article about honeybees, write a multiple-choice item asking which sentence best states the main idea (dimension central-idea). Make the distractors a true supporting detail (too-narrow), an overgeneralization (too-broad), and a misread (misreads-detail).
+32. Make a multi-select item: choose the two sentences that should be included in a summary of the passage (dimension summary); `focus` lists the two correct claims, distractors are insignificant or too-broad statements.
+33. Compose an EBSR item where Part A asks for the main idea and Part B asks which detail best supports it (dimension central-idea, standard ri-2).
+34. Write a short-text item: "Determine the main idea of the passage. Explain using key details…" (dimension central-idea, DOK r-dok3).
+35. Write a multiple-choice "missing key detail" item: present a short summary in the stem and ask which key detail is missing; the focus claim is the missing detail.

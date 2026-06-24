@@ -17,16 +17,27 @@ Always declare a top-level `target` (the SBAC learning target the program compos
 - **`c1-t11`** — Target 11: Reasoning & Evidence over **informational** texts (RI standards).
   Dimensions: `relationships-interactions`, `author-use-of-information`, `point-of-view`,
   `purpose`, `authors-opinion`. Standards: `ri-1` (always) + `ri-3` / `ri-6` / `ri-7` / `ri-8` / `ri-9`.
+- **`c1-t9`** — Target 9: **Central Ideas** over **informational** texts (RI standards). A
+  DIFFERENT skill from Reasoning & Evidence — synthesize and condense: the main/central idea, the
+  key details that build it, and summary (NOT inference + justification). Dimensions: `central-idea`,
+  `key-detail`, `summary`. Standards: `ri-1` (always) + `ri-2`. **DOK 2** (3 only for the written
+  summary). Item types: `multiple-choice`, `multi-select`, `ebsr`, `short-text` (single-part
+  Hot-Text is not yet available). Distractors use a **significance** taxonomy (`too-narrow`,
+  `too-broad`, `misreads-detail`, `insignificant`) — usually true statements that just aren't the
+  central idea.
 
-**Infer the target — the user need not state it.** Decide from the passage itself: a **literary**
-text (a story, poem, or narrative with characters, setting, plot, theme) → `c1-t4`; an
-**informational** text (an article, report, or expository piece about real events, ideas,
-procedures, or an author's argument) → `c1-t11`. The skill asked also signals it (character /
-theme / narrator's point of view → T4; relationships between ideas / author's use of evidence /
-author's purpose or opinion → T11). When the text type is genuinely ambiguous, prefer `c1-t4`.
+**Infer the target — the user need not state it.** Decide from the passage and the skill asked: a
+**literary** text (story/poem/narrative) → `c1-t4`; an **informational** text → an RI target. Among
+informational targets, choose by skill: **reasoning** — infer/conclude and justify with evidence
+(relationships between ideas, author's use of evidence, point of view/purpose/opinion) → `c1-t11`;
+**central ideas** — the main idea, the key details that support it, or a summary → `c1-t9`. The skill
+also signals T4: character / theme / narrator's point of view. When the text type is genuinely
+ambiguous, prefer `c1-t4`; when an informational request is between reasoning and central-idea,
+ask which is intended or prefer the one the request's verbs match ("infer/conclude/why" → T11;
+"main idea/summarize/most about" → T9).
 Write the choice as the first top-level form: `target c1-t11`. Use the dimensions, standards, and
 stem catalog (in `stems.md`) for that target; mixing targets' vocabularies is a compile error,
-and the passage `type` should match the target (literary for T4, informational for T11). If
+and the passage `type` should match the target (literary for T4; informational for T11 and T9). If
 `target` is omitted entirely the compiler defaults to `c1-t4` and warns — so always emit one
 explicitly rather than relying on the default.
 
@@ -78,9 +89,10 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   options stay tight sentences even though the passage is numbered by paragraph. (Without `quote`,
   the option text is the whole paragraph at `line`.)
 - **outcome** — `id` (required, unique — distractors target it), `type`
-  (`ebsr` | `hot-text` | `short-text`), `dimension`, `focus` (required — the id of the supported
-  correct claim), `stem` (required — the Part A stem / short-text prompt, authored from
-  `stems.md`), and on EBSR `stem-b` (required — the Part B stem). Optional: `subject`,
+  (`ebsr` | `hot-text` | `short-text` | `multiple-choice` | `multi-select`), `dimension`, `focus`
+  (required — the id of the supported correct claim; on `multi-select` a **list** of ids = the
+  correct set), `stem` (required — the Part A / single-question stem / short-text prompt, authored
+  from `stems.md`), and on EBSR `stem-b` (required — the Part B stem). Optional: `subject`,
   `standard`, `dok`, and `rubric` (short-text only — a list of `band score <n> descriptor "…"`
   elements; defaults to a 0/1/2 rubric if omitted).
 - **band** — a rubric row: `band score 2 descriptor "…" {}`. Used only inside an outcome's `rubric`.
@@ -217,14 +229,16 @@ outright is literal recall and out of scope.
 
 ## Built-in enumerations
 
-- `target`: `c1-t4`, `c1-t11` (top level; always author one — defaults to `c1-t4` if omitted)
-- `grade`: a number (top level, optional; defaults to the target's grade — 5 for `c1-t4`/`c1-t11`)
-- item `type`: `ebsr`, `hot-text`, `short-text` · passage `type`: `literary`, `informational`
+- `target`: `c1-t4`, `c1-t11`, `c1-t9` (top level; always author one — defaults to `c1-t4` if omitted)
+- `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
+- item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
+- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning` (shared across targets)
-- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · `dok`: `r-dok3`
+- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant`
+- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (**c1-t9**): `ri-1`, `ri-2`
+- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`)
 
 ## What composition does
 

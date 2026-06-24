@@ -23,7 +23,7 @@
         "id": { "type": "string" },
         "title": { "type": "string" },
         "grade": { "type": "number" },
-        "type": { "type": "string", "enum": ["ebsr", "hot-text", "short-text"] },
+        "type": { "type": "string", "enum": ["ebsr", "hot-text", "short-text", "multiple-choice", "multi-select"] },
         "standards": { "type": "array", "items": { "type": "string" } },
         "dok": { "type": "string" },
         "dimension": { "type": "string" },
@@ -53,6 +53,7 @@
         },
         "partA": { "$ref": "#/$defs/optionGroup" },
         "partB": { "$ref": "#/$defs/optionGroup" },
+        "choice": { "$ref": "#/$defs/optionGroup" },
         "selectable": {
           "type": "array",
           "items": {
@@ -97,6 +98,8 @@
           "properties": {
             "partA": { "type": "string" },
             "partB": { "type": "string" },
+            "choice": { "type": "string" },
+            "choices": { "type": "array", "items": { "type": "string" } },
             "rationale": { "type": "string" }
           }
         },

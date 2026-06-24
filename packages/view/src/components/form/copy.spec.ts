@@ -38,6 +38,35 @@ const HOTTEXT: any = {
   warnings: [],
 };
 
+const MC: any = {
+  type: "multiple-choice",
+  id: "q4",
+  passage: { heading: "Bees", lines: [{ id: 1, text: "A." }] },
+  stem: { partA: "Which sentence best shows the main idea?" },
+  choice: { options: [{ key: "A", text: "Bees work together.", correct: true }, { key: "B", text: "The queen lays eggs.", correct: false }] },
+  distractorAnalysis: [],
+  answerKey: { choice: "A" },
+  review: { correctClaim: { id: "c1", text: "Bees work together." } },
+  warnings: [],
+};
+
+const MULTISELECT: any = {
+  type: "multi-select",
+  id: "q5",
+  passage: { heading: "Bees", lines: [{ id: 1, text: "A." }] },
+  stem: { partA: "Choose two sentences that belong in a summary." },
+  selectCount: 2,
+  choice: { options: [
+    { key: "A", text: "Workers gather nectar.", correct: true },
+    { key: "B", text: "The queen lays eggs.", correct: true },
+    { key: "C", text: "Bees are insects.", correct: false },
+  ] },
+  distractorAnalysis: [],
+  answerKey: { choices: ["A", "B"] },
+  review: { correctClaim: { id: "s1", text: "Workers gather nectar." } },
+  warnings: [],
+};
+
 const SHORTTEXT: any = {
   type: "short-text",
   id: "q3",
@@ -107,6 +136,23 @@ describe("copy serializer — hot text & short text", () => {
     const preview = itemToHtml(SHORTTEXT, "preview");
     expect(preview).toContain("Answer:");
     expect(preview).not.toContain("Scoring rubric");
+  });
+});
+
+describe("copy serializer — multiple choice & multi-select", () => {
+  it("multiple choice emits the stem, options, and the single-key answer", () => {
+    const html = itemToHtml(MC, "review");
+    expect(html).toContain("Which sentence best shows the main idea?");
+    expect(html).toContain("Bees work together.");
+    expect(html).toContain("Answer &mdash; A");
+    expect(html).toContain("✓");
+    expect(itemToText(MC, "review")).toContain("Answer — A");
+  });
+  it("multi-select lists the correct set in the key", () => {
+    const html = itemToHtml(MULTISELECT, "review");
+    expect(html).toContain("Choose two sentences");
+    expect(html).toContain("Answer &mdash; A, B");
+    expect(itemToText(MULTISELECT, "review")).toContain("Answer — A, B");
   });
 });
 

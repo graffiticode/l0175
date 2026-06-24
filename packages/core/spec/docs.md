@@ -7,16 +7,20 @@ _Revised: 2026-06-18_
 
 *Graffiticode* is a collection of domain languages for creating task-specific web apps.
 **L0175** composes 5th-grade English Language Arts assessment items conforming to the
-Smarter Balanced specification ELA · Grade 5 · Claim 1 (Reading) · Reasoning & Evidence,
-for learning targets **T4** (literary) and **T11** (informational).
+Smarter Balanced specification ELA · Grade 5 · Claim 1 (Reading), for learning targets **T4**
+(Reasoning & Evidence, literary), **T11** (Reasoning & Evidence, informational), and **T9**
+(Central Ideas, informational). Targets are **different skills**: T4/T11 ask students to infer or
+conclude and justify with evidence; T9 asks them to determine the main idea, the key details that
+build it, or summarize.
 
 One language serves **multiple learning targets**, chosen by a required top-level `target`:
-`c1-t4` (literary, RL standards) or `c1-t11` (informational, RI standards). It is **item-first**:
-a program declares its `target`, then authors the `outcome`s (questions) first — each with a
-unique `id`, a `focus` correct claim, and an explicit `stem` — then the supported and distractor
-`claim`s (each distractor `targets` the question(s) it foils) and the evidence `source`s for one
-passage. The compiler *composes* each outcome from its `focus` and the foils that target it,
-assembling a finished item (EBSR, Hot Text, or Short Text).
+`c1-t4` (literary, RL), `c1-t11` (informational, RI), or `c1-t9` (informational, RI-1/RI-2). It is
+**item-first**: a program declares its `target`, then authors the `outcome`s (questions) first —
+each with a unique `id`, a `focus` correct claim (a **list** on `multi-select`), and an explicit
+`stem` — then the supported and distractor `claim`s (each distractor `targets` the question(s) it
+foils) and the evidence `source`s for one passage. The compiler *composes* each outcome from its
+`focus` and the foils that target it, assembling a finished item (EBSR, Hot Text, Short Text,
+Multiple Choice, or Multi-Select).
 
 ### Overview
 
@@ -45,7 +49,7 @@ toggle.
 
 | Form | Arity | Example | Description |
 | ---- | :---: | ------- | ----------- |
-| **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11`) |
+| **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11` / `c1-t9`) |
 | **passage** | 2 | `passage "Title"` | Sets the passage heading; chains with `type` and `lines` |
 | **type** | 2 | `type literary` | Passage type (`literary` / `informational`) or, on an outcome, the item type |
 | **lines** | 2 | `lines [ "..." "..." ]` | Passage paragraphs (one entry per source paragraph), auto-numbered from 1 — preserve the request's paragraph breaks; don't merge into one block. Hot Text selects at the sentence level automatically, so split by paragraph (not by sentence) for every task model |
@@ -62,24 +66,26 @@ toggle.
 
 Attribute functions (arity-2, merge one key into the element's record):
 
-- **top level** — `target` (required: `c1-t4` | `c1-t11`), `title` (optional), `grade` (optional reading-level target; defaults to the target's grade)
-- **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (outcome→correct claim id), `targets` (distractor→outcome ids)
+- **top level** — `target` (required: `c1-t4` | `c1-t11` | `c1-t9`), `title` (optional), `grade` (optional reading-level target; defaults to the target's grade)
+- **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (outcome→correct claim id, or a list on `multi-select`), `targets` (distractor→outcome ids)
 - **claim** — `status`, `dimension`, `text`, `error-type`*, `rationale`*, `targets`*, `plausibility` (0–1 distractor temptingness override), `subject`, `standard`, `dok`
 - **evidence** — `status`, `line` (or `quote`), `supports`, `rationale`
-- **outcome / stem** — `id`†, `type`†, `dimension`†, `focus`†, `stem`† (Part A / prompt, from `stems.md`), `stem-b` (Part B, required on EBSR), `subject`, `standard`, `dok`, `rubric` (short-text)
+- **outcome / stem** — `id`†, `type`†, `dimension`†, `focus`†, `stem`† (Part A / single-question / prompt, from `stems.md`), `stem-b` (Part B, required on EBSR), `subject`, `standard`, `dok`, `rubric` (short-text)
 - **rubric band** — `score`, `descriptor`
 
 \* required on distractor claims.  † required on every outcome. See `spec.md` for the full per-function reference.
 
 ### Enumerations
 
-- `target`: `c1-t4` (literary), `c1-t11` (informational)
-- item `type`: `ebsr`, `hot-text`, `short-text`
+- `target`: `c1-t4` (literary, R&E), `c1-t11` (informational, R&E), `c1-t9` (informational, Central Ideas)
+- item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select`
 - `dimension` (c1-t4): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (c1-t11): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
+- `dimension` (c1-t9): `central-idea`, `key-detail`, `summary`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- `error-type`: `misreads-detail`, `erroneous-inference`, `faulty-reasoning`
-- `standard` (c1-t4): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (c1-t11): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · `dok`: `r-dok3`
+- `error-type` (c1-t4 / c1-t11): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (c1-t9): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant`
+- `standard` (c1-t4): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (c1-t11): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (c1-t9): `ri-1`, `ri-2`
+- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E → r-dok3; T9 → r-dok2, written summary r-dok3)
 
 ### Grade-appropriate reading level
 

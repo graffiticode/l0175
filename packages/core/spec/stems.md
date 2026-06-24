@@ -1,24 +1,28 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# L0175 Appropriate-Stem Catalog (SBAC · Grade 5 · Claim 1 · Reasoning & Evidence)
+# L0175 Appropriate-Stem Catalog (SBAC · Grade 5 · Claim 1)
 
-_Revised: 2026-06-19_
+_Revised: 2026-06-24_
 
 The **code generator authors each question's stem from this catalog** and emits it on the
 outcome (`stem`, and `stem-b` on EBSR). The compiler uses the authored text verbatim — it does
-not synthesize stems. These stems are transcribed **verbatim** from the guidelines' "Appropriate
-Stems" (Task Models 1–3, single-passage only; dual-text-stimuli stems are out of scope).
+not synthesize stems (it DOES synthesize the Hot-Text Part B selection line). These stems are
+transcribed **verbatim** from the guidelines' "Appropriate Stems" (single-passage only;
+dual-text-stimuli stems are out of scope).
 
 **First match your program's `target`, then use that target's catalog below:**
-- **`c1-t4`** (literary) → source `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf`
-- **`c1-t11`** (informational) → source `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
+- **`c1-t4`** (Reasoning & Evidence, literary) → `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf`
+- **`c1-t11`** (Reasoning & Evidence, informational) → `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
+- **`c1-t9`** (Central Ideas, informational) → `packages/core/data/E.G5.C1.T9 Central Ideas.pdf`
 
 ## How to use this catalog
 
-1. Use the section for your `target` (T4 or T11).
-2. Pick the **task model** by item type: EBSR → Task Model 1, Hot Text → Task Model 2,
-   Short Text → Task Model 3.
-3. Pick the **one stem template** that matches the task (inference vs. conclusion vs.
-   author-intent, and the dimension), and fill its bracketed `[...]` slot.
+1. Use the section for your `target`.
+2. Pick the stem that matches your **item `type`** and the task. Task-model numbering is
+   per-target and differs between targets — match by item type, not by number. (R&E targets:
+   EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T9 Central Ideas: Multiple-Choice=TM1,
+   Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5.)
+3. Pick the **one stem template** that matches the task and the dimension, and fill its
+   bracketed `[...]` slot.
 
 **Specificity rule (required, both targets).** The `[...]` slot must name the concrete thing the
 question is about — a character's name (`Mother`), a specific event (`the turkey-feeding`), a
@@ -175,3 +179,75 @@ Author as `stem`; every Short Text stem ends with the explain clause ("key **evi
   `stem "Which of these conclusions about the author's point of view is supported by the passage?"`
 - authors-opinion / Short Text →
   `stem "What conclusion can be drawn about the author's opinion about renewable energy? Explain using key evidence from the passage to support your answer."`
+
+---
+
+# Target 9 (`c1-t9`) — Central Ideas (informational)
+
+A **different skill** from Reasoning & Evidence: synthesize and condense — the **main/central
+idea**, the **key details** that build it, and **summary**. DOK **2** (3 only for the written
+summary). Standards **RI-1 + RI-2**. Dimensions: `central-idea` (the main idea / author's message /
+main problem), `key-detail` (a supporting detail), `summary` (the details that belong in a summary).
+
+**Distractors are a SIGNIFICANCE taxonomy** (usually true statements that just aren't central):
+`too-narrow` (a real supporting detail mistaken for the main idea), `too-broad` (an
+overgeneralization / off-topic claim), `misreads-detail` (a misread), `insignificant` (a minor true
+detail that doesn't belong in a summary). The `[...]` slot names what the question is about (the
+same string as `subject`), e.g. "the passage", "the first paragraph", "the introduction".
+
+## Task Model 1 — Multiple Choice (`type multiple-choice`, single-answer, DOK 2)
+
+Author as `stem`; the `focus` claim is the correct central idea (or, for the missing-detail variant,
+the missing key detail):
+- Which sentence best [shows/tells/describes] the main idea of [the passage / provide section]?
+- Which sentence best [shows/tells/describes] the main problem in the passage?
+- Which sentence best [shows/tells/describes] the author's [message/main idea] in [provide section]?
+- Which [sentence/detail] from the passage best [shows/tells/describes] the main idea?
+- Which sentence best summarizes [the passage / the first paragraph / the introduction]?
+- Which sentence is the best summary of what happens [when/after/during] [provide text event]?
+- Read this summary. [provide summary; one pivotal key event/idea/detail is missing] Which [key event/idea/detail] is missing from the summary?
+
+## Task Model 2 — Multi-Select (`type multi-select`, choose two, DOK 2)
+
+Author as `stem`; `focus` is the **list** of the two correct statements (the correct set):
+- Choose two sentences that best identify the main ideas presented in the passage.
+- Choose two sentences that should be included in a summary of [the passage / provide section].
+
+## Task Model 3 — EBSR (`type ebsr`, two-part, DOK 2)
+
+**Lead-in:** This question has two parts. First, answer part A. Then, answer part B.
+
+**Part A (`stem`) — pick one** (the `focus` claim is the central idea):
+- Which sentence best [shows/tells/describes] the main idea of the passage?
+- Which sentence best [shows/tells/describes] the main problem in the passage?
+- Which sentence best [shows/tells/describes] the author's [message/main idea] in [provide section]?
+
+**Part B (`stem-b`) — pick one** (Part B options are key-detail `source`s):
+- Which [sentence/detail] from the passage best [supports/is an example of] your answer in part A?
+
+## Task Model 5 — Short Text (`type short-text`, constructed response, DOK 3)
+
+Author as `stem`; every Short Text stem ends with the explain clause:
+- Determine the main idea of the passage. Explain using key details from the passage to support your answer.
+- What is the main idea of the passage? Explain using key details from the passage to support your answer.
+- What is the author's [message/point] about [provide text detail that relates to the central idea]? Explain using key ideas from the passage to support your answer.
+- What is the author's main idea in this [paragraph/section]? Explain using key details from the passage to support your answer.
+- Summarize [the first paragraph / the introduction]. Use key [details/events] from the passage in your summary.
+- Summarize what happens [after/during] [provide text event]. Use key [details/events] from the passage in your summary.
+
+**Note — Task Model 4 (Hot Text) is not yet available for T9.** T9's Hot-Text is a *single-part*
+"click the sentence(s) that show the main idea" item; L0175's `hot-text` is currently two-part
+(statement + evidence). Single-part Hot-Text selection is planned with the T8 work; until then,
+author T9 Hot-Text intent as Multiple Choice or EBSR.
+
+## Worked examples (T9, specific slot fills)
+
+- central-idea / Multiple Choice →
+  `stem "Which sentence best shows the main idea of the passage?"`
+- summary / Multi-Select →
+  `stem "Choose two sentences that should be included in a summary of the passage."` with `focus ["s1" "s2"]`
+- central-idea / EBSR →
+  `stem "Which sentence best describes the main idea of the passage?"`
+  `stem-b "Which detail from the passage best supports your answer in part A?"`
+- central-idea / Short Text →
+  `stem "Determine the main idea of the passage. Explain using key details from the passage to support your answer."`
