@@ -915,12 +915,21 @@ function composeWordMeaning(
     const excerpt = byLine || byContains || str(word.quote);
     if (!excerpt) warnings.push(`Outcome '${oid}': word '${wordId}' needs a 'line' (the paragraph it appears in) or a 'quote' so there is an excerpt to select from.`);
     const excerptNorms = new Set(norm(excerpt).split(" ").filter(Boolean));
-    // Curated candidates = other authored words present in this paragraph. If none, fall back to
-    // every content word being a choice.
+    // Curated candidates come from two authoring styles, both keyed to words in this paragraph:
+    //   1. other authored `word`s (the canonical hot-text model), and
+    //   2. the focus word's single-word distractor MEANINGS — the generator often authors the
+    //      click candidates this way (reusing the MC/MS shape: a word + meanings) rather than as
+    //      separate `word`s. A meaning whose text is one word in the paragraph IS a candidate word;
+    //      multi-word definitions (e.g. the correct meaning "very tiring and difficult") are ignored.
+    // If neither yields a candidate, fall back to every content word being a choice.
     const otherWords = ctx.words.filter((w: any) => str(w.id) !== str(word.id));
-    const authoredCandidates = otherWords.filter((w: any) => excerptNorms.has(norm(str(w.text))));
-    const curated = authoredCandidates.length >= 1;
-    const candNorms = new Set([correctNorm, ...authoredCandidates.map((w: any) => norm(str(w.text)))]);
+    const wordCandidates = otherWords.filter((w: any) => excerptNorms.has(norm(str(w.text))));
+    const meaningCandidates = distractorM.filter(
+      (m: any) => str(m.text).trim().split(/\s+/).length === 1 && excerptNorms.has(norm(str(m.text))),
+    );
+    const candTexts = [...wordCandidates.map((w: any) => str(w.text)), ...meaningCandidates.map((m: any) => str(m.text))];
+    const curated = candTexts.length >= 1;
+    const candNorms = new Set([correctNorm, ...candTexts.map((t: string) => norm(t))]);
     const tokens = excerpt.split(/\s+/).filter(Boolean).map((raw: string, idx: number) => {
       const pre = (raw.match(/^[^A-Za-z0-9]+/) || [""])[0];
       const post = (raw.match(/[^A-Za-z0-9]+$/) || [""])[0];

@@ -344,15 +344,23 @@ The stem shows the sentence with the targeted word and asks for its meaning:
 ## Task Model 3 — Hot Text / click-the-word (`type hot-text`, single-part, DOK 1–2)
 
 The reverse: the stem gives a **definition**; the student clicks the word in the passage that
-matches it. Author the **candidate `word`s** in a top-level `words` list (`text` only — no
-`meanings`): the correct one is the outcome's `focus` (give it the `line` of its paragraph) and the
-others are distractor candidate words. **All candidates must be words that appear in that one
-paragraph.** The compiler shows the whole paragraph (from the focus word's `line`) and makes the
-authored candidate words clickable, with the focus word correct. (Author only the correct word and
-the compiler falls back to making every content word in the paragraph clickable.) **The `stem` is
-just the instruction + definition — do NOT paste the paragraph into the stem; it is shown
-separately** (the compiler warns if the stem contains it). Candidates not in the focus word's
-paragraph are warned and dropped. Stems:
+matches it. Author the focus `word` (the correct one) as the outcome's `focus`, giving it the
+`line` of its paragraph, then the **distractor candidate words** one of two ways:
+
+1. **As more `word`s** in the `words` list (`text` only — no `meanings`), or
+2. **As the focus word's distractor `meanings`** whose `text` IS the candidate word — a single word,
+   carrying an `error-type` + `rationale`. For hot-text the meaning text must be the literal word to
+   click, **not** a definition. (This reuses the MC/MS shape and is what the generator most often
+   produces.)
+
+**All candidates must be words that appear in the focus word's paragraph.** The compiler shows the
+whole paragraph (from the focus word's `line`) and makes the candidate words clickable, with the
+focus word correct. **The `stem` is just the instruction + definition — do NOT paste the paragraph
+into the stem; it is shown separately** (the compiler warns if the stem contains it). Candidates not
+in the focus word's paragraph are warned and dropped. ⚠ If you author *only* the focus word with a
+real multi-word definition (no candidate words/single-word meanings), the compiler can't find
+candidates and falls back to making **every** content word clickable — list the candidate words to
+avoid that. Stems:
 - Read the dictionary entry. [(part of speech) definition] Click on the word in the sentence that most closely matches the definition.
 - The author uses a word that means [definition]. Click on the word in the sentence that best shows that meaning.
 

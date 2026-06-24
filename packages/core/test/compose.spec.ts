@@ -694,6 +694,26 @@ describe("compose — Target 10 (Word Meanings): meaning selection", () => {
     expect(it0.wordSelect.tokens.filter((t: any) => t.correct)).toHaveLength(1);
   });
 
+  it("meaning-derived candidates: single-word distractor meanings in the paragraph become the choices", async () => {
+    // The generator sometimes authors the click candidates as the focus word's distractor MEANINGS
+    // (the MC/MS shape) instead of separate `word`s. Single-word meaning texts present in the
+    // paragraph are the candidates; the multi-word correct definition is ignored (no fallback).
+    const words = `words [ word id "w1" text "aqueduct" line 1
+      meanings [
+        meaning id "m1" status correct text "a channel that carries water" {},
+        meaning id "m2" status distractor error-type other-meaning text "engineers" rationale "a nearby word, not the meaning" {},
+        meaning id "m3" status distractor error-type misinterprets text "distances" rationale "a nearby word, not the meaning" {}
+      ] {} ]`;
+    const it0 = item0((await compile(T10(HT, words))).data);
+    const sel = it0.wordSelect.tokens.filter((t: any) => t.selectable).map((t: any) => t.text);
+    expect(sel.sort()).toEqual(["aqueduct", "distances", "engineers"]); // exactly correct + the 2 meaning-words
+    expect(sel).not.toContain("built"); // NOT the all-content-words fallback
+    expect(sel).not.toContain("water");
+    const correct = it0.wordSelect.tokens.filter((t: any) => t.correct);
+    expect(correct).toHaveLength(1);
+    expect(correct[0].text).toBe("aqueduct");
+  });
+
   it("warns when an authored candidate word is not in the correct word's paragraph", async () => {
     const words = `words [ word id "w1" text "aqueduct" line 1 {}, word id "w2" text "vessels" {} ]`;
     const it0 = item0((await compile(T10(HT, words))).data);
