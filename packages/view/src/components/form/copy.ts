@@ -62,13 +62,18 @@ function selectableHtml(selectable: any[], mode: Mode): string {
     .join("");
 }
 
-// Word-select Hot Text (T10 TM3): render the excerpt inline; in review the correct word is bolded
-// with a ✓. The candidate words aren't otherwise distinguished in static copy.
+// Word-select Hot Text (T10 TM3): render the excerpt inline. The candidate (clickable) words are
+// dotted-underlined so the choices survive the copy into Docs/Word; in review the correct word is
+// also bolded with a ✓.
 function wordSelectHtml(wordSelect: any, mode: Mode): string {
   return (wordSelect?.tokens ?? [])
     .map((t: any) => {
       const correct = mode === "review" && t.correct;
-      const word = correct ? `<strong>${esc(t.text)} ✓</strong>` : esc(t.text);
+      let word = esc(t.text);
+      if (t.selectable) {
+        const styled = `<span style="border-bottom:1px dashed #6b7280">${word}</span>`;
+        word = correct ? `<strong>${styled} ✓</strong>` : styled;
+      }
       return `${esc(t.pre ?? "")}${word}${esc(t.post ?? "")}`;
     })
     .join(" ");
@@ -179,7 +184,15 @@ export function itemToText(item: any, mode: Mode): string {
     }
   } else if (item.type === "hot-text" && item.wordSelect) {
     out.push(item.stem?.partA ?? ""); // word-select: authored stem states the definition
-    out.push((item.wordSelect.tokens ?? []).map((t: any) => `${t.pre ?? ""}${t.text}${mode === "review" && t.correct ? " ✓" : ""}${t.post ?? ""}`).join(" "));
+    // candidate words are bracketed so the clickable choices are visible in plain text
+    out.push(
+      (item.wordSelect.tokens ?? [])
+        .map((t: any) => {
+          const core = t.selectable ? `[${t.text}${mode === "review" && t.correct ? " ✓" : ""}]` : t.text;
+          return `${t.pre ?? ""}${core}${t.post ?? ""}`;
+        })
+        .join(" "),
+    );
   } else if (item.type === "hot-text") {
     out.push(item.stem?.partA ?? ""); // single-part: authored stem states the inference
     hotTextLines();

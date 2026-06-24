@@ -38,6 +38,29 @@ const HOTTEXT: any = {
   warnings: [],
 };
 
+const WORDSELECT: any = {
+  type: "hot-text",
+  id: "q6",
+  passage: { heading: "Aqueducts", lines: [{ id: 1, text: "They built aqueducts, which carried water." }] },
+  stem: { partA: "Read the paragraph below. Click the word that means a channel that carries water." },
+  selectCount: 1,
+  wordSelect: {
+    excerpt: "They built aqueducts, which carried water.",
+    tokens: [
+      { idx: 0, pre: "", text: "They", post: "", selectable: false, correct: false },
+      { idx: 1, pre: "", text: "built", post: "", selectable: false, correct: false },
+      { idx: 2, pre: "", text: "aqueducts", post: ",", selectable: true, correct: true },
+      { idx: 3, pre: "", text: "which", post: "", selectable: false, correct: false },
+      { idx: 4, pre: "", text: "carried", post: "", selectable: true, correct: false },
+      { idx: 5, pre: "", text: "water", post: ".", selectable: false, correct: false },
+    ],
+  },
+  distractorAnalysis: [],
+  answerKey: { word: "aqueducts", rationale: "" },
+  review: { correctClaim: { id: "w1", text: "aqueducts" } },
+  warnings: [],
+};
+
 const MC: any = {
   type: "multiple-choice",
   id: "q4",
@@ -126,6 +149,25 @@ describe("copy serializer — hot text & short text", () => {
     expect(html).toContain("Part B");
     expect(html).toContain("any 2 of: 1.1, 2.1");
     expect(html).toContain("✓");
+  });
+  it("word-select (T10) underlines candidate words and brackets them in plain text", () => {
+    const preview = itemToHtml(WORDSELECT, "preview");
+    // every candidate (clickable) word is dotted-underlined, in BOTH modes
+    expect(preview).toMatch(/<span style="border-bottom:1px dashed[^"]*">aqueducts<\/span>/);
+    expect(preview).toMatch(/<span style="border-bottom:1px dashed[^"]*">carried<\/span>/);
+    expect(preview).not.toContain("✓"); // questions view hides the answer
+    // non-candidate words stay plain
+    expect(preview).not.toMatch(/border-bottom[^>]*>They/);
+
+    const review = itemToHtml(WORDSELECT, "review");
+    expect(review).toMatch(/<strong><span style="border-bottom:1px dashed[^"]*">aqueducts<\/span> ✓<\/strong>/);
+    expect(review).toContain("Answer &mdash; aqueducts");
+
+    const text = itemToText(WORDSELECT, "review");
+    expect(text).toContain("[aqueducts ✓],"); // correct candidate, punctuation preserved
+    expect(text).toContain("[carried]"); // distractor candidate bracketed
+    expect(text).toContain("They built"); // non-candidates plain
+    expect(itemToText(WORDSELECT, "preview")).toContain("[aqueducts]"); // no ✓ in questions view
   });
   it("short text review emits the prompt, rubric and exemplar; preview shows a blank", () => {
     const review = itemToHtml(SHORTTEXT, "review");
