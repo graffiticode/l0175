@@ -25,16 +25,25 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   Hot-Text is not yet available). Distractors use a **significance** taxonomy (`too-narrow`,
   `too-broad`, `misreads-detail`, `insignificant`) — usually true statements that just aren't the
   central idea.
+- **`c1-t8`** — Target 8: **Key Details** over **informational** texts (RI standards). A DIFFERENT
+  model: the inference/conclusion is **GIVEN in the stem**, and the student selects the supporting
+  **evidence** (the answer is evidence, not a chosen statement). Dimension: `supporting-evidence`.
+  Standards: `ri-1` (always) + `ri-7`. **DOK 1–2**. Item types: `multiple-choice`, `multi-select`,
+  `hot-text` (single-part) — no EBSR, no short-text. **Author ONE supported `claim` = the given
+  inference (its `focus`), state it in the `stem`, and author `source`s as the options:
+  `directly-supports` = correct evidence (with a `quote`), `supports-wrong-claim`/`irrelevant` =
+  distractor evidence. No distractor claims.**
 
 **Infer the target — the user need not state it.** Decide from the passage and the skill asked: a
 **literary** text (story/poem/narrative) → `c1-t4`; an **informational** text → an RI target. Among
 informational targets, choose by skill: **reasoning** — infer/conclude and justify with evidence
 (relationships between ideas, author's use of evidence, point of view/purpose/opinion) → `c1-t11`;
-**central ideas** — the main idea, the key details that support it, or a summary → `c1-t9`. The skill
-also signals T4: character / theme / narrator's point of view. When the text type is genuinely
-ambiguous, prefer `c1-t4`; when an informational request is between reasoning and central-idea,
-ask which is intended or prefer the one the request's verbs match ("infer/conclude/why" → T11;
-"main idea/summarize/most about" → T9).
+**central ideas** — the main idea, the key details that support it, or a summary → `c1-t9`;
+**key details** — the request **states an inference/conclusion and asks which detail/sentence
+supports it** (the answer is evidence) → `c1-t8`. The skill also signals T4: character / theme /
+narrator's point of view. When the text type is genuinely ambiguous, prefer `c1-t4`; for an
+informational request, match the verbs: "infer/conclude/why" → T11; "main idea/summarize/most
+about" → T9; "which detail/sentence supports [this stated idea]" → T8.
 Write the choice as the first top-level form: `target c1-t11`. Use the dimensions, standards, and
 stem catalog (in `stems.md`) for that target; mixing targets' vocabularies is a compile error,
 and the passage `type` should match the target (literary for T4; informational for T11 and T9). If
@@ -229,16 +238,17 @@ outright is literal recall and out of scope.
 
 ## Built-in enumerations
 
-- `target`: `c1-t4`, `c1-t11`, `c1-t9` (top level; always author one — defaults to `c1-t4` if omitted)
+- `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t8` (top level; always author one — defaults to `c1-t4` if omitted)
 - `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
+  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/short-text · T8: multiple-choice/multi-select/hot-text)
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
-- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary`
+- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t8**): `supporting-evidence`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant`
-- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (**c1-t9**): `ri-1`, `ri-2`
-- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`)
+- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t8**): none — wrong answers are non-supporting `source`s, not distractor claims
+- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (**c1-t9**): `ri-1`, `ri-2` · (**c1-t8**): `ri-1`, `ri-7`
+- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`; T8 is `r-dok2`)
 
 ## What composition does
 

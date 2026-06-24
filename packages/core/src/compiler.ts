@@ -73,11 +73,18 @@ type TargetProfile = {
   textType: string;      // expected passage type for this target
   baseStandard: string;  // always added by standardsFor (the cite-evidence standard)
   defaultDok: string;    // DOK for this target's selected-response items (short-text bumps to r-dok3)
+  // What the answer options are made of: "statement" → the options are claims the student chooses
+  // among (T4/T11/T9); "evidence" → the inference is GIVEN in the stem and the options are passage
+  // sources the student selects as support (T8 Key Details).
+  answerKind: "statement" | "evidence";
+  itemTypes: Set<string>; // the item types this target allows (validated against per outcome)
   standards: Set<string>;
   dimensions: Set<string>;
   errorTypes: string[];  // the distractor taxonomy for this target (ordered for coverage selection)
   dimStandard: Record<string, string>; // dimension → companion standard
 };
+
+const RE_ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text"]);
 
 const TARGETS: Record<string, TargetProfile> = {
   // Claim 1 · Target 4 — Reasoning & Evidence, literary texts (RL standards). The original L0175.
@@ -88,6 +95,8 @@ const TARGETS: Record<string, TargetProfile> = {
     textType: "literary",
     baseStandard: "rl-1",
     defaultDok: "r-dok3",
+    answerKind: "statement",
+    itemTypes: RE_ITEM_TYPES,
     standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
     dimensions: new Set([
       "character", "setting", "event", "point-of-view",
@@ -108,6 +117,8 @@ const TARGETS: Record<string, TargetProfile> = {
     textType: "informational",
     baseStandard: "ri-1",
     defaultDok: "r-dok3",
+    answerKind: "statement",
+    itemTypes: RE_ITEM_TYPES,
     standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
     dimensions: new Set([
       "relationships-interactions", "author-use-of-information",
@@ -133,6 +144,8 @@ const TARGETS: Record<string, TargetProfile> = {
     textType: "informational",
     baseStandard: "ri-1",
     defaultDok: "r-dok2",
+    answerKind: "statement",
+    itemTypes: new Set(["multiple-choice", "multi-select", "ebsr", "short-text"]),
     standards: new Set(["ri-1", "ri-2"]),
     dimensions: new Set(["central-idea", "key-detail", "summary"]),
     errorTypes: T9_ERROR_TYPES,
@@ -140,6 +153,26 @@ const TARGETS: Record<string, TargetProfile> = {
       "central-idea": "ri-2",
       "key-detail": "ri-2",
       "summary": "ri-2",
+    },
+  },
+  // Claim 1 · Target 8 — Key Details, informational texts (RI-1 + RI-7). A DIFFERENT model: the
+  // inference/conclusion is GIVEN in the stem and the student selects the supporting EVIDENCE
+  // (answerKind "evidence"). Options are passage sources, not claims; no statement Part A, no
+  // EBSR/short-text. DOK 1–2 (default 2).
+  "c1-t8": {
+    id: "c1-t8",
+    label: "Grade 5 · Claim 1 · Target 8 (Key Details)",
+    grade: 5,
+    textType: "informational",
+    baseStandard: "ri-1",
+    defaultDok: "r-dok2",
+    answerKind: "evidence",
+    itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
+    standards: new Set(["ri-1", "ri-7"]),
+    dimensions: new Set(["supporting-evidence"]),
+    errorTypes: [], // T8 wrong answers are non-supporting sources, not distractor claims
+    dimStandard: {
+      "supporting-evidence": "ri-7",
     },
   },
 };
@@ -382,18 +415,24 @@ function validateOutcome(o: any, errors: any[], profile: TargetProfile) {
   const at = coordOf(o);
   const push = (message: string) => errors.push({ message, ...at });
   if (!id) push(`${where}: missing id (each question needs a unique id so distractors can target it).`);
-  if (!ITEM_TYPES.has(str(o.type))) {
-    push(`${where}: invalid type '${str(o.type)}'. Expected ${[...ITEM_TYPES].join(", ")}.`);
+  const t = str(o.type);
+  if (!ITEM_TYPES.has(t)) {
+    push(`${where}: invalid type '${t}'. Expected ${[...ITEM_TYPES].join(", ")}.`);
+  } else if (!profile.itemTypes.has(t)) {
+    push(`${where}: item type '${t}' is not available for target ${profile.id} (allowed: ${[...profile.itemTypes].join(", ")}).`);
   }
   if (!profile.dimensions.has(str(o.dimension))) push(`${where}: invalid dimension '${str(o.dimension)}' for target ${profile.id}.`);
   if (o.standard !== undefined && !profile.standards.has(str(o.standard))) push(`${where}: invalid standard '${str(o.standard)}' for target ${profile.id}.`);
   // Item-first contract: the question owns its correct answer (focus) and its stem text,
   // authored from the guideline's Appropriate-Stem catalog (the compiler no longer synthesizes stems).
-  // `focus` is one claim id for single-answer items; Multi-Select needs the full correct set (≥2).
+  // `focus` names the supported claim(s). For STATEMENT multi-select it's the correct SET (≥2); for
+  // every other case it's a single claim — including T8's EVIDENCE multi-select, where `focus` is
+  // the one GIVEN inference and the correct set is sources, not focus claims.
   const focus = focusIds(o);
+  const statementMultiSelect = t === "multi-select" && profile.answerKind === "statement";
   if (focus.length === 0) push(`${where}: missing focus (the id of the supported claim this question is built around).`);
-  else if (str(o.type) === "multi-select" && focus.length < 2) push(`${where}: multi-select needs at least 2 focus claims (the correct set).`);
-  else if (str(o.type) !== "multi-select" && focus.length > 1) push(`${where}: ${str(o.type)} takes a single focus claim; only multi-select takes a list.`);
+  else if (statementMultiSelect && focus.length < 2) push(`${where}: multi-select needs at least 2 focus claims (the correct set).`);
+  else if (!statementMultiSelect && focus.length > 1) push(`${where}: ${t} takes a single focus claim; only statement multi-select takes a list.`);
   if (!str(o.stem)) push(`${where}: missing stem (author it from the guideline's Appropriate-Stem catalog).`);
   if (str(o.type) === "ebsr" && !str(o.stemB)) push(`${where}: EBSR needs a Part B stem (stem-b).`);
 }
@@ -455,12 +494,14 @@ function validateGraph(ctx: any, errors: any[]): string[] {
       if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
       else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
     }
-    // Option items need enough distinct foils bound to them, or they can't be composed (hard error).
-    // EBSR / Hot-Text / Multiple-Choice want 3 (4 options); Multi-Select wants at least 2 foils
-    // beyond its correct set.
+    // STATEMENT items need enough distinct distractor CLAIMS bound to them, or they can't be
+    // composed (hard error). EBSR / Hot-Text / Multiple-Choice want 3 (4 options); Multi-Select
+    // wants ≥2 foils beyond its correct set. EVIDENCE targets (T8) draw foils from sources, not
+    // claims, so this claim-count gate doesn't apply (their viability is warned in composition).
     const t = str(o.type);
-    const min = (t === "ebsr" || t === "hot-text" || t === "multiple-choice") ? TUNING.DISTRACTOR_SLOTS
-      : t === "multi-select" ? 2 : 0;
+    const min = ctx.profile.answerKind !== "statement" ? 0
+      : (t === "ebsr" || t === "hot-text" || t === "multiple-choice") ? TUNING.DISTRACTOR_SLOTS
+        : t === "multi-select" ? 2 : 0;
     if (oid && min > 0) {
       const distinct = new Set(
         ctx.claims
@@ -790,9 +831,22 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     return item;
   }
 
-  // Multiple Choice (single-part, 4 options, exactly one correct). The `focus` claim is the key; its
-  // `targets` distractors are the foils.
+  // Multiple Choice (single-part, 4 options, exactly one correct).
   if (itemType === "multiple-choice") {
+    if (ctx.profile.answerKind === "evidence") {
+      // T8: the inference is given in the stem; the options are passage evidence. Correct = a
+      // directly-supporting source for the focus claim; foils = non-supporting sources.
+      if (directSources.length === 0) warnings.push("No directly-supporting evidence for the given inference; this item has no correct option.");
+      const { options, pool } = evidenceOptions(correct, directSources, ctx, seed, outcomeIndex, false);
+      if (pool < TUNING.MIN_VIABLE_PART_B) warnings.push(`Only ${pool} non-supporting evidence source(s) available; author at least ${TUNING.MIN_VIABLE_PART_B} so the best foils can be chosen.`);
+      checkLengthBalance(options, "Options", warnings);
+      checkStemGiveaway(str(outcome.stem), str(options.find((o: any) => o.correct)?.text), str(outcome.subject), warnings);
+      item.choice = { options };
+      item.distractorAnalysis = evidenceAnalysis(options, ctx);
+      item.answerKey = { choice: options.find((o: any) => o.correct)?.key, rationale: str(correct.rationale) };
+      return item;
+    }
+    // Statement targets: the `focus` claim is the key; its `targets` distractor claims are the foils.
     const distractors = selectDistractorClaims(outcome, correct, ctx, warnings);
     const options = partAOptions(correct, distractors, seed, ctx.passage.id, outcomeIndex);
     checkLengthBalance(options, "Options", warnings);
@@ -803,9 +857,21 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     return item;
   }
 
-  // Multi-Select (single-part, 5–6 options, N correct). The full correct set is `focus`; the student
-  // must select exactly that set (guideline: "all responses correct").
+  // Multi-Select (single-part, 5–6 options, an exact correct SET; guideline: "all responses correct").
   if (itemType === "multi-select") {
+    if (ctx.profile.answerKind === "evidence") {
+      // T8: the correct set is the directly-supporting sources; foils are non-supporting sources.
+      if (directSources.length < 2) warnings.push("Multi-select (evidence) needs at least 2 directly-supporting sources as the correct set.");
+      const { options, pool } = evidenceOptions(correct, directSources, ctx, seed, outcomeIndex, true);
+      if (pool < TUNING.MIN_VIABLE_PART_B) warnings.push(`Only ${pool} non-supporting evidence source(s) available; author at least ${TUNING.MIN_VIABLE_PART_B}.`);
+      checkLengthBalance(options, "Options", warnings);
+      item.choice = { options };
+      item.selectCount = options.filter((o: any) => o.correct).length;
+      item.distractorAnalysis = evidenceAnalysis(options, ctx);
+      item.answerKey = { choices: options.filter((o: any) => o.correct).map((o: any) => o.key), rationale: str(correct.rationale) };
+      return item;
+    }
+    // Statement targets: the full correct set is `focus` (a list); distractor claims are the foils.
     const correctCount = correctClaims.length;
     const slots = Math.max(1, TUNING.MULTI_SELECT_OPTIONS - correctCount);
     const distractors = selectDistractorClaims(outcome, correct, ctx, warnings, slots);
@@ -816,6 +882,18 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     item.selectCount = correctCount; // how many to select (the stem says "Choose two", etc.)
     item.distractorAnalysis = optionAnalysis(options, correct, ctx);
     item.answerKey = { choices: options.filter((o: any) => o.correct).map((o: any) => o.key), rationale: str(correct.rationale) };
+    return item;
+  }
+
+  // Single-part Hot Text (evidence targets, e.g. T8): the inference is GIVEN in the authored stem
+  // and the student clicks the supporting sentences. No Part A statement options.
+  if (itemType === "hot-text" && ctx.profile.answerKind === "evidence") {
+    const { selectable, selectCount } = buildSelectable(ctx, directSources, warnings);
+    item.selectable = selectable;
+    item.selectCount = selectCount;
+    item.stem = { partA: str(outcome.stem) }; // single-part: the authored click instruction (no lead-in / Part B)
+    item.distractorAnalysis = [];
+    item.answerKey = { partB: selectable.filter((s: any) => s.correct).map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
     return item;
   }
 
@@ -850,41 +928,15 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
         "Hot Text Part A must ask for the best STATEMENT (an inference), not passage sentences — selecting sentences is Part B (fixed by the compiler). Use a \"Click on the statement that best…\" stem from stems.md Task Model 2.",
       );
     }
-    // Each paragraph (`lines` entry) is segmented into sentences; every sentence is selectable,
-    // grouped by paragraph so the passage keeps its paragraph format. A sentence is correct when a
-    // directly-supporting source names it: a source with a `quote` marks the matching sentence
-    // (normalized equality, falling back to containment); a source with no `quote` marks every
-    // sentence of its paragraph (paragraph-level support, as before).
-    const directNoQuote = new Set(directSources.filter((s: any) => !str(s.quote)).map((s: any) => s.line));
-    const directQuotes = directSources.filter((s: any) => str(s.quote)).map((s: any) => norm(str(s.quote)));
-    const isCorrectSentence = (lineId: number, text: string): boolean => {
-      if (directNoQuote.has(lineId)) return true;
-      const n = norm(text);
-      return directQuotes.some((q) => q === n || q.includes(n) || n.includes(q));
-    };
-    const selectable: any[] = [];
-    for (const l of ctx.passage.lines) {
-      splitSentences(l.text).forEach((sentence: string, i: number) => {
-        selectable.push({
-          id: `${l.id}.${i + 1}`, lineId: l.id, sentence: i + 1, text: sentence,
-          correct: isCorrectSentence(l.id, sentence),
-        });
-      });
-    }
+    // The passage is segmented into sentences (grouped by paragraph) and the directly-supporting
+    // ones are marked correct; the student selects an exact count (a proper subset of the valid
+    // superset). See buildSelectable.
+    const { selectable, selectCount } = buildSelectable(ctx, directSources, warnings);
     item.selectable = selectable;
-    const correctUnits = selectable.filter((s: any) => s.correct);
-    const valid = correctUnits.length;
-    if (valid === 0) warnings.push("No directly-supporting evidence for the correct claim; Part B has no correct selection.");
-    // The valid supporting sentences are a SUPERSET; the student selects an EXACT number, and any
-    // selection of that many drawn from the set is correct. The count is one less than the valid
-    // set (a proper subset, so they never must find every one), capped at HOT_TEXT_SELECT_MAX (so
-    // it stays ≤3 once there are more than 4 valid) and floored at 1 (when there is only one).
-    const selectCount = valid <= 1 ? 1 : Math.min(TUNING.HOT_TEXT_SELECT_MAX, valid - 1);
     item.selectCount = selectCount;
     item.stem.partB = hotTextPartB(selectCount);
-    if (valid === 1) warnings.push("Only 1 valid supporting sentence; author a superset (2+ directly-supporting sentences) so the expected answer is a subset of the valid responses.");
     item.distractorAnalysis = analysis;
-    item.answerKey = { partA: aKey, partB: correctUnits.map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
+    item.answerKey = { partA: aKey, partB: selectable.filter((s: any) => s.correct).map((s: any) => s.id).join(", "), rationale: str(correct.rationale) };
     return item;
   }
 
@@ -936,7 +988,7 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
 // Rank so the most tempting win — a wrong-claim source tied to a CHOSEN distractor AND to the
 // correct claim (plausibly supports more than one Part A option) scores highest; irrelevant
 // lines lowest. Returns the full candidate `pool` size (for the viability floor) + the best 3.
-function pickPartBDistractors(correct: any, distractors: any[], ctx: any): { pool: number; chosen: any[] } {
+function pickPartBDistractors(correct: any, distractors: any[], ctx: any, slots = TUNING.DISTRACTOR_SLOTS): { pool: number; chosen: any[] } {
   const distractorIds = new Set(distractors.map((d) => str(d.id)));
   const correctId = str(correct.id);
   const candidates = ctx.sources.filter((s: any) => {
@@ -949,7 +1001,7 @@ function pickPartBDistractors(correct: any, distractors: any[], ctx: any): { poo
     return 0.5 + (sup.some((id: string) => distractorIds.has(id)) ? 2 : 0) + (sup.includes(correctId) ? 1 : 0);
   };
   const ranked = candidates.slice().sort((a: any, b: any) => score(b) - score(a) || str(a.id).localeCompare(str(b.id)));
-  return { pool: candidates.length, chosen: ranked.slice(0, TUNING.DISTRACTOR_SLOTS) };
+  return { pool: candidates.length, chosen: ranked.slice(0, slots) };
 }
 
 function firstWrongClaim(s: any, correct: any): string {
@@ -961,6 +1013,64 @@ function partBRationale(s: any, status: string): string {
   if (s && str(s.rationale)) return str(s.rationale);
   if (status === "supports-wrong-claim") return "Real evidence, but it supports a different (erroneous) inference, not the correct one.";
   return "Does not directly support the inference.";
+}
+
+// Segment the passage into selectable sentences and mark the ones the `directSources` support (the
+// Hot-Text selection set). A directly-supporting source with a `quote` marks the matching sentence
+// (normalized equality → containment); without a `quote` it marks every sentence of its paragraph.
+// Returns the grouped-by-paragraph `selectable` plus the exact-count `selectCount` (one less than
+// the valid set, capped at HOT_TEXT_SELECT_MAX, floored at 1); pushes viability warnings.
+function buildSelectable(ctx: any, directSources: any[], warnings: string[]): { selectable: any[]; selectCount: number } {
+  const directNoQuote = new Set(directSources.filter((s: any) => !str(s.quote)).map((s: any) => s.line));
+  const directQuotes = directSources.filter((s: any) => str(s.quote)).map((s: any) => norm(str(s.quote)));
+  const isCorrect = (lineId: number, text: string): boolean => {
+    if (directNoQuote.has(lineId)) return true;
+    const n = norm(text);
+    return directQuotes.some((q) => q === n || q.includes(n) || n.includes(q));
+  };
+  const selectable: any[] = [];
+  for (const l of ctx.passage.lines) {
+    splitSentences(l.text).forEach((sentence: string, i: number) => {
+      selectable.push({ id: `${l.id}.${i + 1}`, lineId: l.id, sentence: i + 1, text: sentence, correct: isCorrect(l.id, sentence) });
+    });
+  }
+  const valid = selectable.filter((s: any) => s.correct).length;
+  if (valid === 0) warnings.push("No directly-supporting evidence; Part B has no correct selection.");
+  if (valid === 1) warnings.push("Only 1 valid supporting sentence; author a superset (2+ directly-supporting sentences) so the expected answer is a subset of the valid responses.");
+  const selectCount = valid <= 1 ? 1 : Math.min(TUNING.HOT_TEXT_SELECT_MAX, valid - 1);
+  return { selectable, selectCount };
+}
+
+// Build labeled EVIDENCE options (answerKind "evidence", e.g. T8): the correct option(s) are the
+// directly-supporting sources for the given-inference claim; foils are the most tempting
+// non-supporting sources. `correctMany` controls Multiple-Choice (1 correct) vs Multi-Select (the
+// full directly-supporting set). Returns the options + the candidate-pool size.
+function evidenceOptions(
+  correct: any, directSources: any[], ctx: any, seed: string, outcomeIndex: number, correctMany: boolean,
+): { options: any[]; pool: number } {
+  const correctSrcs = correctMany ? directSources : directSources.slice(0, 1);
+  const foilSlots = Math.max(1, (correctMany ? TUNING.MULTI_SELECT_OPTIONS : TUNING.PART_OPTIONS) - correctSrcs.length);
+  const { pool, chosen } = pickPartBDistractors(correct, [], ctx, foilSlots);
+  const correctOpts = correctSrcs.map((s: any) => ({ text: sourceText(s, ctx.passage), correct: true, sourceId: str(s.id) }));
+  const foilOpts = chosen.map((s: any) => ({
+    text: sourceText(s, ctx.passage), correct: false, sourceId: str(s.id), status: str(s.status), tiesTo: firstWrongClaim(s, correct),
+  }));
+  const options = correctMany
+    ? labelize(seededShuffle([...correctOpts, ...foilOpts], `${seed}:ev`))
+    : (correctOpts.length
+      ? placeCorrect(correctOpts[0], foilOpts, seed, ctx.passage.id, "MC", outcomeIndex)
+      : labelize(seededShuffle(foilOpts, `${seed}:MC`)));
+  return { options, pool };
+}
+
+// Per-option analysis for evidence options (the non-correct sources), tagged part "A".
+function evidenceAnalysis(options: any[], ctx: any): any[] {
+  return options
+    .filter((o: any) => !o.correct)
+    .map((o: any) => ({
+      part: "A", key: o.key, sourceId: o.sourceId, status: o.status, tiesTo: o.tiesTo,
+      rationale: partBRationale(ctx.sourceById[o.sourceId], o.status),
+    }));
 }
 
 // Stems are authored on the outcome (from the guideline catalog). Part A is the authored `stem`;

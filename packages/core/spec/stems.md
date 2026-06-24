@@ -13,6 +13,7 @@ dual-text-stimuli stems are out of scope).
 - **`c1-t4`** (Reasoning & Evidence, literary) → `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf`
 - **`c1-t11`** (Reasoning & Evidence, informational) → `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
 - **`c1-t9`** (Central Ideas, informational) → `packages/core/data/E.G5.C1.T9 Central Ideas.pdf`
+- **`c1-t8`** (Key Details, informational) → `packages/core/data/E.G5.C1.T8 Key Details.pdf`
 
 ## How to use this catalog
 
@@ -20,7 +21,8 @@ dual-text-stimuli stems are out of scope).
 2. Pick the stem that matches your **item `type`** and the task. Task-model numbering is
    per-target and differs between targets — match by item type, not by number. (R&E targets:
    EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T9 Central Ideas: Multiple-Choice=TM1,
-   Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5.)
+   Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5. T8 Key Details: Multiple-Choice=TM1,
+   Multi-Select=TM2, Hot-Text=TM3.)
 3. Pick the **one stem template** that matches the task and the dimension, and fill its
    bracketed `[...]` slot.
 
@@ -251,3 +253,48 @@ author T9 Hot-Text intent as Multiple Choice or EBSR.
   `stem-b "Which detail from the passage best supports your answer in part A?"`
 - central-idea / Short Text →
   `stem "Determine the main idea of the passage. Explain using key details from the passage to support your answer."`
+
+---
+
+# Target 8 (`c1-t8`) — Key Details (informational)
+
+A **different model**: the inference/conclusion is **GIVEN in the stem**, and the student selects
+the **text evidence** that supports it. DOK **1–2**. Standards **RI-1 + RI-7**. Dimension:
+`supporting-evidence`. Item types: `multiple-choice`, `multi-select`, `hot-text` (no EBSR, no
+constructed response).
+
+**Authoring:** author ONE supported `claim` = the given inference (named by the outcome's `focus`)
+and **state that inference in the `stem`**; author `source`s for the options — `directly-supports`
+(the correct evidence; give a `quote` for the exact sentence) and `supports-wrong-claim` /
+`irrelevant` (the distractor evidence, each with a `rationale`). The options are the **sources**,
+not claims; there are no distractor claims.
+
+## Task Model 1 — Multiple Choice (`type multiple-choice`, single-answer, DOK 1–2)
+
+The stem states the inference and asks which evidence supports it:
+- Which [evidence/detail/sentence] from the passage best supports [provide inference or conclusion]?
+- [Provide inference or conclusion based on the passage]. Which [evidence/detail/sentence] from the passage best supports this [inference/conclusion]?
+- The reader can [infer/conclude] [provide inference/conclusion]. Which [evidence/detail/sentence] from the passage best supports this?
+- The author [infers/concludes] that [provide inference/conclusion]. Which [evidence/detail/sentence] from the passage best supports this?
+
+## Task Model 2 — Multi-Select (`type multi-select`, choose two/three, DOK 1–2)
+
+- Choose [two/three] [details/sentences] from the passage that best support the [inference/conclusion] that [provide inference/conclusion].
+- Which [evidence/details/sentences] from the passage best support [provide inference/conclusion]? Select two answers.
+
+## Task Model 3 — Hot Text (`type hot-text`, single-part select-text, DOK 1–2)
+
+Single-part: the authored `stem` states the inference and the click instruction (the compiler does
+not synthesize it); the student clicks the supporting sentence(s):
+- Click the [detail/sentence/set of sentences/paragraph] that best supports [provide inference/conclusion].
+- Click [one/two] [details/sentences] that best support [provide inference/conclusion].
+- [Provide inference/conclusion]. Click the [sentence(s)] from the passage that support this.
+
+## Worked examples (T8, specific slot fills)
+
+- supporting-evidence / Multiple Choice →
+  `stem "Aqueducts brought water to distant cities. Which detail from the passage best supports this conclusion?"` with one supported `claim` (the inference) at `focus`, its directly-supporting `source` the correct option.
+- supporting-evidence / Multi-Select →
+  `stem "Which two details best support the idea that aqueducts carried water far? Select two answers."` (two `directly-supports` sources)
+- supporting-evidence / Hot Text (single-part) →
+  `stem "Aqueducts brought water to distant cities. Click the sentence(s) from the passage that support this."`

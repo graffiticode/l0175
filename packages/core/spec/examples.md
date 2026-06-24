@@ -6,9 +6,10 @@ _Revised: 2026-06-24_
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
 assessment items (Smarter Balanced · Grade 5 · Claim 1) for learning targets **T4**
 (`target c1-t4`, Reasoning & Evidence, literary), **T11** (`target c1-t11`, Reasoning & Evidence,
-informational), and **T9** (`target c1-t9`, Central Ideas, informational). Each program declares
-its `target` first. Categories 1–6 below are literary (T4); Category 7 is informational R&E (T11);
-Category 8 is Central Ideas (T9).
+informational), **T9** (`target c1-t9`, Central Ideas, informational), and **T8** (`target c1-t8`,
+Key Details, informational). Each program declares its `target` first. Categories 1–6 below are
+literary (T4); Category 7 is informational R&E (T11); Category 8 is Central Ideas (T9); Category 9
+is Key Details (T8).
 
 ## Category 1: EBSR items (two-part selected response)
 
@@ -70,3 +71,11 @@ A DIFFERENT skill from Reasoning & Evidence — the main idea, the key details t
 33. Compose an EBSR item where Part A asks for the main idea and Part B asks which detail best supports it (dimension central-idea, standard ri-2).
 34. Write a short-text item: "Determine the main idea of the passage. Explain using key details…" (dimension central-idea, DOK r-dok3).
 35. Write a multiple-choice "missing key detail" item: present a short summary in the stem and ask which key detail is missing; the focus claim is the missing detail.
+
+## Category 9: Key Details items (target c1-t8)
+
+A DIFFERENT model — the inference/conclusion is GIVEN in the stem and the student selects the supporting EVIDENCE (DOK 1–2; standards ri-1+ri-7; dimension supporting-evidence). Author ONE supported claim = the given inference (its `focus`), state it in the stem, and author `source`s as the options: directly-supports = correct evidence (with a `quote`), supports-wrong-claim/irrelevant = distractor evidence. No distractor claims.
+
+36. From an informational article about Roman aqueducts, write a multiple-choice item that states the conclusion "aqueducts brought water to distant cities" and asks which detail from the passage best supports it (dimension supporting-evidence).
+37. Make a multi-select item: which two details best support the stated conclusion? Select two answers (two directly-supports sources are the correct set).
+38. Make a single-part hot-text item: state the inference, then have students click the sentence(s) in the passage that support it (dimension supporting-evidence).

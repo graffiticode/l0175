@@ -521,6 +521,67 @@ describe("compose — Target 9 (Central Ideas) + Multiple-Choice / Multi-Select"
   });
 });
 
+describe("compose — Target 8 (Key Details): evidence selection", () => {
+  const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
+  // T8: the inference is GIVEN in the stem; the options are passage EVIDENCE. One supported claim
+  // (the given inference) + sources: directly-supports = correct evidence, irrelevant = foils.
+  const T8 = (outcome: string) => `target c1-t8 passage "Aqueducts" type informational lines [
+      "Roman aqueducts carried water across long distances. They used gentle slopes so water flowed by gravity. Arches held the channels high above valleys. Cities far from rivers could finally get fresh water."
+    ]
+    claims [
+      claim id "c1" status supported dimension supporting-evidence subject "the aqueducts" text "Roman aqueducts let cities far from rivers get fresh water." cites ["e1" "e2"] {}
+    ]
+    evidence [
+      source id "e1" line 1 quote "Cities far from rivers could finally get fresh water." status directly-supports supports ["c1"] {},
+      source id "e2" line 1 quote "Roman aqueducts carried water across long distances." status directly-supports supports ["c1"] {},
+      source id "e3" line 1 quote "They used gentle slopes so water flowed by gravity." status irrelevant supports [] {},
+      source id "e4" line 1 quote "Arches held the channels high above valleys." status irrelevant supports [] {},
+      source id "e5" line 1 quote "Roman builders mixed strong concrete." status irrelevant supports [] {}
+    ]
+    outcomes [ ${outcome} ] {}..`;
+  const MC = `outcome id "q1" type multiple-choice dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1" stem "Roman aqueducts let far-off cities get fresh water. Which detail from the passage best supports this conclusion?" {}`;
+  const MS = `outcome id "q1" type multi-select dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1" stem "Which two details from the passage best support the idea that aqueducts brought water to distant cities? Select two answers." {}`;
+  const HT = `outcome id "q1" type hot-text dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1" stem "Aqueducts brought water to distant cities. Click the sentence(s) from the passage that support this." {}`;
+
+  it("Multiple-Choice draws evidence options (1 correct source), RI-1+RI-7, DOK r-dok2", async () => {
+    const { errors, data } = await compile(T8(MC));
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t8");
+    expect(it0.standards).toEqual(expect.arrayContaining(["ri-1", "ri-7"]));
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.choice.options).toHaveLength(4);
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(1);
+    // the correct option is an evidence excerpt (a source quote), not the inference statement
+    expect(it0.choice.options.find((o: any) => o.correct).text).toMatch(/Cities far from rivers|Roman aqueducts carried/);
+    expect(it0.answerKey.choice).toMatch(/^[A-D]$/);
+  });
+
+  it("Multi-Select takes the directly-supporting sources as the correct set", async () => {
+    const it0 = item0((await compile(T8(MS))).data);
+    expect(it0.type).toBe("multi-select");
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(2);
+    expect(it0.answerKey.choices).toHaveLength(2);
+    expect(it0.selectCount).toBe(2);
+  });
+
+  it("Hot-Text is single-part: a selectable passage, no Part A", async () => {
+    const it0 = item0((await compile(T8(HT))).data);
+    expect(it0.partA).toBeUndefined();
+    expect(it0.stem.partB).toBeUndefined();
+    expect(it0.stem.partA).toMatch(/Click the sentence/);
+    expect(it0.selectable.filter((s: any) => s.correct).length).toBeGreaterThanOrEqual(1);
+    expect(it0.answerKey.partB).toBeTruthy();
+  });
+
+  it("restricts item types per target: T8 rejects ebsr; T4 rejects multiple-choice", async () => {
+    const ebsrOnT8 = T8(MC).replace("type multiple-choice", "type ebsr");
+    expect((await compile(ebsrOnT8)).errors.some((e: any) => /item type 'ebsr' is not available for target c1-t8/.test(e.message))).toBe(true);
+    const mcOnT4 = `target c1-t4 passage "P" type literary lines [ "A cat sat. It purred." ] claims [ claim id "c1" status supported dimension character subject "the cat" text "The cat is content." cites ["e1"] {} ] evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ] outcomes [ outcome id "q1" type multiple-choice dimension character subject "the cat" focus "c1" stem "Which inference is supported?" {} ] {}..`;
+    expect((await compile(mcOnT4)).errors.some((e: any) => /item type 'multiple-choice' is not available for target c1-t4/.test(e.message))).toBe(true);
+  });
+});
+
 describe("compose — grade level & readability", () => {
   // A deliberately above-grade passage: long sentences, abstract/academic vocabulary. Self-
   // contained (claims/evidence reference only line 1) so the only warning under test is readability.

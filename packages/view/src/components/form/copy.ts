@@ -81,11 +81,15 @@ export function itemToHtml(item: any, mode: Mode): string {
   const out: string[] = [];
   if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
 
-  if (item.type === "ebsr" || item.type === "hot-text") {
+  if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
     out.push(P(`<strong>Part A.</strong> ${esc(item.stem?.partA)}`, "margin:8px 0 4px"));
     out.push(optionsHtml(item.partA?.options, mode, false));
     out.push(P(`<strong>Part B.</strong> ${esc(item.stem?.partB)}`, "margin:8px 0 4px"));
     out.push(item.type === "ebsr" ? optionsHtml(item.partB?.options, mode, true) : selectableHtml(item.selectable, mode));
+  } else if (item.type === "hot-text") {
+    // Single-part Hot Text (evidence): the authored stem (which states the inference) + selectable.
+    out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
+    out.push(selectableHtml(item.selectable, mode));
   } else if (item.type === "multiple-choice" || item.type === "multi-select") {
     out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
     out.push(optionsHtml(item.choice?.options, mode, false));
@@ -100,7 +104,7 @@ export function itemToHtml(item: any, mode: Mode): string {
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
     if (item.type === "hot-text") {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
-      if (ids.length) key.push(`Part B &mdash; any ${item.selectCount ?? 1} of: ${esc(ids.join(", "))}`);
+      if (ids.length) key.push(`${item.partA ? "Part B" : "Answer"} &mdash; any ${item.selectCount ?? 1} of: ${esc(ids.join(", "))}`);
     }
     if (item.answerKey?.choice) key.push(`Answer &mdash; ${esc(item.answerKey.choice)}`);
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer &mdash; ${esc(item.answerKey.choices.join(", "))}`);
@@ -141,22 +145,24 @@ export function itemToText(item: any, mode: Mode): string {
     return `${o.key}. ${quote ? `“${o.text}”` : o.text}${mark}`;
   };
 
-  if (item.type === "ebsr" || item.type === "hot-text") {
+  const hotTextLines = () => {
+    // Hot Text: one line per paragraph, sentences inline; correct sentences marked in review.
+    for (const g of groupByLine(item.selectable ?? [])) {
+      out.push(g.units.map((s: any) => `${s.text}${mode === "review" && s.correct ? " ✓" : ""}`).join(" "));
+    }
+  };
+  if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
     out.push(`Part A. ${item.stem?.partA ?? ""}`);
     for (const o of item.partA?.options ?? []) out.push(opt(o, false));
     out.push("", `Part B. ${item.stem?.partB ?? ""}`);
     if (item.type === "ebsr") {
       for (const o of item.partB?.options ?? []) out.push(opt(o, true));
     } else {
-      // Hot Text: one line per paragraph, sentences inline; correct sentences marked in review.
-      for (const g of groupByLine(item.selectable ?? [])) {
-        out.push(
-          g.units
-            .map((s: any) => `${s.text}${mode === "review" && s.correct ? " ✓" : ""}`)
-            .join(" "),
-        );
-      }
+      hotTextLines();
     }
+  } else if (item.type === "hot-text") {
+    out.push(item.stem?.partA ?? ""); // single-part: authored stem states the inference
+    hotTextLines();
   } else if (item.type === "multiple-choice" || item.type === "multi-select") {
     out.push(item.stem?.partA ?? "");
     for (const o of item.choice?.options ?? []) out.push(opt(o, false));
@@ -171,7 +177,7 @@ export function itemToText(item: any, mode: Mode): string {
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B — ${item.answerKey.partB}`);
     if (item.type === "hot-text") {
       const ids = (item.selectable ?? []).filter((s: any) => s.correct).map((s: any) => s.id);
-      if (ids.length) key.push(`Part B — any ${item.selectCount ?? 1} of: ${ids.join(", ")}`);
+      if (ids.length) key.push(`${item.partA ? "Part B" : "Answer"} — any ${item.selectCount ?? 1} of: ${ids.join(", ")}`);
     }
     if (item.answerKey?.choice) key.push(`Answer — ${item.answerKey.choice}`);
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer — ${item.answerKey.choices.join(", ")}`);

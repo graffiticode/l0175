@@ -27,7 +27,7 @@ const ENUM_VALUES = [
   // single-part item types (Multiple Choice / Multi-Select) — used by T9 and the later T8/T10
   "multiple-choice", "multi-select",
   // learning targets (the top-level `target` selector)
-  "c1-t4", "c1-t11", "c1-t9",
+  "c1-t4", "c1-t11", "c1-t9", "c1-t8",
   // T4 (literary) dimensions
   "character", "setting", "event", "point-of-view",
   "theme", "topic", "narrators-feelings", "character-relationship",
@@ -35,6 +35,8 @@ const ENUM_VALUES = [
   "relationships-interactions", "author-use-of-information", "purpose", "authors-opinion",
   // T9 (Central Ideas) dimensions
   "central-idea", "key-detail", "summary",
+  // T8 (Key Details) dimension
+  "supporting-evidence",
   "supported", "distractor",
   "directly-supports", "supports-wrong-claim", "irrelevant",
   // error taxonomies: Reasoning & Evidence (T4/T11) + Central Ideas (T9, significance-based)

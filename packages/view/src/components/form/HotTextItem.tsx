@@ -21,14 +21,17 @@ export function HotTextItem({
   const review = mode === "review";
   const preview = mode === "preview";
   const previewB = preview && picked.length > 0; // Part B feedback active once a sentence is clicked
-  const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
+  // Single-part Hot Text (evidence targets, e.g. T8): the inference is given in the stem and there
+  // is no Part A statement to pick — only the sentence selection.
+  const hasPartA = !!item.partA;
+  const aOk = hasPartA ? !!item.partA.options.find((o: any) => o.key === partA)?.correct : true;
   const correctIds = item.selectable.filter((s: any) => s.correct).map((s: any) => s.id);
   // The valid sentences are a superset; the student picks an EXACT count, and any selection of
   // that many drawn from the valid set (nothing outside it) is correct. `count` comes from the
   // compiler (one less than the valid set, capped at 3, floored at 1).
   const count = item.selectCount ?? 1;
   const bOk = picked.length === count && picked.every((id: string) => correctIds.includes(id));
-  const answered = partA !== undefined && picked.length > 0;
+  const answered = (hasPartA ? partA !== undefined : true) && picked.length > 0;
 
   // Group the selectable sentences by their paragraph (lineId), preserving order.
   const paragraphs: { lineId: number; units: any[] }[] = [];
@@ -52,26 +55,28 @@ export function HotTextItem({
 
   return (
     <div className="flex flex-col gap-4">
+      {hasPartA && (
+        <div className="flex flex-col gap-2">
+          <StemLine>Part A. {item.stem.partA}</StemLine>
+          {item.partA.options.map((o: any) => (
+            <OptionRow
+              key={o.key}
+              name={`${item.id}-A`}
+              optKey={o.key}
+              selected={partA === o.key}
+              onSelect={() => pickA(o.key)}
+              mode={mode}
+              correct={o.correct}
+              analysis={ax[`A:${o.key}`]}
+              feedback={preview && partA !== undefined}
+            >
+              {o.text}
+            </OptionRow>
+          ))}
+        </div>
+      )}
       <div className="flex flex-col gap-2">
-        <StemLine>Part A. {item.stem.partA}</StemLine>
-        {item.partA.options.map((o: any) => (
-          <OptionRow
-            key={o.key}
-            name={`${item.id}-A`}
-            optKey={o.key}
-            selected={partA === o.key}
-            onSelect={() => pickA(o.key)}
-            mode={mode}
-            correct={o.correct}
-            analysis={ax[`A:${o.key}`]}
-            feedback={preview && partA !== undefined}
-          >
-            {o.text}
-          </OptionRow>
-        ))}
-      </div>
-      <div className="flex flex-col gap-2">
-        <StemLine>Part B. {item.stem.partB}</StemLine>
+        <StemLine>{hasPartA ? `Part B. ${item.stem.partB}` : item.stem.partA}</StemLine>
         {/* Mirror the Passage view (ItemView.tsx `Passage`): same panel, paragraph numbers, and
             text styling, so the selectable passage reads exactly like the Passage tab — each
             sentence is a selectable inline span. */}
@@ -124,7 +129,9 @@ export function HotTextItem({
         <ResultBanner correct={aOk && bOk}>
           {aOk && bOk
             ? "Correct — 1 / 1 point."
-            : `Not quite — 0 / 1 point.  (Part A ${aOk ? "✓" : "✗"} · Part B ${bOk ? "✓" : "✗"})`}
+            : hasPartA
+              ? `Not quite — 0 / 1 point.  (Part A ${aOk ? "✓" : "✗"} · Part B ${bOk ? "✓" : "✗"})`
+              : "Not quite — 0 / 1 point."}
         </ResultBanner>
       )}
     </div>
