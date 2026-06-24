@@ -7,9 +7,11 @@ _Revised: 2026-06-19_
 items (Smarter Balanced · Grade 5 · Claim 1). One language serves **multiple learning targets**,
 selected by a required top-level `target`: `c1-t4` (Reasoning & Evidence, literary, RL standards),
 `c1-t11` (Reasoning & Evidence, informational, RI standards), `c1-t9` (Central Ideas,
-informational, RI-1/RI-2), or `c1-t8` (Key Details, informational, RI-1/RI-7 — the inference is
-given and the student selects supporting evidence) — different reading skills, each with its own
-dimensions, distractor taxonomy, DOK, item types, and stem catalog. It is **item-first**: a
+informational, RI-1/RI-2), `c1-t8` (Key Details, informational, RI-1/RI-7 — the inference is
+given and the student selects supporting evidence), or `c1-t10` (Word Meanings, informational,
+RI-4/L-4 — the meaning of a targeted word, options authored as `word`/`meaning`) — different
+reading skills, each with its own dimensions, distractor taxonomy, DOK, item types, and stem
+catalog. It is **item-first**: a
 program declares its `target`, then authors the `outcome`s (questions) first — each with a unique
 `id`, a `focus` naming its correct claim, and an explicit `stem` from that target's guideline
 catalog — then the supported and distractor `claim`s (each distractor `targets` the question(s)
@@ -62,7 +64,7 @@ Free text (`text`, `rationale`, `subject`, `stem`, the passage heading) and id l
 
 | Form | Arity | Takes | Description |
 | :--- | :---: | :--- | :--- |
-| `target` | 2 | tag | Top level: the learning target — `c1-t4` (R&E literary, RL), `c1-t11` (R&E informational, RI), `c1-t9` (Central Ideas informational, RI-1/RI-2), or `c1-t8` (Key Details informational, RI-1/RI-7). Selects the valid dimensions/standards, distractor taxonomy, DOK, item types, and stem catalog. Always author one; defaults to `c1-t4` if omitted. |
+| `target` | 2 | tag | Top level: the learning target — `c1-t4` (R&E literary, RL), `c1-t11` (R&E informational, RI), `c1-t9` (Central Ideas informational, RI-1/RI-2), `c1-t8` (Key Details informational, RI-1/RI-7), or `c1-t10` (Word Meanings informational, RI-4/L-4). Selects the valid dimensions/standards, distractor taxonomy, DOK, item types, and stem catalog. Always author one; defaults to `c1-t4` if omitted. |
 | `title` | 2 | string | Optional assessment title; echoed on the composed output. |
 | `grade` | 2 | number | Optional top-level reading-level target (e.g. `grade 5`). Defaults to the target/guideline's grade (5 for `c1-t4`/`c1-t11`); echoed on the output. The compiler estimates the passage's reading level and warns when it reads above this grade. |
 | `passage` | 2 | string | Opens the stimulus; the value is the passage **heading**. Chains with `type` and `lines`. |
@@ -142,14 +144,14 @@ composes). A `focus` that isn't a supported claim, or a `targets` to a missing o
 
 ## Enumerations
 
-- **`target`**: `c1-t4` (R&E literary), `c1-t11` (R&E informational), `c1-t9` (Central Ideas informational), `c1-t8` (Key Details informational) — required, top level
+- **`target`**: `c1-t4` (R&E literary), `c1-t11` (R&E informational), `c1-t9` (Central Ideas informational), `c1-t8` (Key Details informational), `c1-t10` (Word Meanings informational) — required, top level
 - **item `type`**: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set is per-target) · **passage `type`**: `literary`, `informational`
 - **`dimension` (c1-t4)**: `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - **`dimension` (c1-t11)**: `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
-- **`dimension` (c1-t9)**: `central-idea`, `key-detail`, `summary` · **(c1-t8)**: `supporting-evidence`
-- **claim `status`**: `supported`, `distractor` · **source `status`**: `directly-supports`, `supports-wrong-claim`, `irrelevant`
-- **`error-type` (c1-t4 / c1-t11)**: `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · **(c1-t9)**: `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · **(c1-t8)**: none — wrong answers are non-supporting sources
-- **`standard` (c1-t4)**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **(c1-t11)**: `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · **(c1-t9)**: `ri-1`, `ri-2` · **(c1-t8)**: `ri-1`, `ri-7` · **`dok`**: `r-dok1`, `r-dok2`, `r-dok3`
+- **`dimension` (c1-t9)**: `central-idea`, `key-detail`, `summary` · **(c1-t8)**: `supporting-evidence` · **(c1-t10)**: `word-meaning`
+- **claim `status`**: `supported`, `distractor` · **source `status`**: `directly-supports`, `supports-wrong-claim`, `irrelevant` · **meaning `status` (c1-t10)**: `correct`, `distractor`
+- **`error-type` (c1-t4 / c1-t11)**: `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · **(c1-t9)**: `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · **(c1-t8)**: none — non-supporting sources · **(c1-t10)**: `other-meaning`, `misinterprets`, `wrong-context`
+- **`standard` (c1-t4)**: `rl-1`, `rl-3`, `rl-6`, `rl-9` · **(c1-t11)**: `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · **(c1-t9)**: `ri-1`, `ri-2` · **(c1-t8)**: `ri-1`, `ri-7` · **(c1-t10)**: `ri-4`, `l-4`, `l-4a`, `l-4b`, `l-4c`, `l-5c` · **`dok`**: `r-dok1`, `r-dok2`, `r-dok3`
 
 ## How composition uses the vocabulary
 

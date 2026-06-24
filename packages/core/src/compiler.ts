@@ -75,8 +75,9 @@ type TargetProfile = {
   defaultDok: string;    // DOK for this target's selected-response items (short-text bumps to r-dok3)
   // What the answer options are made of: "statement" → the options are claims the student chooses
   // among (T4/T11/T9); "evidence" → the inference is GIVEN in the stem and the options are passage
-  // sources the student selects as support (T8 Key Details).
-  answerKind: "statement" | "evidence";
+  // sources the student selects as support (T8 Key Details); "meaning" → the options are the
+  // candidate meanings of a targeted `word` (T10 Word Meanings).
+  answerKind: "statement" | "evidence" | "meaning";
   // Hot Text shape: true → single-part (click the supporting / main-idea sentences; the authored
   // stem is the whole instruction). Only Reasoning & Evidence pairs Hot Text with a statement Part A
   // (two-part), so T4/T11 are false; T8 (Key Details) and T9 (Central Ideas) are true.
@@ -183,6 +184,28 @@ const TARGETS: Record<string, TargetProfile> = {
       "supporting-evidence": "ri-7",
     },
   },
+  // Claim 1 · Target 10 — Word Meanings, informational texts (RI-4 + the L-4 family). The most
+  // different model: the question asks for the MEANING of a targeted word/phrase in context, so the
+  // options are candidate MEANINGS (answerKind "meaning"), authored as `word`/`meaning`, not claims.
+  // DOK 1–2. The strategy (context / roots & affixes / word relationships / reference) is expressed
+  // via the authored standard (l-4a / l-4b / l-5c / l-4c).
+  "c1-t10": {
+    id: "c1-t10",
+    label: "Grade 5 · Claim 1 · Target 10 (Word Meanings)",
+    grade: 5,
+    textType: "informational",
+    baseStandard: "ri-4",
+    defaultDok: "r-dok2",
+    answerKind: "meaning",
+    singlePartHotText: false,
+    itemTypes: new Set(["multiple-choice", "multi-select"]),
+    standards: new Set(["ri-4", "ri-1", "l-4", "l-4a", "l-4b", "l-4c", "l-5c"]),
+    dimensions: new Set(["word-meaning"]),
+    errorTypes: ["other-meaning", "misinterprets", "wrong-context"],
+    dimStandard: {
+      "word-meaning": "l-4",
+    },
+  },
 };
 const DEFAULT_TARGET = "c1-t4"; // best-effort fallback when `target` is missing/unknown (still a hard error)
 
@@ -228,6 +251,7 @@ const ATTR_KEYS: Record<string, string> = {
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
   STEM_B: "stemB", SCORE: "score", DESCRIPTOR: "descriptor",
   CLAIMS: "claims", EVIDENCE: "evidence", OUTCOMES: "outcomes",
+  WORDS: "words", MEANINGS: "meanings", // T10 (Word Meanings)
 };
 
 export class Checker extends BaseChecker {
@@ -255,7 +279,7 @@ export class Transformer extends BaseTransformer {
     }
     // Element wrappers: pass the assembled attribute-chain record through, stamping the
     // element's source coord (Symbol key, so it never leaks into output) for error highlighting.
-    for (const tag of ["CLAIM", "SOURCE", "OUTCOME", "BAND"]) {
+    for (const tag of ["CLAIM", "SOURCE", "OUTCOME", "BAND", "WORD", "MEANING"]) {
       this[tag] = (node: any, options: any, resume: any) => {
         this.visit(node.elts[0], options, (e0: any, v0: any) => {
           if (v0 && typeof v0 === "object") v0[COORD] = node.coord ?? this.nodePool[node.elts[0]]?.coord;
@@ -314,6 +338,7 @@ function composeProgram(top: any, errors: any[]): any {
   const lineTexts: string[] = Array.isArray(top.lines) ? top.lines.map(str) : [];
   const claims: any[] = Array.isArray(top.claims) ? top.claims : [];
   const sources: any[] = Array.isArray(top.evidence) ? top.evidence : [];
+  const words: any[] = Array.isArray(top.words) ? top.words : []; // T10 targeted words
   const outcomes: any[] = Array.isArray(top.outcomes) ? top.outcomes : [];
 
   // --- hard validation (fails the compile) ---
@@ -332,6 +357,7 @@ function composeProgram(top: any, errors: any[]): any {
   }
   for (const c of claims) validateClaim(c, errors, profile);
   for (const s of sources) validateSource(s, errors);
+  for (const w of words) validateWord(w, errors, profile);
   for (const o of outcomes) validateOutcome(o, errors, profile);
 
   const passageId = slug(heading);
@@ -345,10 +371,12 @@ function composeProgram(top: any, errors: any[]): any {
     passage,
     claims,
     sources,
+    words,
     outcomes,
     profile,
     claimById: index(claims, "id"),
     sourceById: index(sources, "id"),
+    wordById: index(words, "id"),
     outcomeById: index(outcomes, "id"),
   };
 
@@ -415,6 +443,34 @@ function validateSource(s: any, errors: any[]) {
   if (s.line === undefined && !str(s.quote)) {
     push(`${where}: needs a line number or a quote.`);
   }
+}
+
+// A T10 `word`: a targeted word/phrase plus its candidate `meaning`s. Each meaning is `correct`
+// (the answer) or `distractor` (with a T10 error-type + rationale). A usable word needs ≥1 correct
+// and ≥1 distractor meaning; Multi-Select questions need ≥2 correct (checked at compose).
+function validateWord(w: any, errors: any[], profile: TargetProfile) {
+  const id = str(w.id);
+  const where = id ? `word '${id}'` : "a word";
+  const at = coordOf(w);
+  const push = (message: string) => errors.push({ message, ...at });
+  if (!id) push(`${where}: missing id.`);
+  if (!str(w.text)) push(`${where}: missing text (the targeted word/phrase).`);
+  const meanings: any[] = Array.isArray(w.meanings) ? w.meanings : [];
+  if (meanings.length === 0) { push(`${where}: needs a meanings list.`); return; }
+  let nCorrect = 0;
+  for (const m of meanings) {
+    const mw = `${where} meaning '${str(m.id) || "?"}'`;
+    const st = str(m.status);
+    if (st !== "correct" && st !== "distractor") push(`${mw}: invalid status '${st}'. Expected correct or distractor.`);
+    if (!str(m.text)) push(`${mw}: missing text (the meaning).`);
+    if (st === "correct") nCorrect++;
+    if (st === "distractor") {
+      if (!profile.errorTypes.includes(str(m.errorType))) push(`${mw}: distractor meaning needs a valid error-type for target ${profile.id} (${profile.errorTypes.join(", ")}).`);
+      if (!str(m.rationale)) push(`${mw}: distractor meaning needs a rationale.`);
+    }
+  }
+  if (nCorrect === 0) push(`${where}: needs at least one meaning with status correct.`);
+  if (meanings.length - nCorrect === 0) push(`${where}: needs at least one distractor meaning.`);
 }
 
 function validateOutcome(o: any, errors: any[], profile: TargetProfile) {
@@ -498,9 +554,14 @@ function validateGraph(ctx: any, errors: any[]): string[] {
   for (const o of ctx.outcomes) {
     const oid = str(o.id);
     for (const f of focusIds(o)) {
-      const fc = ctx.claimById[f];
-      if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
-      else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
+      if (ctx.profile.answerKind === "meaning") {
+        // T10: focus names a `word` (the targeted word), not a claim.
+        if (!ctx.wordById[f]) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known word id.`, ...coordOf(o) });
+      } else {
+        const fc = ctx.claimById[f];
+        if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
+        else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
+      }
     }
     // Items whose options are distractor CLAIMS need enough distinct ones bound to them, or they
     // can't be composed (hard error). EBSR / two-part Hot-Text / Multiple-Choice want 3 (4 options);
@@ -804,12 +865,72 @@ function optionAnalysis(options: any[], correct: any, ctx: any, part = "A"): any
     });
 }
 
+// T10 Word Meanings: compose a Multiple-Choice / Multi-Select item whose options are the candidate
+// `meaning`s of the targeted `word` named by `focus`. correct meanings are the key(s); distractor
+// meanings (with T10 error-types) are the foils. The targeted word + its context ride along on
+// `item.word` for the renderer.
+function composeWordMeaning(
+  outcome: any, ctx: any, dim: string, dok: string, itemType: string, seed: string, outcomeIndex: number, warnings: string[],
+): any {
+  const wordId = focusIds(outcome)[0];
+  const word = ctx.wordById[wordId];
+  const meanings: any[] = word && Array.isArray(word.meanings) ? word.meanings : [];
+  const correctM = meanings.filter((m: any) => str(m.status) === "correct");
+  const distractorM = meanings.filter((m: any) => str(m.status) === "distractor");
+  const key0 = correctM[0];
+  const correct = key0 ? { id: str(key0.id), text: str(key0.text), standard: key0.standard } : null;
+  const item = baseItem(itemType, outcome, ctx, dim, dok, correct, warnings);
+  if (word) item.word = { text: str(word.text), line: word.line, quote: str(word.quote) || undefined };
+  if (!word) {
+    warnings.push(`Outcome '${str(outcome.id)}' focus '${wordId}' is not a known word; cannot compose.`);
+    return item;
+  }
+  const toOpt = (m: any, correctFlag: boolean) => ({ text: str(m.text), correct: correctFlag, meaningId: str(m.id), errorType: str(m.errorType) || undefined });
+  const meaningById = index(meanings, "id");
+  const analysis = (options: any[]) => options.filter((o: any) => !o.correct).map((o: any) => ({
+    part: "A", key: o.key, meaningId: o.meaningId, errorType: o.errorType, rationale: str(meaningById[o.meaningId]?.rationale),
+  }));
+
+  if (itemType === "multi-select") {
+    if (correctM.length < 2) warnings.push("Multi-select (word meaning) needs at least 2 correct meanings.");
+    const slots = Math.max(1, TUNING.MULTI_SELECT_OPTIONS - correctM.length);
+    const opts = [...correctM.map((m) => toOpt(m, true)), ...distractorM.slice(0, slots).map((m) => toOpt(m, false))];
+    const options = labelize(seededShuffle(opts, `${seed}:WM`));
+    checkLengthBalance(options, "Options", warnings);
+    item.choice = { options };
+    item.selectCount = options.filter((o: any) => o.correct).length;
+    item.distractorAnalysis = analysis(options);
+    item.answerKey = { choices: options.filter((o: any) => o.correct).map((o: any) => o.key), rationale: str(key0?.rationale) };
+    return item;
+  }
+
+  // Multiple Choice: one correct meaning + up to 3 distractor meanings.
+  const correctOpt = key0 ? toOpt(key0, true) : null;
+  const distractorOpts = distractorM.slice(0, TUNING.PART_OPTIONS - 1).map((m) => toOpt(m, false));
+  const options = correctOpt
+    ? placeCorrect(correctOpt, distractorOpts, seed, ctx.passage.id, "MC", outcomeIndex)
+    : labelize(seededShuffle(distractorOpts, `${seed}:MC`));
+  if (!correctOpt) warnings.push("No correct meaning for the targeted word; this item has no correct option.");
+  checkLengthBalance(options, "Options", warnings);
+  checkStemGiveaway(str(outcome.stem), str(correctOpt?.text), str(outcome.subject), warnings);
+  item.choice = { options };
+  item.distractorAnalysis = analysis(options);
+  item.answerKey = { choice: options.find((o: any) => o.correct)?.key, rationale: str(key0?.rationale) };
+  return item;
+}
+
 function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], outcomeIndex = 0): any {
   const warnings: string[] = [...graphWarnings];
   const dim = str(outcome.dimension);
   const itemType = str(outcome.type);
   const dok = str(outcome.dok) || dokFor(ctx.profile, itemType);
   const seed = `${ctx.passage.id}:${str(outcome.id)}:${itemType}`;
+
+  // T10 Word Meanings: `focus` names a `word`, and the options are its candidate meanings — a
+  // separate compose path (no claim/evidence graph).
+  if (ctx.profile.answerKind === "meaning") {
+    return composeWordMeaning(outcome, ctx, dim, dok, itemType, seed, outcomeIndex, warnings);
+  }
 
   // 1. The question pins its correct answer(s) via `focus`. One claim for single-answer items; the
   // full correct set for multi-select. `correct` is the primary (first) for the shared machinery.

@@ -14,6 +14,7 @@ dual-text-stimuli stems are out of scope).
 - **`c1-t11`** (Reasoning & Evidence, informational) → `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
 - **`c1-t9`** (Central Ideas, informational) → `packages/core/data/E.G5.C1.T9 Central Ideas.pdf`
 - **`c1-t8`** (Key Details, informational) → `packages/core/data/E.G5.C1.T8 Key Details.pdf`
+- **`c1-t10`** (Word Meanings, informational) → `packages/core/data/E.G5.C1.T10 Word Meanings.pdf`
 
 ## How to use this catalog
 
@@ -22,7 +23,8 @@ dual-text-stimuli stems are out of scope).
    per-target and differs between targets — match by item type, not by number. (R&E targets:
    EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T9 Central Ideas: Multiple-Choice=TM1,
    Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5. T8 Key Details: Multiple-Choice=TM1,
-   Multi-Select=TM2, Hot-Text=TM3.)
+   Multi-Select=TM2, Hot-Text=TM3. T10 Word Meanings: Multiple-Choice=TM1, Multi-Select=TM2,
+   Hot-Text=TM3.)
 3. Pick the **one stem template** that matches the task and the dimension, and fill its
    bracketed `[...]` slot.
 
@@ -304,3 +306,42 @@ not synthesize it); the student clicks the supporting sentence(s):
   `stem "Which two details best support the idea that aqueducts carried water far? Select two answers."` (two `directly-supports` sources)
 - supporting-evidence / Hot Text (single-part) →
   `stem "Aqueducts brought water to distant cities. Click the sentence(s) from the passage that support this."`
+
+---
+
+# Target 10 (`c1-t10`) — Word Meanings (informational)
+
+A **different model**: the question asks for the **meaning of a targeted word/phrase in context**,
+so the answer choices are **meanings** (definitions/synonyms), authored as a `word` with candidate
+`meaning`s — not claims. DOK **1–2**. Standards **RI-4** (always) + the **L-4 family** by strategy:
+context → `l-4a`, Greek/Latin roots & affixes → `l-4b`, word relationships (synonyms/antonyms) →
+`l-5c`, reference materials → `l-4c`. Dimension: `word-meaning`. Item types: `multiple-choice`,
+`multi-select` (the reverse click-the-word Hot-Text, Task Model 3, is not yet available).
+
+**Authoring:** author a `word` (the targeted word, with `line`/`quote` for its context) holding a
+`meanings` list — one (MC) or ≥2 (Multi-Select) `status correct` meanings + `status distractor`
+meanings, each distractor with a T10 `error-type` and `rationale`. The outcome's `focus` names the
+word; the stem states the word and its context sentence. Distractor taxonomy: `other-meaning`
+(another meaning of the word, ignoring context), `misinterprets` (misreads the word/context),
+`wrong-context` (uses the wrong context).
+
+## Task Model 1 — Multiple Choice (`type multiple-choice`, single-answer, DOK 1–2)
+
+The stem shows the sentence with the targeted word and asks for its meaning:
+- Read the sentence(s). [excerpt] What is the meaning of the word [word]?
+- Read the sentence(s). [excerpt] What does the word [word] most likely mean?
+- Read the sentence(s). [excerpt] Which word or phrase best states the meaning of [word]?
+- Read the sentence(s). [excerpt] Pick the word or phrase that best defines [word] as it is used in the sentence(s).
+- Read the dictionary entry. [(part of speech) 1. definition] Which word from the text best matches the dictionary entry?
+- Read the sentence(s). [excerpt] What does the [root/affix] in the word [word] mean?
+
+## Task Model 2 — Multi-Select (`type multi-select`, choose two, DOK 1–2)
+
+- Read the sentence(s). [excerpt] What does the word [word] most likely mean? Choose two answers.
+- Read the sentence(s). [excerpt] What does the use of [word] tell the reader about [idea/event] in the passage? Choose two answers.
+
+## Worked example (T10, specific slot fill)
+
+- word-meaning / Multiple Choice →
+  `word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water for miles." meanings [ meaning id "m1" status correct text "a channel built to carry water" {} meaning id "m2" status distractor error-type other-meaning text "a cargo boat" rationale "another meaning, ignores context" {} … ] {}`
+  `stem "Read the sentence: \"The aqueduct carried water for miles.\" What does the word aqueduct most likely mean?"` with `focus "w1"`, `standard l-4a`

@@ -607,6 +607,64 @@ describe("compose — Target 8 (Key Details): evidence selection", () => {
   });
 });
 
+describe("compose — Target 10 (Word Meanings): meaning selection", () => {
+  const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
+  // T10: the answer choices are MEANINGS of a targeted `word`; correct meaning(s) + distractor
+  // meanings (with T10 error-types). Multi-Select needs ≥2 correct meanings.
+  const T10 = (outcome: string, words = WORDS) => `target c1-t10 passage "Aqueducts" type informational lines [
+      "Roman engineers built aqueducts. The aqueduct carried water across long distances."
+    ]
+    ${words}
+    outcomes [ ${outcome} ] {}..`;
+  const WORDS = `words [
+      word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water across long distances."
+        meanings [
+          meaning id "m1" status correct text "a channel built to carry water" {},
+          meaning id "m2" status distractor error-type other-meaning text "a boat that carries cargo" rationale "another meaning, ignores context" {},
+          meaning id "m3" status distractor error-type misinterprets text "a tall stone tower" rationale "misreads the sentence" {},
+          meaning id "m4" status distractor error-type wrong-context text "a kind of road" rationale "uses the wrong context" {}
+        ] {}
+    ]`;
+  const MC = `outcome id "q1" type multiple-choice dimension word-meaning subject "aqueduct" standard l-4a focus "w1" stem "Read the sentence: \\"The aqueduct carried water across long distances.\\" What does the word aqueduct most likely mean?" {}`;
+
+  it("Multiple-Choice draws meaning options (1 correct), RI-4 + L-4, DOK r-dok2", async () => {
+    const { errors, data } = await compile(T10(MC));
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t10");
+    expect(it0.standards).toEqual(expect.arrayContaining(["ri-4", "l-4a"])); // base ri-4 + authored l-4a
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.choice.options).toHaveLength(4);
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(1);
+    expect(it0.choice.options.find((o: any) => o.correct).text).toBe("a channel built to carry water");
+    expect(it0.word.text).toBe("aqueduct");
+    expect(it0.answerKey.choice).toMatch(/^[A-D]$/);
+  });
+
+  it("Multi-Select takes the correct meanings as the set (needs ≥2 correct)", async () => {
+    const words2 = WORDS.replace('meaning id "m2" status distractor error-type other-meaning text "a boat that carries cargo" rationale "another meaning, ignores context" {}',
+      'meaning id "m2" status correct text "a water channel" {}');
+    const MS = `outcome id "q1" type multi-select dimension word-meaning subject "aqueduct" standard l-5c focus "w1" stem "What does the word aqueduct most likely mean? Choose two answers." {}`;
+    const it0 = item0((await compile(T10(MS, words2))).data);
+    expect(it0.type).toBe("multi-select");
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(2);
+    expect(it0.answerKey.choices).toHaveLength(2);
+    expect(it0.selectCount).toBe(2);
+  });
+
+  it("validates words: a word needs a correct meaning and a distractor; rejects a bad T10 error-type", async () => {
+    const noCorrect = WORDS.replace('status correct text "a channel built to carry water"', 'status distractor error-type misinterprets text "a channel built to carry water" rationale "r"');
+    expect((await compile(T10(MC, noCorrect))).errors.some((e: any) => /needs at least one meaning with status correct/.test(e.message))).toBe(true);
+    const badType = WORDS.replace("error-type other-meaning", "error-type faulty-reasoning");
+    expect((await compile(T10(MC, badType))).errors.some((e: any) => /valid error-type for target c1-t10/.test(e.message))).toBe(true);
+  });
+
+  it("restricts item types: T10 rejects ebsr / hot-text", async () => {
+    expect((await compile(T10(MC.replace("type multiple-choice", "type ebsr")))).errors.some((e: any) => /item type 'ebsr' is not available for target c1-t10/.test(e.message))).toBe(true);
+    expect((await compile(T10(MC.replace("type multiple-choice", "type hot-text")))).errors.some((e: any) => /item type 'hot-text' is not available for target c1-t10/.test(e.message))).toBe(true);
+  });
+});
+
 describe("compose — grade level & readability", () => {
   // A deliberately above-grade passage: long sentences, abstract/academic vocabulary. Self-
   // contained (claims/evidence reference only line 1) so the only warning under test is readability.

@@ -1,9 +1,9 @@
 {
   "revised": "2026-06-24",
   "id": "0175",
-  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1) for multiple learning targets selected by a top-level `target`: c1-t4 (Reasoning & Evidence, literary, RL), c1-t11 (Reasoning & Evidence, informational, RI), c1-t9 (Central Ideas, informational, RI-1/RI-2), and c1-t8 (Key Details, informational, RI-1/RI-7 — the inference is given and the student selects supporting evidence) — different reading skills. Item-first: each authored question pins its correct answer(s) (focus) and its stem, and the compiler draws the wrong answers from the foils (distractor claims, or non-supporting sources) bound to it.",
+  "summary": "Composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1) for multiple learning targets selected by a top-level `target`: c1-t4 (Reasoning & Evidence, literary, RL), c1-t11 (Reasoning & Evidence, informational, RI), c1-t9 (Central Ideas, informational, RI-1/RI-2), c1-t8 (Key Details, informational, RI-1/RI-7 — the inference is given and the student selects supporting evidence), and c1-t10 (Word Meanings, informational, RI-4/L-4 — the meaning of a targeted word, options authored as word/meaning) — different reading skills. Item-first: each authored question pins its correct answer(s) (focus) and its stem, and the compiler draws the wrong answers from the foils (distractor claims, non-supporting sources, or distractor meanings) bound to it.",
   "in_scope": [
-    "A required top-level target: c1-t4 (literary, R&E), c1-t11 (informational, R&E), c1-t9 (informational, Central Ideas), or c1-t8 (informational, Key Details), selecting the dimension/standard/error-type/DOK/item-type/stem vocabulary",
+    "A required top-level target: c1-t4 (literary, R&E), c1-t11 (informational, R&E), c1-t9 (informational, Central Ideas), c1-t8 (informational, Key Details), or c1-t10 (informational, Word Meanings), selecting the dimension/standard/error-type/DOK/item-type/stem vocabulary",
     "A single passage with numbered lines",
     "Questions (outcomes) authored first, each with a unique id, a focus correct claim (a list on multi-select), and a stem from the target's guideline catalog; distractors bound to questions via targets",
     "A content graph: supported and distractor claims, plus evidence sources tagged directly-supports / supports-wrong-claim / irrelevant",
@@ -11,13 +11,15 @@
     "c1-t11 dimensions: relationships-interactions, author-use-of-information, point-of-view, purpose, authors-opinion",
     "c1-t9 (Central Ideas) dimensions: central-idea, key-detail, summary",
     "c1-t8 (Key Details) dimension: supporting-evidence — the inference is given in the stem and the student selects supporting evidence (options are sources, not claims)",
+    "c1-t10 (Word Meanings) dimension: word-meaning — the question asks the meaning of a targeted word/phrase; options are meanings authored as word/meaning (not claims)",
     "Item types: ebsr (two-part selected response), hot-text (select text — two-part for R&E/Central-Ideas, single-part for Key Details), short-text (constructed response), multiple-choice (one correct), multi-select (exact correct set); the allowed set is per-target",
-    "Authored, error-typed distractors — R&E: misreads-detail / erroneous-inference / faulty-reasoning; Central Ideas (c1-t9): too-narrow / too-broad / misreads-detail / insignificant; Key Details (c1-t8): wrong answers are non-supporting sources (supports-wrong-claim / irrelevant), not distractor claims — with rationales",
-    "Standards rl-1/rl-3/rl-6/rl-9 (c1-t4), ri-1/ri-3/ri-6/ri-7/ri-8/ri-9 (c1-t11), ri-1/ri-2 (c1-t9), ri-1/ri-7 (c1-t8); DOK r-dok1..r-dok3 (R&E r-dok3; T9 r-dok2, written summary r-dok3; T8 r-dok2)",
+    "Authored, error-typed distractors — R&E: misreads-detail / erroneous-inference / faulty-reasoning; Central Ideas (c1-t9): too-narrow / too-broad / misreads-detail / insignificant; Key Details (c1-t8): non-supporting sources (supports-wrong-claim / irrelevant), not distractor claims; Word Meanings (c1-t10): distractor meanings other-meaning / misinterprets / wrong-context — with rationales",
+    "Standards rl-1/rl-3/rl-6/rl-9 (c1-t4), ri-1/ri-3/ri-6/ri-7/ri-8/ri-9 (c1-t11), ri-1/ri-2 (c1-t9), ri-1/ri-7 (c1-t8), ri-4/l-4/l-4a/l-4b/l-4c/l-5c (c1-t10); DOK r-dok1..r-dok3 (R&E r-dok3; T9 r-dok2, written summary r-dok3; T8 & T10 r-dok2)",
     "A reading-level target set by the guideline/target's grade (Grade 5 for c1-t4/c1-t11), overridable by an optional top-level `grade`; the compiler estimates the passage's reading level and warns when it runs above the target grade"
   ],
   "out_of_scope": [
-    "Claims, grades, or Claim-1 targets beyond T4, T11, T9, and T8 — T10 (Word Meanings) is planned; others belong in their own dialects",
+    "Claims, grades, or Claim-1 targets beyond T4, T11, T9, T8, and T10 — other Claim-1 targets belong in their own dialects",
+    "Click-the-word Hot-Text for c1-t10 (the guideline's Task Model 3) — needs word-level selection; a planned follow-up",
     "Dual-text stimuli (a single passage only in this version)",
     "Compile-time LLM generation — the compiler selects and validates authored content, it does not invent it",
     "Auto-scoring of short-text responses — they are hand-scored against the emitted rubric",

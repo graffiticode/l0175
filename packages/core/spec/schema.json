@@ -68,6 +68,15 @@
           }
         },
         "selectCount": { "type": "number" },
+        "word": {
+          "type": "object",
+          "description": "T10 Word Meanings: the targeted word + its context",
+          "properties": {
+            "text": { "type": "string" },
+            "line": { "type": "number" },
+            "quote": { "type": "string" }
+          }
+        },
         "prompt": { "type": "string" },
         "rubric": {
           "type": "array",
@@ -85,6 +94,7 @@
               "key": { "type": "string" },
               "claimId": { "type": "string" },
               "sourceId": { "type": "string" },
+              "meaningId": { "type": "string" },
               "errorType": { "type": "string" },
               "status": { "type": "string" },
               "tiesTo": {},

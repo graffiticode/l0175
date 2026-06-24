@@ -27,7 +27,7 @@ const ENUM_VALUES = [
   // single-part item types (Multiple Choice / Multi-Select) — used by T9 and the later T8/T10
   "multiple-choice", "multi-select",
   // learning targets (the top-level `target` selector)
-  "c1-t4", "c1-t11", "c1-t9", "c1-t8",
+  "c1-t4", "c1-t11", "c1-t9", "c1-t8", "c1-t10",
   // T4 (literary) dimensions
   "character", "setting", "event", "point-of-view",
   "theme", "topic", "narrators-feelings", "character-relationship",
@@ -37,14 +37,19 @@ const ENUM_VALUES = [
   "central-idea", "key-detail", "summary",
   // T8 (Key Details) dimension
   "supporting-evidence",
-  "supported", "distractor",
+  // T10 (Word Meanings) dimension
+  "word-meaning",
+  "supported", "distractor", "correct",
   "directly-supports", "supports-wrong-claim", "irrelevant",
   // error taxonomies: Reasoning & Evidence (T4/T11) + Central Ideas (T9, significance-based)
   "misreads-detail", "erroneous-inference", "faulty-reasoning",
   "too-narrow", "too-broad", "insignificant",
-  // standards: RL (T4) + RI (T11/T9)
+  // Word Meanings (T10) distractor taxonomy
+  "other-meaning", "misinterprets", "wrong-context",
+  // standards: RL (T4) + RI (T11/T9/T8/T10) + L (T10)
   "rl-1", "rl-3", "rl-6", "rl-9",
-  "ri-1", "ri-2", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9",
+  "ri-1", "ri-2", "ri-3", "ri-4", "ri-6", "ri-7", "ri-8", "ri-9",
+  "l-4", "l-4a", "l-4b", "l-4c", "l-5c",
   "r-dok1", "r-dok2", "r-dok3",
   "inference", "conclusion", "author-intent",
 ];
@@ -88,12 +93,16 @@ const additions = {
   claims: fn2("CLAIMS"),
   evidence: fn2("EVIDENCE"),
   outcomes: fn2("OUTCOMES"),
+  words: fn2("WORDS"), // T10 (Word Meanings) — targeted words, top level
+  meanings: fn2("MEANINGS"), // candidate meanings inside a `word`
 
   // --- element wrappers (arity-1) ---
   claim: fn1("CLAIM"),
   source: fn1("SOURCE"),
   outcome: fn1("OUTCOME"),
   band: fn1("BAND"), // a rubric band: score + descriptor
+  word: fn1("WORD"), // T10 — a targeted word + its candidate meanings
+  meaning: fn1("MEANING"), // T10 — one candidate meaning (correct or distractor)
 };
 
 export const lexicon = { ...base, ...enums, ...additions };

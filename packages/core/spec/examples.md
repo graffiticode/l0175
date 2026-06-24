@@ -6,10 +6,11 @@ _Revised: 2026-06-24_
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
 assessment items (Smarter Balanced · Grade 5 · Claim 1) for learning targets **T4**
 (`target c1-t4`, Reasoning & Evidence, literary), **T11** (`target c1-t11`, Reasoning & Evidence,
-informational), **T9** (`target c1-t9`, Central Ideas, informational), and **T8** (`target c1-t8`,
-Key Details, informational). Each program declares its `target` first. Categories 1–6 below are
-literary (T4); Category 7 is informational R&E (T11); Category 8 is Central Ideas (T9); Category 9
-is Key Details (T8).
+informational), **T9** (`target c1-t9`, Central Ideas, informational), **T8** (`target c1-t8`,
+Key Details, informational), and **T10** (`target c1-t10`, Word Meanings, informational). Each
+program declares its `target` first. Categories 1–6 below are literary (T4); Category 7 is
+informational R&E (T11); Category 8 is Central Ideas (T9); Category 9 is Key Details (T8);
+Category 10 is Word Meanings (T10).
 
 ## Category 1: EBSR items (two-part selected response)
 
@@ -79,3 +80,11 @@ A DIFFERENT model — the inference/conclusion is GIVEN in the stem and the stud
 36. From an informational article about Roman aqueducts, write a multiple-choice item that states the conclusion "aqueducts brought water to distant cities" and asks which detail from the passage best supports it (dimension supporting-evidence).
 37. Make a multi-select item: which two details best support the stated conclusion? Select two answers (two directly-supports sources are the correct set).
 38. Make a single-part hot-text item: state the inference, then have students click the sentence(s) in the passage that support it (dimension supporting-evidence).
+
+## Category 10: Word Meanings items (target c1-t10)
+
+A DIFFERENT model — the question asks for the MEANING of a targeted word/phrase in context, so the options are meanings (DOK 1–2; standard ri-4 + the L-4 family). Author a top-level `words` list: a `word` (the targeted word, with line/quote for context) holding `meanings` — `status correct` (the answer) + `status distractor` (error-type other-meaning/misinterprets/wrong-context + rationale). The outcome's `focus` names the word; state the word + its sentence in the stem.
+
+39. From an informational article, write a multiple-choice item asking what the word "aqueduct" most likely means as used in the passage (dimension word-meaning, standard l-4a — context). Distractors: another meaning that ignores context (other-meaning), a misread (misinterprets), and a wrong-context meaning.
+40. Make a multi-select item: "What does the word 'channel' most likely mean? Choose two answers." (two correct meanings, dimension word-meaning).
+41. Write a roots/affixes item: ask what the root in a word means, standard l-4b (dimension word-meaning).
