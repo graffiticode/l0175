@@ -519,6 +519,31 @@ describe("compose — Target 9 (Central Ideas) + Multiple-Choice / Multi-Select"
     const listOnMc = T9_MC.replace('focus "c1"', 'focus ["c1" "d1"]');
     expect((await compile(listOnMc)).errors.some((e: any) => /takes a single focus claim/.test(e.message))).toBe(true);
   });
+
+  // Hot Text (TM4): single-part "click the sentence(s) that show the main idea" — no Part A.
+  const T9_HT = `target c1-t9 passage "Honeybees" type informational lines [
+      "Honeybees live together in colonies. By working together, the whole colony survives. The queen lays the eggs."
+    ]
+    claims [ claim id "c1" status supported dimension central-idea subject "the colony" text "Honeybees survive by working together." cites ["e1" "e2"] {} ]
+    evidence [
+      source id "e1" line 1 quote "Honeybees live together in colonies." status directly-supports supports ["c1"] {},
+      source id "e2" line 1 quote "By working together, the whole colony survives." status directly-supports supports ["c1"] {}
+    ]
+    outcomes [ outcome id "q1" type hot-text dimension central-idea subject "the colony" standard ri-2 focus "c1" stem "Click on the sentence(s) that best show the main idea of the passage." {} ] {}..`;
+
+  it("composes a single-part Hot-Text item (TM4): a selectable passage, no Part A", async () => {
+    const { errors, data } = await compile(T9_HT);
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t9");
+    expect(it0.type).toBe("hot-text");
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.partA).toBeUndefined(); // single-part
+    expect(it0.stem.partB).toBeUndefined();
+    expect(it0.stem.partA).toMatch(/Click on the sentence/);
+    expect(it0.selectable.filter((s: any) => s.correct).map((s: any) => s.id)).toEqual(["1.1", "1.2"]);
+    expect(it0.answerKey.partB).toBe("1.1, 1.2");
+  });
 });
 
 describe("compose — Target 8 (Key Details): evidence selection", () => {

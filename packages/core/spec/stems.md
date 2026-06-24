@@ -237,10 +237,14 @@ Author as `stem`; every Short Text stem ends with the explain clause:
 - Summarize [the first paragraph / the introduction]. Use key [details/events] from the passage in your summary.
 - Summarize what happens [after/during] [provide text event]. Use key [details/events] from the passage in your summary.
 
-**Note — Task Model 4 (Hot Text) is not yet available for T9.** T9's Hot-Text is a *single-part*
-"click the sentence(s) that show the main idea" item; L0175's `hot-text` is currently two-part
-(statement + evidence). Single-part Hot-Text selection is planned with the T8 work; until then,
-author T9 Hot-Text intent as Multiple Choice or EBSR.
+## Task Model 4 — Hot Text (`type hot-text`, single-part select-text, DOK 2)
+
+Single-part: the authored `stem` is the whole click instruction (the compiler does not synthesize
+it); the student clicks the sentence(s) that show the main idea. The correct sentences are the
+`focus` claim's directly-supporting `source`s (give each a `quote`):
+- Click on [one/two] [sentence(s)/section(s)] of the text that best [shows/tells/describes] the main idea of [the passage / provide section].
+- Read this summary of the passage. [provide summary; one key event/idea/detail is missing] A [key event/idea/detail] is missing from the summary. Click on the [sentence/section] that includes the missing [event/idea/detail].
+- Click on [one/two] [key details/events] that should be included in a summary of the passage.
 
 ## Worked examples (T9, specific slot fills)
 
@@ -253,6 +257,8 @@ author T9 Hot-Text intent as Multiple Choice or EBSR.
   `stem-b "Which detail from the passage best supports your answer in part A?"`
 - central-idea / Short Text →
   `stem "Determine the main idea of the passage. Explain using key details from the passage to support your answer."`
+- central-idea / Hot Text (single-part) →
+  `stem "Click on the sentence that best shows the main idea of the passage."` (the `focus` claim's directly-supporting sources are the correct sentences)
 
 ---
 

@@ -18,7 +18,6 @@
   ],
   "out_of_scope": [
     "Claims, grades, or Claim-1 targets beyond T4, T11, T9, and T8 — T10 (Word Meanings) is planned; others belong in their own dialects",
-    "Single-part Hot-Text for c1-t9 (the guideline's Task Model 4) — the mechanism now exists (built for T8); enabling it for T9 is a quick follow-up",
     "Dual-text stimuli (a single passage only in this version)",
     "Compile-time LLM generation — the compiler selects and validates authored content, it does not invent it",
     "Auto-scoring of short-text responses — they are hand-scored against the emitted rubric",

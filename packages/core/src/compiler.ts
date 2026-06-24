@@ -77,6 +77,10 @@ type TargetProfile = {
   // among (T4/T11/T9); "evidence" → the inference is GIVEN in the stem and the options are passage
   // sources the student selects as support (T8 Key Details).
   answerKind: "statement" | "evidence";
+  // Hot Text shape: true → single-part (click the supporting / main-idea sentences; the authored
+  // stem is the whole instruction). Only Reasoning & Evidence pairs Hot Text with a statement Part A
+  // (two-part), so T4/T11 are false; T8 (Key Details) and T9 (Central Ideas) are true.
+  singlePartHotText: boolean;
   itemTypes: Set<string>; // the item types this target allows (validated against per outcome)
   standards: Set<string>;
   dimensions: Set<string>;
@@ -96,6 +100,7 @@ const TARGETS: Record<string, TargetProfile> = {
     baseStandard: "rl-1",
     defaultDok: "r-dok3",
     answerKind: "statement",
+    singlePartHotText: false,
     itemTypes: RE_ITEM_TYPES,
     standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
     dimensions: new Set([
@@ -118,6 +123,7 @@ const TARGETS: Record<string, TargetProfile> = {
     baseStandard: "ri-1",
     defaultDok: "r-dok3",
     answerKind: "statement",
+    singlePartHotText: false,
     itemTypes: RE_ITEM_TYPES,
     standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
     dimensions: new Set([
@@ -145,7 +151,8 @@ const TARGETS: Record<string, TargetProfile> = {
     baseStandard: "ri-1",
     defaultDok: "r-dok2",
     answerKind: "statement",
-    itemTypes: new Set(["multiple-choice", "multi-select", "ebsr", "short-text"]),
+    singlePartHotText: true, // T9 Hot Text (TM4): click the sentence(s) that show the main idea
+    itemTypes: new Set(["multiple-choice", "multi-select", "ebsr", "hot-text", "short-text"]),
     standards: new Set(["ri-1", "ri-2"]),
     dimensions: new Set(["central-idea", "key-detail", "summary"]),
     errorTypes: T9_ERROR_TYPES,
@@ -167,6 +174,7 @@ const TARGETS: Record<string, TargetProfile> = {
     baseStandard: "ri-1",
     defaultDok: "r-dok2",
     answerKind: "evidence",
+    singlePartHotText: true,
     itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
     standards: new Set(["ri-1", "ri-7"]),
     dimensions: new Set(["supporting-evidence"]),
@@ -494,12 +502,14 @@ function validateGraph(ctx: any, errors: any[]): string[] {
       if (!fc) errors.push({ message: `outcome '${oid}' focus '${f}' is not a known claim id.`, ...coordOf(o) });
       else if (str(fc.status) !== "supported") errors.push({ message: `outcome '${oid}' focus '${f}' must be a supported claim, not a ${str(fc.status)}.`, ...coordOf(o) });
     }
-    // STATEMENT items need enough distinct distractor CLAIMS bound to them, or they can't be
-    // composed (hard error). EBSR / Hot-Text / Multiple-Choice want 3 (4 options); Multi-Select
-    // wants ≥2 foils beyond its correct set. EVIDENCE targets (T8) draw foils from sources, not
-    // claims, so this claim-count gate doesn't apply (their viability is warned in composition).
+    // Items whose options are distractor CLAIMS need enough distinct ones bound to them, or they
+    // can't be composed (hard error). EBSR / two-part Hot-Text / Multiple-Choice want 3 (4 options);
+    // Multi-Select wants ≥2 foils beyond its correct set. Items whose foils are SOURCES — evidence
+    // targets (T8) and any single-part Hot-Text (T8/T9) — don't use distractor claims, so this gate
+    // doesn't apply (their viability is warned in composition).
     const t = str(o.type);
-    const min = ctx.profile.answerKind !== "statement" ? 0
+    const sourceFoils = ctx.profile.answerKind !== "statement" || (t === "hot-text" && ctx.profile.singlePartHotText);
+    const min = sourceFoils ? 0
       : (t === "ebsr" || t === "hot-text" || t === "multiple-choice") ? TUNING.DISTRACTOR_SLOTS
         : t === "multi-select" ? 2 : 0;
     if (oid && min > 0) {
@@ -885,9 +895,10 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
     return item;
   }
 
-  // Single-part Hot Text (evidence targets, e.g. T8): the inference is GIVEN in the authored stem
-  // and the student clicks the supporting sentences. No Part A statement options.
-  if (itemType === "hot-text" && ctx.profile.answerKind === "evidence") {
+  // Single-part Hot Text (T8 Key Details, T9 Central Ideas): the authored stem is the whole click
+  // instruction (it states the given inference, or asks for the main-idea sentences); the student
+  // clicks the directly-supporting sentences. No Part A statement options.
+  if (itemType === "hot-text" && ctx.profile.singlePartHotText) {
     const { selectable, selectCount } = buildSelectable(ctx, directSources, warnings);
     item.selectable = selectable;
     item.selectCount = selectCount;

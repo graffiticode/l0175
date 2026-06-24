@@ -20,9 +20,11 @@ that simply aren't central: `too-narrow` (a supporting detail mistaken for the m
 `too-broad` (an overgeneralization/off-topic), `misreads-detail`, `insignificant` (a minor detail
 that doesn't belong in a summary). T9 item types are `multiple-choice` (pick the central idea),
 `multi-select` (choose the two sentences that belong in a summary — `focus` is a **list**), `ebsr`
-(central idea → supporting detail), and `short-text` (summary); single-part Hot-Text is not yet
-available. Two new item types — `multiple-choice` (4 options, one correct) and `multi-select` (5–6
-options, an exact correct set) — are single-part: author the `stem` and a `focus`, no Part B.
+(central idea → supporting detail), `short-text` (summary), and single-part `hot-text` (click the
+sentence(s) that show the main idea — the `focus` claim's directly-supporting `source`s are the
+correct selection). Two new item types — `multiple-choice` (4 options, one correct) and
+`multi-select` (5–6 options, an exact correct set) — are single-part: author the `stem` and a
+`focus`, no Part B.
 
 L0175 also composes **`c1-t8` — Key Details** (informational): the inference/conclusion is **GIVEN
 in the stem** and the student selects the supporting **evidence** (the answer is *evidence*, not a
@@ -39,7 +41,7 @@ options: `directly-supports` = correct evidence (with a `quote`), `supports-wron
 
 When composing a request, declare the `target`, then author the passage and outcomes (with their stems) first, then the inference graph (supported claims, then the targeted distractors), then the evidence. The program is one flat builder chain: top-level forms (`target`, `passage`, `type`, `lines`, `claims`, `evidence`, `outcomes`) thread a single continuation and the whole program ends with one `{}..`. Inside the `claims`/`evidence`/`outcomes` lists, each element (`claim`/`source`/`outcome`) is its own attribute chain terminated by its own `{}`. Attribute values that are free text (`text`, `rationale`, `subject`, `stem`, the passage heading) or id labels (`id`, `focus`, `cites`, `supports`, `targets`) are quoted strings; closed-enum values (`target`, `type`, `status`, `dimension`, `error-type`, `standard`, `dok`) are bare kebab-case identifiers (e.g. `c1-t11`, `ebsr`, `directly-supports`, `ri-1`).
 
-In scope: SBAC Grade 5 · Claim 1 for targets **T4** (Reasoning & Evidence, literary, RL), **T11** (Reasoning & Evidence, informational, RI), **T9** (Central Ideas, informational, RI-1/RI-2), and **T8** (Key Details, informational, RI-1/RI-7 — given-inference → evidence selection); a single passage; a content graph of supported and distractor claims plus evidence sources tagged by role; the per-target dimensions and distractor taxonomy; item types `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set varies by target); DOK r-dok1..r-dok3. Out of scope: other claims/grades or targets beyond T4/T11/T9/T8 (T10 is planned); single-part Hot-Text for T9 (a quick follow-up now that T8 added it); dual-text stimuli; compile-time LLM generation; auto-scoring of short text; cross-language composition.
+In scope: SBAC Grade 5 · Claim 1 for targets **T4** (Reasoning & Evidence, literary, RL), **T11** (Reasoning & Evidence, informational, RI), **T9** (Central Ideas, informational, RI-1/RI-2), and **T8** (Key Details, informational, RI-1/RI-7 — given-inference → evidence selection); a single passage; a content graph of supported and distractor claims plus evidence sources tagged by role; the per-target dimensions and distractor taxonomy; item types `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set varies by target); DOK r-dok1..r-dok3. Out of scope: other claims/grades or targets beyond T4/T11/T9/T8 (T10 is planned); dual-text stimuli; compile-time LLM generation; auto-scoring of short text; cross-language composition.
 
 ## Grade-appropriate reading level
 

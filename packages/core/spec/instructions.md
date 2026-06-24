@@ -21,8 +21,9 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   DIFFERENT skill from Reasoning & Evidence — synthesize and condense: the main/central idea, the
   key details that build it, and summary (NOT inference + justification). Dimensions: `central-idea`,
   `key-detail`, `summary`. Standards: `ri-1` (always) + `ri-2`. **DOK 2** (3 only for the written
-  summary). Item types: `multiple-choice`, `multi-select`, `ebsr`, `short-text` (single-part
-  Hot-Text is not yet available). Distractors use a **significance** taxonomy (`too-narrow`,
+  summary). Item types: `multiple-choice`, `multi-select`, `ebsr`, `short-text`, and single-part
+  `hot-text` (click the sentence(s) that show the main idea — its directly-supporting `source`s are
+  the correct selection). Distractors use a **significance** taxonomy (`too-narrow`,
   `too-broad`, `misreads-detail`, `insignificant`) — usually true statements that just aren't the
   central idea.
 - **`c1-t8`** — Target 8: **Key Details** over **informational** texts (RI standards). A DIFFERENT
@@ -241,7 +242,7 @@ outright is literal recall and out of scope.
 - `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t8` (top level; always author one — defaults to `c1-t4` if omitted)
 - `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
-  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/short-text · T8: multiple-choice/multi-select/hot-text)
+  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text)
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
 - `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t8**): `supporting-evidence`
