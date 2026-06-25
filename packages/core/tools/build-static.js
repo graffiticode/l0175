@@ -50,8 +50,9 @@ const parentInstructions = readFileSync(
 const ownInstructions = readFileSync(join(specDir, "instructions.md"), "utf-8");
 writeFileSync(join(outDir, "instructions.md"), `${parentInstructions}\n\n${ownInstructions}`);
 
-// 4. Copy L0175's own verbatim spec assets.
-for (const f of ["usage-guide.md", "stems.md", "scope.json", "schema.json", "template.gc"]) {
+// 4. Copy L0175's own verbatim spec assets. unparse-hints.json (optional) maps node tags to
+//    /* */ annotations the console's spec generator reads; absent ⇒ plain unparse.
+for (const f of ["usage-guide.md", "stems.md", "scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
   const src = join(specDir, f);
   if (existsSync(src)) copyFileSync(src, join(outDir, f));
 }
