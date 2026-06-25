@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
+<!-- gc:model=opus -->
 # L0175 Dialect Extensions
 
 _Revised: 2026-06-19_
