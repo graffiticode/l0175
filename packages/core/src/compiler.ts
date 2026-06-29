@@ -1319,7 +1319,7 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
       dok,
       dimension: dim,
       scoring,
-      correctClaim: correct ? { id: str(correct.id), text: str(correct.text) } : null,
+      correctClaim: correct ? { id: str(correct.id), text: str(correct.text), subject: str(correct.subject) || undefined } : null,
       alternativeClaims: 0,
     },
     warnings,

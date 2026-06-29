@@ -2,6 +2,19 @@
 // @graffiticode/l0175 — the L0175 compiler core. Inherits @graffiticode/l0000.
 export { Checker, Transformer, compiler } from "./compiler.js";
 export { lexicon } from "./lexicon.js";
+export {
+  stripReadingPassage,
+  buildSignatureTags,
+  buildSignatureFromSource,
+  extractQueryFacets,
+  buildEmbeddingArtifacts,
+} from "./embedding.js";
+export type {
+  PassageRef,
+  DesignFacets,
+  SignatureResult,
+  EmbeddingArtifacts,
+} from "./embedding.js";
 
 // Re-export the base machinery + inheritance contract from the parent language.
 export { Compiler, Renderer, Visitor } from "@graffiticode/l0000";
