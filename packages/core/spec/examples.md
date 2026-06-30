@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 RAG Training Examples
 
-_Revised: 2026-06-24_
+_Revised: 2026-06-30_
 
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
 assessment items (Smarter Balanced · Grade 5 · Claim 1) for learning targets **T4**
@@ -36,18 +36,22 @@ Category 10 is Word Meanings (T10).
 
 ## Category 4: Authoring the inference graph
 
-14. Add a supported claim, that the character cares more about the tide pool than the picnic, and point question q1's focus at it.
-15. Add a second supported claim about the brother and build a separate question q2 around it.
-16. Tag line 1 and line 3 as directly supporting the main inference.
-17. Mark line 2 as evidence that supports a wrong claim, tied to both the correct claim and the 'anger' distractor.
-18. Mark the last two lines as irrelevant so they can serve as Part B foils.
+Each prompt composes a complete item; the focus is how the claim/evidence graph is built.
+
+14. Compose an EBSR item about a girl named Mara at a tide pool: author a supported claim that she cares more about the tide pool than her family's picnic, and make that claim the question's focus.
+15. Compose a literary item with two questions about the tide-pool story — one built on a supported claim that Mara is absorbed by the pool, and a separate question built on a supported claim that her brother wants her attention.
+16. Compose an EBSR item whose focus inference is directly supported by two of the passage's lines — tag both sources directly-supports and cite them from the correct claim.
+17. Compose an EBSR item that includes a supports-wrong-claim source: real evidence that props up an 'anger' misreading rather than the correct inference, linked to both the correct claim and the anger distractor.
+18. Compose an EBSR item whose last two passage lines are tagged irrelevant so they can serve as Part B foils.
 
 ## Category 5: Distractors by error type
 
-19. Add a misreads-detail distractor for question q1 that takes the character's silence as anger.
-20. Add an erroneous-inference distractor for q1 that the character dislikes being outdoors.
-21. Add a faulty-reasoning distractor for q1 that mistakes the character's whisper for fear.
-22. Give each distractor a rationale explaining the student error it targets, and tag it with the question id(s) it foils.
+Each prompt composes a complete item; the focus is the error-typed distractor it features.
+
+19. Compose an EBSR item about Mara at the tide pool with a misreads-detail distractor that takes her silence as anger, with a rationale that names the error and targets the question.
+20. Compose an EBSR item about Mara at the tide pool with an erroneous-inference distractor that she dislikes being outdoors.
+21. Compose an EBSR item about Mara at the tide pool with a faulty-reasoning distractor that mistakes her whisper for fear.
+22. Compose an EBSR item whose distractors each carry a rationale explaining the student error they target and are tagged with the question id(s) they foil.
 
 ## Category 6: Item-first composition
 
