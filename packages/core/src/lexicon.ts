@@ -26,6 +26,8 @@ const ENUM_VALUES = [
   "ebsr", "hot-text", "short-text",
   // single-part item types (Multiple Choice / Multi-Select) — used by T9 and the later T8/T10
   "multiple-choice", "multi-select",
+  // task-model numbers (per-target; resolved to an item type by the compiler via targets.ts)
+  "tm1", "tm2", "tm3", "tm4", "tm5",
   // learning targets (the top-level `target` selector)
   "c1-t4", "c1-t11", "c1-t9", "c1-t8", "c1-t10",
   // T4 (literary) dimensions
@@ -76,6 +78,7 @@ const additions = {
   quote: fn2("QUOTE"), // optional evidence text override
   supports: fn2("SUPPORTS"), // evidence -> claim id list
   type: fn2("TYPE"), // passage type OR item type (contextual)
+  "task-model": fn2("TASK_MODEL"), // outcome task model (tm1..tm5); resolved to item type per target
   subject: fn2("SUBJECT"),
   standard: fn2("STANDARD"),
   focus: fn2("FOCUS"), // optional forced correct-claim id

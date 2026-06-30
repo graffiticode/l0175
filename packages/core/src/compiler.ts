@@ -22,27 +22,17 @@ import {
   Transformer as BaseTransformer,
   Compiler,
 } from "@graffiticode/l0000";
+import { TARGETS_DATA, STANDARD_FAMILIES, type TargetData } from "./targets.js";
 
 // ---------------------------------------------------------------------------
 // Enumerations (the closed vocabularies; bare kebab identifiers resolve to these strings).
 // ---------------------------------------------------------------------------
-const ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text", "multiple-choice", "multi-select"]);
 const PASSAGE_TYPES = new Set(["literary", "informational"]);
 const CLAIM_STATUS = new Set(["supported", "distractor"]);
 const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irrelevant"]);
-// Distractor error taxonomies, per target family. Reasoning & Evidence (T4/T11) classifies foils by
-// reasoning failure; Central Ideas (T9) classifies them by SIGNIFICANCE (a true statement that just
-// isn't the central idea). Each target profile picks its taxonomy via `errorTypes`.
-const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"]; // Reasoning & Evidence
-const T9_ERROR_TYPES = ["too-narrow", "too-broad", "misreads-detail", "insignificant"]; // Central Ideas
-
-// CCSS Grade-5 reading-standard families. A target's `standards` set is the full strand for its
-// text type, so any plausible CCSS code for that text type validates (the dimStandard map below
-// still picks the right companion by default). RL.8 is "not applicable to literature"; RL.10/RI.10
-// are range-of-reading bands, not discrete item standards.
-const RL_G5 = ["rl-1", "rl-2", "rl-3", "rl-4", "rl-5", "rl-6", "rl-7", "rl-9"];
-const RI_G5 = ["ri-1", "ri-2", "ri-3", "ri-4", "ri-5", "ri-6", "ri-7", "ri-8", "ri-9"];
-const L_G5 = ["l-4", "l-4a", "l-4b", "l-4c", "l-5", "l-5a", "l-5b", "l-5c"]; // vocabulary (T10)
+// The per-target structure (item/task models, standards families, dimensions, error taxonomies,
+// dimension→standard maps) is the SINGLE SOURCE OF TRUTH in ./targets.ts. `TARGETS` below is built
+// from it; `ITEM_TYPES` is the union of every target's allowed types (derived, not hand-listed).
 
 // Small prior on distractor temptingness by error type. Used by the computed plausibility score;
 // author `plausibility` overrides it. Unlisted types default to 0.
@@ -90,133 +80,47 @@ type TargetProfile = {
   // stem is the whole instruction). Only Reasoning & Evidence pairs Hot Text with a statement Part A
   // (two-part), so T4/T11 are false; T8 (Key Details) and T9 (Central Ideas) are true.
   singlePartHotText: boolean;
-  itemTypes: Set<string>; // the item types this target allows (validated against per outcome)
+  // Per-target task-model numbering → item type (e.g. T9 tm3 → "ebsr"). Numbers are PER-TARGET and
+  // collide across targets, so the compiler resolves an authored `task-model` against THIS map.
+  taskModels: Record<string, string>;
+  itemTypes: Set<string>; // the item types this target allows (derived from taskModels values)
   standards: Set<string>;
   dimensions: Set<string>;
   errorTypes: string[];  // the distractor taxonomy for this target (ordered for coverage selection)
   dimStandard: Record<string, string>; // dimension → companion standard
 };
 
-const RE_ITEM_TYPES = new Set(["ebsr", "hot-text", "short-text"]);
+// Build a runtime profile from the JSON-shaped source data in ./targets.ts: expand the standard
+// families to their codes, and derive the allowed item-type set from the task-model values (so the
+// numbering and the allowed set can never disagree).
+function buildProfile(d: TargetData): TargetProfile {
+  return {
+    id: d.id,
+    label: d.label,
+    grade: d.grade,
+    textType: d.textType,
+    baseStandard: d.baseStandard,
+    defaultDok: d.defaultDok,
+    answerKind: d.answerKind,
+    singlePartHotText: d.singlePartHotText,
+    taskModels: d.taskModels,
+    itemTypes: new Set(Object.values(d.taskModels)),
+    standards: new Set(d.standards.flatMap((f) => STANDARD_FAMILIES[f])),
+    dimensions: new Set(d.dimensions),
+    errorTypes: d.errorTypes,
+    dimStandard: d.dimStandard,
+  };
+}
 
-const TARGETS: Record<string, TargetProfile> = {
-  // Claim 1 · Target 4 — Reasoning & Evidence, literary texts (RL standards). The original L0175.
-  "c1-t4": {
-    id: "c1-t4",
-    label: "Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence)",
-    grade: 5,
-    textType: "literary",
-    baseStandard: "rl-1",
-    defaultDok: "r-dok3",
-    answerKind: "statement",
-    singlePartHotText: false,
-    itemTypes: RE_ITEM_TYPES,
-    standards: new Set(RL_G5),
-    dimensions: new Set([
-      "character", "setting", "event", "point-of-view",
-      "theme", "topic", "narrators-feelings", "character-relationship",
-    ]),
-    errorTypes: ERROR_TYPES,
-    dimStandard: {
-      "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
-      "point-of-view": "rl-6", "narrators-feelings": "rl-6",
-      // theme/topic = determine-the-theme/summarize → RL.2 (the CCSS theme standard), not the
-      // cross-text-comparison RL.9.
-      "theme": "rl-2", "topic": "rl-2",
-    },
-  },
-  // Claim 1 · Target 11 — Reasoning & Evidence, informational texts (RI standards).
-  "c1-t11": {
-    id: "c1-t11",
-    label: "Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence)",
-    grade: 5,
-    textType: "informational",
-    baseStandard: "ri-1",
-    defaultDok: "r-dok3",
-    answerKind: "statement",
-    singlePartHotText: false,
-    itemTypes: RE_ITEM_TYPES,
-    standards: new Set(RI_G5),
-    dimensions: new Set([
-      "relationships-interactions", "author-use-of-information",
-      "point-of-view", "purpose", "authors-opinion",
-    ]),
-    errorTypes: ERROR_TYPES,
-    dimStandard: {
-      "relationships-interactions": "ri-3",
-      "author-use-of-information": "ri-8",
-      "point-of-view": "ri-6",
-      "purpose": "ri-8",
-      "authors-opinion": "ri-8",
-    },
-  },
-  // Claim 1 · Target 9 — Central Ideas, informational texts (RI-1 + RI-2). A DIFFERENT skill from
-  // Reasoning & Evidence: whole-text synthesis and significance (the main idea, the key details that
-  // build it, and summary), DOK 2 (3 only for the written summary). Distractors are a SIGNIFICANCE
-  // taxonomy — usually true statements that just aren't the central idea.
-  "c1-t9": {
-    id: "c1-t9",
-    label: "Grade 5 · Claim 1 · Target 9 (Central Ideas)",
-    grade: 5,
-    textType: "informational",
-    baseStandard: "ri-1",
-    defaultDok: "r-dok2",
-    answerKind: "statement",
-    singlePartHotText: true, // T9 Hot Text (TM4): click the sentence(s) that show the main idea
-    itemTypes: new Set(["multiple-choice", "multi-select", "ebsr", "hot-text", "short-text"]),
-    standards: new Set(RI_G5),
-    dimensions: new Set(["central-idea", "key-detail", "summary"]),
-    errorTypes: T9_ERROR_TYPES,
-    dimStandard: {
-      "central-idea": "ri-2",
-      "key-detail": "ri-2",
-      "summary": "ri-2",
-    },
-  },
-  // Claim 1 · Target 8 — Key Details, informational texts (RI-1 + RI-7). A DIFFERENT model: the
-  // inference/conclusion is GIVEN in the stem and the student selects the supporting EVIDENCE
-  // (answerKind "evidence"). Options are passage sources, not claims; no statement Part A, no
-  // EBSR/short-text. DOK 1–2 (default 2).
-  "c1-t8": {
-    id: "c1-t8",
-    label: "Grade 5 · Claim 1 · Target 8 (Key Details)",
-    grade: 5,
-    textType: "informational",
-    baseStandard: "ri-1",
-    defaultDok: "r-dok2",
-    answerKind: "evidence",
-    singlePartHotText: true,
-    itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
-    standards: new Set(RI_G5),
-    dimensions: new Set(["supporting-evidence"]),
-    errorTypes: [], // T8 wrong answers are non-supporting sources, not distractor claims
-    dimStandard: {
-      "supporting-evidence": "ri-7",
-    },
-  },
-  // Claim 1 · Target 10 — Word Meanings, informational texts (RI-4 + the L-4 family). The most
-  // different model: the question asks for the MEANING of a targeted word/phrase in context, so the
-  // options are candidate MEANINGS (answerKind "meaning"), authored as `word`/`meaning`, not claims.
-  // DOK 1–2. The strategy (context / roots & affixes / word relationships / reference) is expressed
-  // via the authored standard (l-4a / l-4b / l-5c / l-4c).
-  "c1-t10": {
-    id: "c1-t10",
-    label: "Grade 5 · Claim 1 · Target 10 (Word Meanings)",
-    grade: 5,
-    textType: "informational",
-    baseStandard: "ri-4",
-    defaultDok: "r-dok2",
-    answerKind: "meaning",
-    singlePartHotText: false, // T10 Hot Text is word-level (composeWordMeaning), not sentence-level
-    itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
-    standards: new Set([...RI_G5, ...L_G5]),
-    dimensions: new Set(["word-meaning"]),
-    errorTypes: ["other-meaning", "misinterprets", "wrong-context"],
-    dimStandard: {
-      "word-meaning": "l-4",
-    },
-  },
-};
+const TARGETS: Record<string, TargetProfile> = Object.fromEntries(
+  Object.entries(TARGETS_DATA).map(([id, d]) => [id, buildProfile(d)]),
+);
+
+// The global set of valid item types = the union of every target's allowed types (derived, not
+// hand-listed, so adding a target's item type here is impossible to forget).
+const ITEM_TYPES = new Set(
+  Object.values(TARGETS).flatMap((p) => [...p.itemTypes]),
+);
 const DEFAULT_TARGET = "c1-t4"; // best-effort fallback when `target` is missing/unknown (still a hard error)
 
 // --- Stems (Smarter Balanced · Grade 5 · Claim 1 · Target 4) --------------------------------
@@ -256,7 +160,7 @@ const ATTR_KEYS: Record<string, string> = {
   ID: "id", STATUS: "status", DIMENSION: "dimension", ERROR_TYPE: "errorType",
   TEXT: "text", RATIONALE: "rationale", CITES: "cites", TARGETS: "targets",
   LINE: "line", QUOTE: "quote",
-  SUPPORTS: "supports", TYPE: "type", SUBJECT: "subject", STANDARD: "standard",
+  SUPPORTS: "supports", TYPE: "type", TASK_MODEL: "taskModel", SUBJECT: "subject", STANDARD: "standard",
   FOCUS: "focus", PASSAGE: "passage", LINES: "lines", TITLE: "title", TARGET: "target", GRADE: "grade", STEM: "stem",
   RUBRIC: "rubric", DOK: "dok", PLAUSIBILITY: "plausibility", MODE: "mode", OTHER: "other",
   STEM_B: "stemB", SCORE: "score", DESCRIPTOR: "descriptor",
@@ -492,6 +396,24 @@ function validateOutcome(o: any, errors: any[], profile: TargetProfile) {
   const at = coordOf(o);
   const push = (message: string) => errors.push({ message, ...at });
   if (!id) push(`${where}: missing id (each question needs a unique id so distractors can target it).`);
+  // Resolve an authored `task-model` (tm1..tmN) against THIS target's table. Task-model numbers are
+  // PER-TARGET and collide across targets (e.g. tm3 = short-text in c1-t4/t11, ebsr in c1-t9), so a
+  // number is meaningless without its target — resolution is always relative to the program's
+  // target. The resolved item type must agree with an explicit `type`; if `type` is omitted, the
+  // task model supplies it. This moves the number→type step off the generator and makes it a hard,
+  // deterministic check (the c1-t9 "tm3 EBSR drifts to hot-text/short-text" failure mode).
+  const tm = str(o.taskModel);
+  if (tm) {
+    const resolved = profile.taskModels[tm];
+    if (!resolved) {
+      const allowed = Object.entries(profile.taskModels).map(([k, v]) => `${k}→${v}`).join(", ");
+      push(`${where}: task model '${tm}' is not available for target ${profile.id} (allowed: ${allowed}).`);
+    } else if (!str(o.type)) {
+      o.type = resolved; // infer the item type from the task model
+    } else if (str(o.type) !== resolved) {
+      push(`${where}: task model '${tm}' is ${resolved} for target ${profile.id}, but type is '${str(o.type)}'.`);
+    }
+  }
   const t = str(o.type);
   if (!ITEM_TYPES.has(t)) {
     push(`${where}: invalid type '${t}'. Expected ${[...ITEM_TYPES].join(", ")}.`);

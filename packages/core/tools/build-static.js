@@ -17,6 +17,35 @@ import {
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { lexicon } from "../dist/lexicon.js";
+import { TARGETS_DATA, STANDARD_FAMILIES, TARGETS_REVISED } from "../dist/targets.js";
+
+// The per-target task-model → item-type table, generated from targets.ts (the single source of
+// truth). Spliced into the spec `.md` files so a doc can never carry a table the compiler
+// contradicts (the c1-t9 "tm3 = EBSR" drift came from a hand-maintained table going stale).
+function renderTaskModelTable(targets) {
+  const maxTm = Math.max(...Object.values(targets).map((t) => Object.keys(t.taskModels).length));
+  const cols = Array.from({ length: maxTm }, (_, i) => `tm${i + 1}`);
+  const header = `| Target | ${cols.join(" | ")} |`;
+  const sep = `|--------|${cols.map(() => "-----|").join("")}`;
+  const rows = Object.entries(targets).map(([id, t]) => {
+    const cells = cols.map((c) => t.taskModels[c] || "—");
+    return `| \`${id}\` — ${t.label} | ${cells.join(" | ")} |`;
+  });
+  return [header, sep, ...rows].join("\n");
+}
+
+// Replace the body between a pair of `<!-- GENERATED:<name> START … -->` / `… END -->` markers.
+// Throws if the markers are missing so a doc that loses its generated block fails the build loudly.
+function spliceGenerated(md, name, body) {
+  const re = new RegExp(
+    `(<!-- GENERATED:${name} START[^>]*-->)[\\s\\S]*?(<!-- GENERATED:${name} END -->)`,
+  );
+  if (!re.test(md)) {
+    console.error(`build-static: missing GENERATED:${name} markers in a spec .md`);
+    process.exit(1);
+  }
+  return md.replace(re, `$1\n${body}\n$2`);
+}
 
 const require = createRequire(import.meta.url);
 const specMarkdown = require("spec-md");
@@ -47,12 +76,29 @@ const parentInstructions = readFileSync(
   require.resolve("@graffiticode/l0000/spec/instructions.md"),
   "utf-8",
 );
-const ownInstructions = readFileSync(join(specDir, "instructions.md"), "utf-8");
+const taskModelTable = renderTaskModelTable(TARGETS_DATA);
+const ownInstructions = spliceGenerated(
+  readFileSync(join(specDir, "instructions.md"), "utf-8"),
+  "task-models",
+  taskModelTable,
+);
 writeFileSync(join(outDir, "instructions.md"), `${parentInstructions}\n\n${ownInstructions}`);
 
-// 4. Copy L0175's own verbatim spec assets. unparse-hints.json (optional) maps node tags to
-//    /* */ annotations the console's spec generator reads; absent ⇒ plain unparse.
-for (const f of ["usage-guide.md", "stems.md", "scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
+// 3b. targets.json — the served, machine-readable copy of the single source of truth (for the
+//     console RAG pipeline and other non-TS consumers).
+writeFileSync(
+  join(outDir, "targets.json"),
+  `${JSON.stringify({ revised: TARGETS_REVISED, standardFamilies: STANDARD_FAMILIES, targets: TARGETS_DATA }, null, 2)}\n`,
+);
+
+// 4. Copy L0175's own verbatim spec assets (stems.md gets its generated task-model table spliced
+//    in first). unparse-hints.json (optional) maps node tags to /* */ annotations the console's
+//    spec generator reads; absent ⇒ plain unparse.
+writeFileSync(
+  join(outDir, "stems.md"),
+  spliceGenerated(readFileSync(join(specDir, "stems.md"), "utf-8"), "task-models", taskModelTable),
+);
+for (const f of ["usage-guide.md", "scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
   const src = join(specDir, f);
   if (existsSync(src)) copyFileSync(src, join(outDir, f));
 }

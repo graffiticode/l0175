@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // RAG embedding helpers for L0175.
 //
+// Imports the pure per-target data (no compiler) to resolve a (target, item type) pair to its
+// task-model NUMBER, so the design signature carries a `task-model:<n>` facet a number-phrased
+// query ("task model 3") can match.
+//
 // Why this exists: L0175 training examples (and live generation requests) embed the reading
 // passage inside the natural-language prompt. When that prompt is fed to an embedding model the
 // passage prose dominates the vector, so retrieval matches on passage topic ("tide pool",
@@ -20,6 +24,8 @@
 // caller composes the program (the console already parses L0175; the core tests use the parser
 // harness) and hands the composed data in.
 
+import { taskModelNumber } from "./targets.js";
+
 // ---- Types -----------------------------------------------------------------------------------
 
 export interface PassageRef {
@@ -31,6 +37,7 @@ export interface DesignFacets {
   target?: string; // c1-t4  (program-level, single)
   passageType?: string; // literary | informational (program-level, single)
   itemTypes?: string[]; // ebsr, hot-text, …
+  taskModels?: string[]; // per-target task-model numbers ("3"), derived from target + item type
   dimensions?: string[];
   standards?: string[];
   doks?: string[];
@@ -146,6 +153,7 @@ export function buildSignatureTags(
   const items = toItems(data);
   const tags = new Set<string>();
   const itemTypes: string[] = [];
+  const taskModels: string[] = [];
   const dimensions: string[] = [];
   const standards: string[] = [];
   const doks: string[] = [];
@@ -156,6 +164,10 @@ export function buildSignatureTags(
   items.forEach((item, idx) => {
     if (item.type) { tags.add(`item:${item.type}`); itemTypes.push(item.type); }
     if (item.target) { tags.add(`target:${item.target}`); target = target || item.target; }
+    if (item.target && item.type) {
+      const n = taskModelNumber(item.target, item.type);
+      if (n) { tags.add(`task-model:${n}`); taskModels.push(n); }
+    }
     const ptype = item.passage && item.passage.type;
     if (ptype) { tags.add(`type:${ptype}`); passageType = passageType || ptype; }
     if (item.dimension) { tags.add(`dimension:${item.dimension}`); dimensions.push(item.dimension); }
@@ -174,6 +186,7 @@ export function buildSignatureTags(
       target,
       passageType,
       itemTypes: uniq(itemTypes),
+      taskModels: uniq(taskModels),
       dimensions: uniq(dimensions),
       standards: uniq(standards),
       doks: uniq(doks),
@@ -216,8 +229,8 @@ export function extractQueryFacets(prompt: string): DesignFacets {
   const facets: DesignFacets = {};
   if (!prompt) return facets;
 
-  // Explicit target wins over prose cues.
-  const explicitTarget = prompt.match(/\bc1-t(4|11)\b/i);
+  // Explicit target wins over prose cues. Only c1-t4 is literary; every other target is informational.
+  const explicitTarget = prompt.match(/\bc1-t(4|8|9|10|11)\b/i);
   if (explicitTarget) {
     facets.target = `c1-t${explicitTarget[1]}`;
     facets.passageType = explicitTarget[1] === "4" ? "literary" : "informational";
@@ -230,6 +243,17 @@ export function extractQueryFacets(prompt: string): DesignFacets {
 
   const itemTypes = ITEM_TYPE_CUES.filter(([re]) => re.test(prompt)).map(([, t]) => t);
   if (itemTypes.length) facets.itemTypes = itemTypes;
+
+  // Task model: an explicit number in the prompt ("task model 3", "TM3") wins; otherwise derive it
+  // from the target + item type. The number is per-target, so it only disambiguates alongside the
+  // target facet — which is exactly the c1-t9-tm3-means-EBSR case.
+  const explicitTm = prompt.match(/\b(?:tm|task[-\s]?model)\s*[-:]?\s*(\d)\b/i);
+  if (explicitTm) {
+    facets.taskModels = [explicitTm[1]];
+  } else if (facets.target && itemTypes.length) {
+    const tms = uniq(itemTypes.map((t) => taskModelNumber(facets.target as string, t)).filter(Boolean) as string[]);
+    if (tms.length) facets.taskModels = tms;
+  }
 
   const stds = uniq((prompt.match(/\br[li]-\d\b/gi) || []).map((s) => s.toLowerCase()));
   if (stds.length) facets.standards = stds;
@@ -270,6 +294,13 @@ export function buildSignatureFromSource(code: string): SignatureResult {
   const itemTypes = uniq(matchAll(code, /\btype\s+(ebsr|hot-text|short-text|multiple-choice|multi-select)\b/g));
   itemTypes.forEach((t) => tags.add(`item:${t}`));
   if (itemTypes.length) facets.itemTypes = itemTypes;
+
+  // Task-model numbers, derived from target + item type (per-target, so the target is required).
+  if (target) {
+    const taskModels = uniq(itemTypes.map((t) => taskModelNumber(target, t)).filter(Boolean) as string[]);
+    taskModels.forEach((n) => tags.add(`task-model:${n}`));
+    if (taskModels.length) facets.taskModels = taskModels;
+  }
 
   const dimensions = uniq(matchAll(code, /\bdimension\s+([a-z][a-z0-9-]*)/g));
   dimensions.forEach((d) => tags.add(`dimension:${d}`));
