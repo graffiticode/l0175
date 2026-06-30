@@ -98,13 +98,20 @@ writeFileSync(
   join(outDir, "stems.md"),
   spliceGenerated(readFileSync(join(specDir, "stems.md"), "utf-8"), "task-models", taskModelTable),
 );
-for (const f of ["usage-guide.md", "scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
+for (const f of ["scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
   const src = join(specDir, f);
   if (existsSync(src)) copyFileSync(src, join(outDir, f));
 }
 
-// 5. language-info.json — envelope + build-injected authoring_guide from "## Overview".
-const usageGuide = readFileSync(join(specDir, "usage-guide.md"), "utf-8");
+// 5. usage-guide.md (agent-facing) gets the same generated task-model table spliced in, then is
+//    served and mined for language-info's authoring_guide. language-info.json — envelope +
+//    build-injected authoring_guide from "## Overview".
+const usageGuide = spliceGenerated(
+  readFileSync(join(specDir, "usage-guide.md"), "utf-8"),
+  "task-models",
+  taskModelTable,
+);
+writeFileSync(join(outDir, "usage-guide.md"), usageGuide);
 const overviewMatch = usageGuide.match(/^##\s+Overview\s*\n([\s\S]*?)(?=^##\s)/m);
 if (!overviewMatch) {
   console.error("build-static: spec/usage-guide.md is missing a '## Overview' section.");
