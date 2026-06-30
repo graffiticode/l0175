@@ -138,14 +138,21 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
   in the focus word's paragraph are warned and dropped.
 - A top-level **`title`** attribute (before `passage`) names the assessment; it is echoed on the output.
 
-## Stems (Appropriate Stems, SBAC G5 · C1 · T4)
+## Stems (Appropriate Stems)
 
 **You author the stem; the compiler does not generate it. Use the guideline's Appropriate-Stem
-templates verbatim — do not invent phrasings.** For each item, open the catalog in **`stems.md`**,
-pick the one template that matches the item type (EBSR → Task Model 1, Hot Text → Task Model 2,
-Short Text → Task Model 3) and the task (inference vs. conclusion vs. author-intent; plain
-subject vs. narrator's-feelings vs. relationship), and fill its bracketed `[...]` slot. Author
-`stem` (Part A / short-text prompt) and, on EBSR, `stem-b` (Part B). Common Part A choices:
+templates verbatim — do not invent phrasings.** `stems.md` has a **section per target** (T4, T11,
+T9, T8, T10), each with its own task models — open the section for the `target` you picked. For
+each item, pick the one template that matches the item type and the task, and fill its bracketed
+`[...]` slot. Author `stem` (Part A / single-question / short-text prompt) and, on EBSR, `stem-b`
+(Part B).
+
+The task-model mapping and Part-A choices below are the **Reasoning & Evidence (T4/T11)** catalog
+(EBSR → Task Model 1, Hot Text → Task Model 2, Short Text → Task Model 3; task = inference vs.
+conclusion vs. author-intent; plain subject vs. narrator's-feelings vs. relationship). **T9, T8,
+and T10 use different task models and stems** — see their `stems.md` sections (e.g. T9 "Which
+sentence best shows the main idea…", T8 states the inference then "Which detail … best supports
+this conclusion?", T10 "What does the word … most likely mean?"). Common R&E Part A choices:
 
 - inference — "Which of these inferences about [...] is supported by the passage?"
 - conclusion — "Which of these conclusions about [...] is supported by the passage?"
@@ -181,6 +188,15 @@ the outcome). Remember the answer must be **inferable from evidence** (Target 4)
 outright is literal recall and out of scope.
 
 ## Authoring guidance
+
+The distractor-pool, error-type-coverage, and EBSR Part-B rules below are the **Reasoning &
+Evidence (T4/T11)** contract — they apply wherever wrong answers are authored as `distractor`
+claims. The other targets author their wrong answers differently (see Step 0): **T9** uses
+`distractor` claims too but with the significance taxonomy (`too-narrow` / `too-broad` /
+`misreads-detail` / `insignificant`); **T8** has **no distractor claims** — its foils are
+non-supporting `source`s (`supports-wrong-claim` / `irrelevant`); **T10** authors distractor
+`meaning`s, not claims. The grade-level, length-balance, and stem-wording rules apply to **all**
+targets.
 
 - For each EBSR/Hot-Text outcome, author **at least 5 viable distractor claims that `targets`
   it**, covering all three error types (`misreads-detail`, `erroneous-inference`,
@@ -334,4 +350,123 @@ outcomes [
     stem-b "Which sentence(s) from the passage best support your answer in Part A?" {}
 ]
 {}..
+```
+
+(For **Target 11**, the same R&E shape over an *informational* passage: `target c1-t11`,
+`type informational`, an RI dimension like `relationships-interactions`, `standard ri-1` + `ri-3`,
+and the T11 stems from `stems.md`.)
+
+## Example (Target 9 — Central Ideas, multiple-choice)
+
+The OPTIONS are still `claim`s, but the skill is the **main idea** (not infer-and-justify) and the
+distractors are the **significance** taxonomy — usually true statements that just aren't central.
+DOK is `r-dok2`; the standards are `ri-1` + `ri-2`. (No EBSR Part B here; on T9 EBSR/Hot-Text the
+correct claim's `directly-supports` sources are the supporting selection.)
+
+```
+target c1-t9
+passage "Honeybees"
+type informational
+lines [
+  "Honeybees live together in large groups called colonies. Worker bees gather nectar and build the hive. The queen bee lays all the eggs. By working together, the colony survives and grows."
+]
+claims [
+  claim id "c1" status supported dimension central-idea subject "the colony" standard ri-2
+    text "Honeybees survive by living and working together, each bee with its own job."
+    cites ["e1"] {}
+  /* T9 distractors are usually TRUE statements that simply aren't the central idea */
+  claim id "d1" status distractor error-type too-narrow targets ["q1"]
+    text "The queen bee lays all the eggs."
+    rationale "A true supporting detail, not the central idea." cites ["e1"] {}
+  claim id "d2" status distractor error-type too-broad targets ["q1"]
+    text "Insects are the most important animals on Earth."
+    rationale "An overgeneralization beyond the passage." cites ["e1"] {}
+  claim id "d3" status distractor error-type misreads-detail targets ["q1"]
+    text "Each bee in the colony does every job by itself."
+    rationale "Misreads the division of labor." cites ["e1"] {}
+]
+evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
+outcomes [
+  outcome id "q1" type multiple-choice dimension central-idea subject "the colony" standard ri-2 focus "c1"
+    stem "Which sentence best shows the main idea of the passage?" {}
+]
+{}..
+```
+
+## Example (Target 8 — Key Details, evidence selection)
+
+The inference is **GIVEN in the stem**; the OPTIONS are passage `source`s, not claims. Author ONE
+supported `claim` (the given inference, named by `focus`), state it in the `stem`, and author the
+`source`s as the choices: `directly-supports` = correct evidence (give each a `quote`),
+`irrelevant`/`supports-wrong-claim` = foils. **No distractor claims.** Standards `ri-1` + `ri-7`,
+DOK `r-dok2`.
+
+```
+target c1-t8
+passage "Aqueducts"
+type informational
+lines [
+  "Roman aqueducts carried water across long distances. They used gentle slopes so water flowed by gravity. Arches held the channels high above valleys. Cities far from rivers could finally get fresh water."
+]
+claims [
+  claim id "c1" status supported dimension supporting-evidence subject "the aqueducts"
+    text "Roman aqueducts let cities far from rivers get fresh water." cites ["e1" "e2"] {}
+]
+evidence [
+  source id "e1" line 1 quote "Cities far from rivers could finally get fresh water." status directly-supports supports ["c1"] {}
+  source id "e2" line 1 quote "Roman aqueducts carried water across long distances." status directly-supports supports ["c1"] {}
+  source id "e3" line 1 quote "They used gentle slopes so water flowed by gravity." status irrelevant supports [] {}
+  source id "e4" line 1 quote "Arches held the channels high above valleys." status irrelevant supports [] {}
+  source id "e5" line 1 quote "Roman builders also paved long, straight roads." status irrelevant supports [] {}
+]
+outcomes [
+  outcome id "q1" type multiple-choice dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1"
+    stem "Roman aqueducts let far-off cities get fresh water. Which detail from the passage best supports this conclusion?" {}
+]
+{}..
+```
+
+## Example (Target 10 — Word Meanings)
+
+The OPTIONS are **meanings** of a targeted `word`, authored in a top-level `words` list — not
+claims. One `status correct` meaning + `status distractor` meanings (each a T10 `error-type` +
+`rationale`). The outcome's `focus` names the `word`; state the word + its sentence in the `stem`.
+Standard `ri-4` + an L-4 strategy code, DOK `r-dok2`.
+
+```
+target c1-t10
+passage "Aqueducts"
+type informational
+lines [
+  "Roman engineers built aqueducts. The aqueduct carried water across long distances."
+]
+words [
+  word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water across long distances."
+    meanings [
+      meaning id "m1" status correct text "a channel built to carry water" {}
+      meaning id "m2" status distractor error-type other-meaning text "a boat that carries cargo"
+        rationale "Another meaning that ignores the context." {}
+      meaning id "m3" status distractor error-type misinterprets text "a tall stone tower"
+        rationale "Misreads the sentence." {}
+      meaning id "m4" status distractor error-type wrong-context text "a kind of road"
+        rationale "Uses the wrong context." {}
+    ] {}
+]
+outcomes [
+  outcome id "q1" type multiple-choice dimension word-meaning subject "aqueduct" standard l-4a focus "w1"
+    stem "Read the sentence: \"The aqueduct carried water across long distances.\" What does the word aqueduct most likely mean?" {}
+]
+{}..
+```
+
+For a **click-the-word** (`hot-text`) T10 item, drop the `meanings` and instead list the clickable
+candidates as bare `word`s in the same paragraph — the correct one is the outcome's `focus`, the
+rest are distractor candidate words; put only the instruction + definition in the `stem`:
+
+```
+words [ word id "w1" text "aqueduct" line 1 {} word id "w2" text "engineers" {} word id "w3" text "water" {} ]
+outcomes [
+  outcome id "q1" type hot-text dimension word-meaning subject "aqueduct" standard l-4c focus "w1"
+    stem "Read the paragraph below. Click the word that means a channel that carries water." {}
+]
 ```

@@ -46,7 +46,10 @@ outcomes [ outcome id "q1" type ebsr dimension character subject "Mara" standard
 ```
 
 composes a two-part EBSR item and renders it as an answerable form with a Student / Review
-toggle.
+toggle. This example is Target 4 (literary, R&E); the other targets use the same flat-chain shape
+but author their options differently — **T9** (Central Ideas) significance-taxonomy `claim`s,
+**T8** (Key Details) `source`s with the inference given in the stem, **T10** (Word Meanings)
+`meaning`s of a targeted `word`. See `instructions.md` for a full worked program per target.
 
 ### Vocabulary
 

@@ -275,3 +275,11 @@ outcomes [
 ]
 {}..
 ```
+
+The example above is Target 4 (literary, R&E). The other targets keep the same flat-chain shape
+but differ in what the options are: **T11** is the same R&E shape over an informational passage
+(RI standards); **T9** (Central Ideas) options are `claim`s judged by significance (`too-narrow` /
+`too-broad` / `insignificant` / `misreads-detail`); **T8** (Key Details) gives the inference in the
+stem and the options are `source`s (no distractor claims); **T10** (Word Meanings) options are
+`meaning`s of a targeted `word` authored in a top-level `words` list. See `instructions.md` for a
+full worked program per target and `stems.md` for each target's stem catalog.
