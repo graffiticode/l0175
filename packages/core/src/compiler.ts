@@ -36,6 +36,14 @@ const SOURCE_STATUS = new Set(["directly-supports", "supports-wrong-claim", "irr
 const ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"]; // Reasoning & Evidence
 const T9_ERROR_TYPES = ["too-narrow", "too-broad", "misreads-detail", "insignificant"]; // Central Ideas
 
+// CCSS Grade-5 reading-standard families. A target's `standards` set is the full strand for its
+// text type, so any plausible CCSS code for that text type validates (the dimStandard map below
+// still picks the right companion by default). RL.8 is "not applicable to literature"; RL.10/RI.10
+// are range-of-reading bands, not discrete item standards.
+const RL_G5 = ["rl-1", "rl-2", "rl-3", "rl-4", "rl-5", "rl-6", "rl-7", "rl-9"];
+const RI_G5 = ["ri-1", "ri-2", "ri-3", "ri-4", "ri-5", "ri-6", "ri-7", "ri-8", "ri-9"];
+const L_G5 = ["l-4", "l-4a", "l-4b", "l-4c", "l-5", "l-5a", "l-5b", "l-5c"]; // vocabulary (T10)
+
 // Small prior on distractor temptingness by error type. Used by the computed plausibility score;
 // author `plausibility` overrides it. Unlisted types default to 0.
 const ERROR_TYPE_PRIOR: Record<string, number> = {
@@ -103,7 +111,7 @@ const TARGETS: Record<string, TargetProfile> = {
     answerKind: "statement",
     singlePartHotText: false,
     itemTypes: RE_ITEM_TYPES,
-    standards: new Set(["rl-1", "rl-3", "rl-6", "rl-9"]),
+    standards: new Set(RL_G5),
     dimensions: new Set([
       "character", "setting", "event", "point-of-view",
       "theme", "topic", "narrators-feelings", "character-relationship",
@@ -112,7 +120,9 @@ const TARGETS: Record<string, TargetProfile> = {
     dimStandard: {
       "character": "rl-3", "character-relationship": "rl-3", "setting": "rl-3", "event": "rl-3",
       "point-of-view": "rl-6", "narrators-feelings": "rl-6",
-      "theme": "rl-9", "topic": "rl-9",
+      // theme/topic = determine-the-theme/summarize → RL.2 (the CCSS theme standard), not the
+      // cross-text-comparison RL.9.
+      "theme": "rl-2", "topic": "rl-2",
     },
   },
   // Claim 1 · Target 11 — Reasoning & Evidence, informational texts (RI standards).
@@ -126,7 +136,7 @@ const TARGETS: Record<string, TargetProfile> = {
     answerKind: "statement",
     singlePartHotText: false,
     itemTypes: RE_ITEM_TYPES,
-    standards: new Set(["ri-1", "ri-3", "ri-6", "ri-7", "ri-8", "ri-9"]),
+    standards: new Set(RI_G5),
     dimensions: new Set([
       "relationships-interactions", "author-use-of-information",
       "point-of-view", "purpose", "authors-opinion",
@@ -154,7 +164,7 @@ const TARGETS: Record<string, TargetProfile> = {
     answerKind: "statement",
     singlePartHotText: true, // T9 Hot Text (TM4): click the sentence(s) that show the main idea
     itemTypes: new Set(["multiple-choice", "multi-select", "ebsr", "hot-text", "short-text"]),
-    standards: new Set(["ri-1", "ri-2"]),
+    standards: new Set(RI_G5),
     dimensions: new Set(["central-idea", "key-detail", "summary"]),
     errorTypes: T9_ERROR_TYPES,
     dimStandard: {
@@ -177,7 +187,7 @@ const TARGETS: Record<string, TargetProfile> = {
     answerKind: "evidence",
     singlePartHotText: true,
     itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
-    standards: new Set(["ri-1", "ri-7"]),
+    standards: new Set(RI_G5),
     dimensions: new Set(["supporting-evidence"]),
     errorTypes: [], // T8 wrong answers are non-supporting sources, not distractor claims
     dimStandard: {
@@ -199,7 +209,7 @@ const TARGETS: Record<string, TargetProfile> = {
     answerKind: "meaning",
     singlePartHotText: false, // T10 Hot Text is word-level (composeWordMeaning), not sentence-level
     itemTypes: new Set(["multiple-choice", "multi-select", "hot-text"]),
-    standards: new Set(["ri-4", "ri-1", "l-4", "l-4a", "l-4b", "l-4c", "l-5c"]),
+    standards: new Set([...RI_G5, ...L_G5]),
     dimensions: new Set(["word-meaning"]),
     errorTypes: ["other-meaning", "misinterprets", "wrong-context"],
     dimStandard: {

@@ -91,7 +91,7 @@ Attribute functions (arity-2, merge one key into the element's record):
 - `dimension` (c1-t9): `central-idea`, `key-detail`, `summary` · (c1-t8): `supporting-evidence` · (c1-t10): `word-meaning`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant` · meaning `status` (c1-t10): `correct`, `distractor`
 - `error-type` (c1-t4 / c1-t11): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (c1-t9): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (c1-t8): none (non-supporting sources) · (c1-t10): `other-meaning`, `misinterprets`, `wrong-context`
-- `standard` (c1-t4): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (c1-t11): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (c1-t9): `ri-1`, `ri-2` · (c1-t8): `ri-1`, `ri-7` · (c1-t10): `ri-4`, `l-4`, `l-4a`, `l-4b`, `l-4c`, `l-5c`
+- `standard` — full CCSS Grade-5 strand for the text type accepted; the dimension's companion is inferred when omitted. Primary companions — (c1-t4): `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` [full RL `rl-1`–`rl-7`/`rl-9`, no `rl-8`] · (c1-t11): `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (c1-t9): `ri-1` + `ri-2` · (c1-t8): `ri-1` + `ri-7` [c1-t11/t9/t8 accept full RI `ri-1`–`ri-9`] · (c1-t10): `ri-4` + the `l-4` / `l-5` families
 - `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E → r-dok3; T9 → r-dok2, written summary r-dok3; T8 & T10 → r-dok2)
 
 ### Grade-appropriate reading level

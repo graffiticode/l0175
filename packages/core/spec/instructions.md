@@ -14,7 +14,11 @@ Always declare a top-level `target` (the SBAC learning target the program compos
 
 - **`c1-t4`** — Target 4: Reasoning & Evidence over **literary** texts (RL standards). Dimensions:
   `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`,
-  `character-relationship`. Standards: `rl-1` (always) + `rl-3` / `rl-6` / `rl-9`.
+  `character-relationship`. Companion standards by dimension: `character` / `character-relationship`
+  / `setting` / `event` → `rl-3`; `point-of-view` / `narrators-feelings` → `rl-6`; **`theme` /
+  `topic` → `rl-2`** (the CCSS theme standard — **not** `rl-9`). `rl-1` (cite evidence) is always
+  added. You normally **omit** `standard` and let the dimension pick its companion; the full
+  Grade-5 **RL** strand (`rl-1`–`rl-7`, `rl-9`) is accepted if you author one explicitly.
 - **`c1-t11`** — Target 11: Reasoning & Evidence over **informational** texts (RI standards).
   Dimensions: `relationships-interactions`, `author-use-of-information`, `point-of-view`,
   `purpose`, `authors-opinion`. Standards: `ri-1` (always) + `ri-3` / `ri-6` / `ri-7` / `ri-8` / `ri-9`.
@@ -294,7 +298,7 @@ targets.
 - `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant` · meaning `status` (c1-t10): `correct`, `distractor`
 - `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t8**): none — wrong answers are non-supporting `source`s · (**c1-t10**): `other-meaning`, `misinterprets`, `wrong-context`
-- `standard` (**c1-t4**): `rl-1`, `rl-3`, `rl-6`, `rl-9` · (**c1-t11**): `ri-1`, `ri-3`, `ri-6`, `ri-7`, `ri-8`, `ri-9` · (**c1-t9**): `ri-1`, `ri-2` · (**c1-t8**): `ri-1`, `ri-7` · (**c1-t10**): `ri-4`, `l-4`, `l-4a`, `l-4b`, `l-4c`, `l-5c`
+- `standard` — primary companions (normally inferred from the dimension; author one only to override): (**c1-t4**) `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` · (**c1-t11**) `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (**c1-t9**) `ri-1` + `ri-2` · (**c1-t8**) `ri-1` + `ri-7` · (**c1-t10**) `ri-4` + `l-4` / `l-4a` / `l-4b` / `l-4c` / `l-5c`. The **full CCSS Grade-5 strand for the target's text type is accepted**: any `rl-1`–`rl-7` / `rl-9` on a literary target (c1-t4), any `ri-1`–`ri-9` on an informational target (c1-t11/t9/t8/t10), plus the `l-4` / `l-5` families on c1-t10. (`rl-2` is the theme standard — valid; there is no `rl-8`.)
 - `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`; T8 & T10 are `r-dok2`)
 
 ## What composition does

@@ -46,10 +46,15 @@ const ENUM_VALUES = [
   "too-narrow", "too-broad", "insignificant",
   // Word Meanings (T10) distractor taxonomy
   "other-meaning", "misinterprets", "wrong-context",
-  // standards: RL (T4) + RI (T11/T9/T8/T10) + L (T10)
-  "rl-1", "rl-3", "rl-6", "rl-9",
-  "ri-1", "ri-2", "ri-3", "ri-4", "ri-6", "ri-7", "ri-8", "ri-9",
-  "l-4", "l-4a", "l-4b", "l-4c", "l-5c",
+  // standards: the full CCSS Grade-5 RL / RI / L families are registered so any plausible CCSS
+  // code parses; each target profile (compiler.ts) restricts which are VALID for that target.
+  // RL (literary; rl-8 is "not applicable to literature", rl-10 is range-of-reading)
+  "rl-1", "rl-2", "rl-3", "rl-4", "rl-5", "rl-6", "rl-7", "rl-9",
+  // RI (informational)
+  "ri-1", "ri-2", "ri-3", "ri-4", "ri-5", "ri-6", "ri-7", "ri-8", "ri-9",
+  // L (vocabulary — T10 word meanings): the L.4 (determine meaning) and L.5 (word relationships /
+  // figurative language) families with their sub-strategy codes
+  "l-4", "l-4a", "l-4b", "l-4c", "l-5", "l-5a", "l-5b", "l-5c",
   "r-dok1", "r-dok2", "r-dok3",
   "inference", "conclusion", "author-intent",
 ];
