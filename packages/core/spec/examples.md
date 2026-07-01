@@ -72,28 +72,28 @@ Each prompt composes a complete item; the focus is the error-typed distractor it
 
 A DIFFERENT skill from Reasoning & Evidence — determine the main idea, the key details that build it, and summary (standards ri-1+ri-2). Distractors are usually TRUE statements that just aren't central: too-narrow (a supporting detail), too-broad (an overgeneralization), insignificant (a minor detail), or misreads-detail. T9 is the only non-R&E target that spans **all five task models**, so one example follows for each — **tm1 multiple-choice · tm2 multi-select · tm3 EBSR · tm4 hot-text · tm5 short-text** (tm1–tm4 are DOK 2; tm5 short-text bumps to DOK 3).
 
-31. **tm1 (multiple choice).** From an informational article about honeybees, write a multiple-choice item asking which sentence best states the main idea (dimension central-idea). Make the distractors a true supporting detail (too-narrow), an overgeneralization (too-broad), and a misread (misreads-detail). (The same MC model also covers the "missing key detail" stem — present a short summary and ask which key detail is missing; the focus claim is the missing detail.)
-32. **tm2 (multi-select).** Make a multi-select item: choose the two sentences that should be included in a summary of the passage (dimension summary); `focus` lists the two correct claims, and the distractors are a too-narrow supporting detail and a misread (misreads-detail) — not statements so insignificant they're implausible.
-33. **tm3 (EBSR).** Compose an EBSR item where Part A asks for the main idea and Part B asks which detail best supports it (dimension central-idea, standard ri-2).
-34. **tm4 (hot-text).** Make a single-part hot-text item: click the sentence(s) that best show the main idea of the passage (dimension central-idea, standard ri-2). The distractor sentences misread a detail or state a too-narrow supporting point.
-35. **tm5 (short-text).** Write a short-text constructed-response item: "Determine the main idea of the passage. Explain using key details from the passage to support your answer." (dimension central-idea, DOK r-dok3).
+31. **tm1 (multiple choice).** From an article about honeybees, write a multiple-choice item asking which sentence best states the main idea. (The same model also supports a "which key detail is missing from this summary" stem.)
+32. **tm2 (multi-select).** Make a multi-select item: choose the two sentences that belong in a summary of the passage.
+33. **tm3 (EBSR).** Compose an EBSR item where Part A asks for the main idea and Part B asks which detail best supports it.
+34. **tm4 (hot-text).** Make a single-part hot-text item: click the sentence(s) that best show the main idea of the passage.
+35. **tm5 (short-text).** Write a short-text item: "Determine the main idea of the passage. Explain using key details from the passage to support your answer."
 
 ## Category 9: Key Details items (target c1-t8)
 
 A DIFFERENT model — the inference/conclusion is GIVEN in the stem and the student selects the supporting EVIDENCE (DOK 1–2; standards ri-1+ri-7; dimension supporting-evidence). Author ONE supported claim = the given inference (its `focus`), state it in the stem, and author `source`s as the options: directly-supports = correct evidence (with a `quote`), supports-wrong-claim/irrelevant = distractor evidence. No distractor claims. T8 has **three task models**, one example each — **tm1 multiple-choice · tm2 multi-select · tm3 hot-text**.
 
-36. **tm1 (multiple choice).** From an informational article about Roman aqueducts, write a multiple-choice item that states the conclusion "aqueducts brought water to distant cities" and asks which detail from the passage best supports it (dimension supporting-evidence).
-37. **tm2 (multi-select).** Make a multi-select item: which two details best support the stated conclusion? Select two answers (two directly-supports sources are the correct set).
-38. **tm3 (hot-text).** Make a single-part hot-text item: state the inference, then have students click the sentence(s) in the passage that support it (dimension supporting-evidence).
+36. **tm1 (multiple choice).** From an article about Roman aqueducts, write a multiple-choice item that states the conclusion "aqueducts brought water to distant cities" and asks which detail from the passage best supports it.
+37. **tm2 (multi-select).** Make a multi-select item: which two details best support the stated conclusion?
+38. **tm3 (hot-text).** Make a single-part hot-text item: state the inference, then have students click the sentence(s) in the passage that support it.
 
 ## Category 10: Word Meanings items (target c1-t10)
 
 A DIFFERENT model — the question asks for the MEANING of a targeted word/phrase in context, so the options are meanings (DOK 1–2; standard ri-4 + the L-4 family). Author a top-level `words` list: a `word` (the targeted word, with line/quote for context) holding `meanings` — `status correct` (the answer) + `status distractor` (error-type other-meaning/misinterprets/wrong-context + rationale). The outcome's `focus` names the word; state the word + its sentence in the stem. T10 has **three task models**, one example each (plus a limited-use roots/affixes variant of the MC model) — **tm1 multiple-choice · tm2 multi-select · tm3 hot-text**.
 
-39. **tm1 (multiple choice).** From an informational article, write a multiple-choice item asking what the word "aqueduct" most likely means as used in the passage (dimension word-meaning, standard l-4a — context). Distractors: another meaning that ignores context (other-meaning), a misread (misinterprets), and a wrong-context meaning.
-40. **tm2 (multi-select).** Make a multi-select item: "What does the word 'channel' most likely mean? Choose two answers." (two correct meanings, dimension word-meaning).
-41. **tm1 (multiple choice, roots/affixes variant).** Write a roots/affixes item: ask what the root in a word means, standard l-4b (dimension word-meaning). The guideline limits roots/affixes items, so use this variant sparingly.
-42. **tm3 (hot-text).** Make a click-the-word item: "Read the dictionary entry … Click the word in the paragraph that matches this definition." The correct word is the outcome's `focus`, carrying the `line` of the paragraph it appears in. Provide the distractor choices in one of two ways: author a few sibling candidate `word`s from that same paragraph (`text` only, no `meanings`), or let the correct word's single-word distractor `meanings` that occur in the paragraph serve as the foils; if you author neither, every content word in the paragraph becomes a choice. The compiler shows the paragraph and makes the candidates clickable (the focus word is the only correct one). Keep the passage out of the stem.
+39. **tm1 (multiple choice).** From an article, write a multiple-choice item asking what the word "aqueduct" most likely means as used in the passage.
+40. **tm2 (multi-select).** Make a multi-select item: "What does the word 'channel' most likely mean? Choose two answers."
+41. **tm1 (multiple choice, roots/affixes variant).** Write a roots/affixes item: ask what the root in a word means.
+42. **tm3 (hot-text).** Make a click-the-word item: "Read the dictionary entry … Click the word in the paragraph that matches this definition."
 
 ## Category 11: Task-model coverage — one request per task model, per target
 
