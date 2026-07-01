@@ -12,18 +12,25 @@ export function CopyButton({ items, mode, title }: { items: any[]; mode: Mode; t
   const [failed, setFailed] = useState(false);
 
   const onCopy = async () => {
-    const passage = mode === "passage";
-    const html = passage ? passagesToHtml(items, title) : itemsToHtml(items, mode, title);
-    const text = passage ? passagesToText(items, title) : itemsToText(items, mode, title);
-    const ok = await copyRichText(html, text);
-    if (ok) {
-      setCopied(true);
-      setFailed(false);
-      setTimeout(() => setCopied(false), 1500);
-    } else {
-      setFailed(true);
-      setTimeout(() => setFailed(false), 2000);
+    // Serialize + clipboard-write can both throw (a malformed item, or a clipboard permission
+    // error in an embedded iframe). Guard the whole thing so a failure surfaces as "Copy failed"
+    // instead of the button silently doing nothing.
+    try {
+      const passage = mode === "passage";
+      const html = passage ? passagesToHtml(items, title) : itemsToHtml(items, mode, title);
+      const text = passage ? passagesToText(items, title) : itemsToText(items, mode, title);
+      const ok = await copyRichText(html, text);
+      if (ok) {
+        setCopied(true);
+        setFailed(false);
+        setTimeout(() => setCopied(false), 1500);
+        return;
+      }
+    } catch (err) {
+      console.error("Copy failed", err);
     }
+    setFailed(true);
+    setTimeout(() => setFailed(false), 2000);
   };
 
   const label = copied

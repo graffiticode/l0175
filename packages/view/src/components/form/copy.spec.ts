@@ -101,6 +101,25 @@ const SHORTTEXT: any = {
   warnings: [],
 };
 
+describe("copy serializer — metadata header", () => {
+  it("prepends the view's pill metadata (type, standards, DoK, dimension) in both modes", () => {
+    for (const mode of ["preview", "review"] as const) {
+      const html = itemToHtml(EBSR, mode);
+      expect(html).toContain("EBSR");
+      expect(html).toContain("ri-1");
+      expect(html).toContain("ri-3");
+      expect(html).toContain("r-dok3");
+      expect(html).toContain("relationships-interactions");
+      const text = itemToText(EBSR, mode);
+      expect(text).toContain("EBSR · ri-1 · ri-3 · r-dok3 · relationships-interactions");
+    }
+  });
+  it("omits absent metadata fields without leaving stray separators", () => {
+    const text = itemToText(MC, "preview"); // no standards/dok/dimension
+    expect(text.split("\n")[0]).toBe("Multiple Choice");
+  });
+});
+
 describe("copy serializer — question (Questions view)", () => {
   const html = itemToHtml(EBSR, "preview");
   it("includes the lead-in, both parts and options but NOT the passage", () => {

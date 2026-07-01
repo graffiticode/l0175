@@ -22,6 +22,26 @@ const esc = (s: any): string =>
 const P = (html: string, style = "margin:0 0 4px"): string => `<p style="${style}">${html}</p>`;
 const NUM = (n: any): string => `<span style="color:#9ca3af">${esc(n)}</span>`;
 
+// Mirrors ItemView's pill row: the task-model label, standards, DoK, and dimension shown at the
+// top of the item. Copied at the head of each item so the copied question/answer key carries the
+// same metadata as the on-screen view.
+const TYPE_LABEL: Record<string, string> = {
+  "ebsr": "EBSR",
+  "hot-text": "Hot Text",
+  "short-text": "Short Text",
+  "multiple-choice": "Multiple Choice",
+  "multi-select": "Multi-Select",
+};
+
+function metaParts(item: any): string[] {
+  return [
+    TYPE_LABEL[item.type] ?? item.type,
+    ...(item.standards ?? []),
+    item.dok,
+    item.dimension,
+  ].filter(Boolean);
+}
+
 function passageHtml(p: any): string {
   if (!p) return "";
   const heading = p.heading ? P(`<strong>${esc(p.heading)}</strong>`) : "";
@@ -100,6 +120,8 @@ export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
   const out: string[] = [];
+  const meta = metaParts(item);
+  if (meta.length) out.push(P(meta.map(esc).join(" &middot; "), "margin:0 0 6px;font-size:9pt;color:#6b7280"));
   if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
 
   if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
@@ -164,6 +186,8 @@ export function itemToText(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
   const out: string[] = [];
+  const meta = metaParts(item);
+  if (meta.length) out.push(meta.join(" · "), "");
   if (item.stem?.leadIn) out.push(item.stem.leadIn, "");
 
   const opt = (o: any, quote: boolean) => {
