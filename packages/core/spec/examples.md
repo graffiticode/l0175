@@ -10,7 +10,8 @@ informational), **T9** (`target c1-t9`, Central Ideas, informational), **T8** (`
 Key Details, informational), and **T10** (`target c1-t10`, Word Meanings, informational). Each
 program declares its `target` first. Categories 1–6 below are literary (T4); Category 7 is
 informational R&E (T11); Category 8 is Central Ideas (T9); Category 9 is Key Details (T8);
-Category 10 is Word Meanings (T10).
+Category 10 is Word Meanings (T10). Category 11 is the **task-model coverage matrix** — at least
+one specific request for every task model in every target (task-model numbers are per-target).
 
 ## Category 1: EBSR items (two-part selected response)
 
@@ -93,3 +94,42 @@ A DIFFERENT model — the question asks for the MEANING of a targeted word/phras
 40. Make a multi-select item: "What does the word 'channel' most likely mean? Choose two answers." (two correct meanings, dimension word-meaning).
 41. Write a roots/affixes item: ask what the root in a word means, standard l-4b (dimension word-meaning).
 42. Make a click-the-word item (hot-text): "Read the dictionary entry … Click the word in the paragraph that matches this definition." Author the candidate `word`s — the correct one is the outcome's `focus` with the `line` of its paragraph, plus a few distractor candidate words from that same paragraph (`text` only, no `meanings`). The compiler shows the paragraph and makes those authored candidates clickable; the focus word is correct. (Author only the correct word and every content word in the paragraph becomes a choice.) Keep the passage out of the stem.
+
+## Category 11: Task-model coverage — one request per task model, per target
+
+Task-model NUMBERS are **per-target and collide** — TM3 is Short Text in T4/T11, EBSR in T9, and
+Hot Text in T8/T10 — so each request below names **both** the number and the item type (the way an
+author actually expresses the intent). This is the full author's-intent matrix: at least one
+specific request for every task model in every target, resolved against that target's table.
+
+**Target 4 (`c1-t4`) — Reasoning & Evidence, literary (RL):**
+
+43. For `c1-t4`, author a **Task Model 1 (EBSR)** item about a boy who hides his fear during a thunderstorm — Part A infers what he feels, Part B gives the supporting line (dimension character, standard rl-1/rl-3).
+44. For `c1-t4`, author a **Task Model 2 (Hot Text)** item whose Part A is the best statement about the narrator's point of view in a first-person camp diary, then Part B highlights the supporting sentences (dimension point-of-view, standard rl-6).
+45. For `c1-t4`, author a **Task Model 3 (Short Text)** constructed-response item asking what the story's theme is and to explain it with evidence from the text (dimension theme, standard rl-2, DOK r-dok3).
+
+**Target 11 (`c1-t11`) — Reasoning & Evidence, informational (RI):**
+
+46. For `c1-t11`, author a **Task Model 1 (EBSR)** item about how two bridge designs solve the same problem — Part A the relationship between them, Part B the supporting detail (dimension relationships-interactions, standard ri-3).
+47. For `c1-t11`, author a **Task Model 2 (Hot Text)** item whose Part A is the best statement of the author's purpose in an article on recycling, then Part B highlights the supporting sentences (dimension purpose, standard ri-8).
+48. For `c1-t11`, author a **Task Model 3 (Short Text)** item asking what conclusion can be drawn about the author's opinion of solar power, explained with key evidence (dimension authors-opinion, DOK r-dok3).
+
+**Target 9 (`c1-t9`) — Central Ideas, informational (RI-1/RI-2):**
+
+49. For `c1-t9`, author a **Task Model 1 (Multiple Choice)** item asking which sentence best states the central idea of an article about coral reefs (dimension central-idea, standard ri-2); distractors too-narrow, too-broad, insignificant.
+50. For `c1-t9`, author a **Task Model 2 (Multi-Select)** item asking which two sentences belong in a summary of a passage about the water cycle (dimension summary); `focus` is the two correct claims.
+51. For `c1-t9`, author a **Task Model 3 (EBSR)** item — Part A asks for the central idea of an article on honeybee colonies, Part B asks which detail best supports it (dimension central-idea, standard ri-2). *(NB: in `c1-t9`, TM3 is EBSR — not Short Text as in T4/T11.)*
+52. For `c1-t9`, author a **Task Model 4 (Hot Text)** single-part item: click the sentence(s) that best show the main idea of an article about volcanoes (dimension central-idea, standard ri-2).
+53. For `c1-t9`, author a **Task Model 5 (Short Text)** item asking the student to determine the central idea and explain it with key details from the passage (dimension central-idea, DOK r-dok3).
+
+**Target 8 (`c1-t8`) — Key Details, informational (RI-1/RI-7):**
+
+54. For `c1-t8`, author a **Task Model 1 (Multiple Choice)** item that states the conclusion "aqueducts carried water to distant cities" and asks which detail best supports it (dimension supporting-evidence, standard ri-7); the options are sources, not statements.
+55. For `c1-t8`, author a **Task Model 2 (Multi-Select)** item asking which two details best support a stated conclusion about migrating birds (the two directly-supports sources are the correct set).
+56. For `c1-t8`, author a **Task Model 3 (Hot Text)** single-part item: state the inference, then have students click the sentence(s) in the passage that support it (dimension supporting-evidence).
+
+**Target 10 (`c1-t10`) — Word Meanings, informational (RI-4/L-4):**
+
+57. For `c1-t10`, author a **Task Model 1 (Multiple Choice)** item asking what "aqueduct" most likely means as used in the passage (dimension word-meaning, standard l-4a — context); distractors other-meaning, misinterprets, wrong-context.
+58. For `c1-t10`, author a **Task Model 2 (Multi-Select)** item: "What does the word 'channel' most likely mean? Choose two answers." (two correct meanings, dimension word-meaning).
+59. For `c1-t10`, author a **Task Model 3 (Hot Text)** click-the-word item: click the word in the paragraph that matches a given definition; the focus word is correct plus a few distractor candidate words from the same paragraph (standard l-4a). Keep the passage out of the stem.
