@@ -51,12 +51,22 @@ number from the query. The corpus just lacks positive output-side exemplars.
    phrases it. `extractQueryFacets` already extracts an explicit number and derives one from
    target + item type; the paired prompts should exercise both spellings.
 
-## Build / validation hooks (when authoring lands)
+## The store and the verification gate (implemented)
 
-- Generate each anchor's signature with `buildEmbeddingArtifacts({ prompt, code })` and assert it
-  carries the expected `target:` / `item:` / `shape:` / `task-model:` tags (mirror the worked
-  "Mara" assertions in `test/embedding.spec.ts`).
-- Every anchor program must compile clean through the core compiler (reuse the `compile` harness in
-  `test/task-model.spec.ts`), and should author `task-model tmN` so the compiler's per-target guard
-  double-checks the intended item type.
-- A coverage check: every `targets.<id>.taskModels` cell has at least one anchor.
+The paired store and the gate now exist:
+
+- **Store:** `spec/examples/<id>.gc` (the program, authored with `task-model tmN`) + `<id>.expect.json`
+  (`{ prompt, expect: { target, taskModel/itemType, dimension, standard } }`). First anchor in:
+  `c1-t9-tm3-ebsr` (the exact drift case). This is the human-refined artifact — author/edit the `.gc`.
+- **Gate:** `verifyExample({ errors, data, code, expect })` (exported from `@graffiticode/l0175`) —
+  BLOCKING checks (compiles clean; composed `target`/item type/`task-model:<n>`/dimension/standard
+  match the declared intent, read from `targets.ts` NOT `instructions.md`) + ADVISORY (compiler
+  warnings surfaced, not fatal). It never maps prompt→code; it validates whatever code exists, so it
+  guards **both** bootstrapped and hand-refined examples. Run it in the console capture step and after
+  any refinement.
+- **Corpus check:** `test/corpus.spec.ts` runs the gate over every `spec/examples/*.gc` on each test
+  run; `test/verify-example.spec.ts` proves the gate rejects a mislabeled example that compiles clean.
+
+Still to author (each must pass the gate): the remaining contrastive siblings per the table above —
+next up for c1-t9 are `tm4` (hot-text) and `tm5` (short-text) on the same passage. Coverage goal:
+every `targets.<id>.taskModels` cell has at least one anchor.
