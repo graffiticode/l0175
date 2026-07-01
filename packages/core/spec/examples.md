@@ -62,11 +62,13 @@ Each prompt composes a complete item; the focus is the error-typed distractor it
 
 ## Category 7: Informational items (target c1-t11)
 
-26. From an informational article about the history of bridge design, write an EBSR item about the relationships between the successive designs (dimension relationships-interactions, standard ri-3).
-27. Make an item about how the author uses evidence to support a point in a science article (dimension author-use-of-information, standard ri-8).
-28. Compose an EBSR item about the author's point of view in an informational passage about city planning (dimension point-of-view, standard ri-6).
-29. Write a short-text item asking what conclusion can be drawn about the author's opinion of renewable energy, with key evidence (dimension authors-opinion).
-30. Make a hot-text item about the author's purpose in an informational passage (dimension purpose).
+The same Reasoning & Evidence skill as Categories 1–6, but over informational (RI) texts — dimensions relationships-interactions, author-use-of-information, point-of-view, purpose, and authors-opinion. Three task models — **tm1 EBSR · tm2 hot-text · tm3 short-text**.
+
+26. **tm1 (EBSR).** From an article about the history of bridge design, write an EBSR item about the relationships between the successive designs.
+27. **tm1 (EBSR).** Compose an EBSR item about how the author uses evidence to support a point in a science article.
+28. **tm1 (EBSR).** Compose an EBSR item about the author's point of view in an informational passage about city planning.
+29. **tm3 (short-text).** Write a short-text item asking what conclusion can be drawn about the author's opinion of renewable energy, with key evidence.
+30. **tm2 (hot-text).** Make a hot-text item about the author's purpose in an informational passage.
 
 ## Category 8: Central Ideas items (target c1-t9)
 
