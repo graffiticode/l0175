@@ -67,6 +67,7 @@ The paired store and the gate now exist:
 - **Corpus check:** `test/corpus.spec.ts` runs the gate over every `spec/examples/*.gc` on each test
   run; `test/verify-example.spec.ts` proves the gate rejects a mislabeled example that compiles clean.
 
-Still to author (each must pass the gate): the remaining contrastive siblings per the table above —
-next up for c1-t9 are `tm4` (hot-text) and `tm5` (short-text) on the same passage. Coverage goal:
-every `targets.<id>.taskModels` cell has at least one anchor.
+**Coverage: 15 of 17 matrix cells** have a gated golden pair — the full c1-t4, c1-t11, c1-t8,
+c1-t10 sets and the c1-t9 tm3/tm4/tm5 drift trio (all advisory-free). The only cells still to author
+are **c1-t9 tm1 (multiple-choice)** and **c1-t9 tm2 (multi-select)** — the last two, to reach the full
+matrix. Each new anchor must pass the gate (`test/corpus.spec.ts` enforces it).
