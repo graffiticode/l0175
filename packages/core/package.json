@@ -3,7 +3,7 @@
     "access": "public"
   },
   "name": "@graffiticode/l0175",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "L0175 — a Graffiticode dialect (hello/image/theme/print) inheriting @graffiticode/l0000",
   "type": "module",
   "main": "./dist/index.js",
