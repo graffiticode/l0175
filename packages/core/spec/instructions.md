@@ -19,9 +19,17 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   `topic` → `rl-2`** (the CCSS theme standard — **not** `rl-9`). `rl-1` (cite evidence) is always
   added. You normally **omit** `standard` and let the dimension pick its companion; the full
   Grade-5 **RL** strand (`rl-1`–`rl-7`, `rl-9`) is accepted if you author one explicitly.
+  **`theme` vs `topic`** (same `rl-2`, different dimensions): `topic` = what the text is *about*
+  (cued by "**mostly about**" / "what is the story about"); `theme` = the *lesson/message* (cued by
+  "the theme" / "the message" / "the lesson"). Tag a "mostly about" prompt `topic` and phrase its
+  correct answer as a subject statement, not a life lesson.
 - **`c1-t11`** — Target 11: Reasoning & Evidence over **informational** texts (RI standards).
   Dimensions: `relationships-interactions`, `author-use-of-information`, `point-of-view`,
   `purpose`, `authors-opinion`. Standards: `ri-1` (always) + `ri-3` / `ri-6` / `ri-7` / `ri-8` / `ri-9`.
+  **`purpose` vs `point-of-view`** (both read "author's …", different companions): `purpose` = *why
+  the author wrote it* (cued by "author's purpose") → `ri-8`; `point-of-view` = *the author's stance*
+  (cued by "author's point of view") → `ri-6`. Tag by the cue and prefer to **omit** `standard` so
+  the dimension infers the right companion.
 - **`c1-t9`** — Target 9: **Central Ideas** over **informational** texts (RI standards). A
   DIFFERENT skill from Reasoning & Evidence — synthesize and condense: the main/central idea, the
   key details that build it, and summary (NOT inference + justification). Dimensions: `central-idea`,

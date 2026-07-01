@@ -125,6 +125,15 @@ Author as `stem` (the prompt); every Short Text stem ends with the explain claus
   `stem "What did the author most likely mean by including the scarecrow in the passage?"`
 - theme / inference / Short Text →
   `stem "What inference can be made about the theme? Explain using key details from the passage to support your answer."`
+- topic / Short Text →
+  `stem "What is the story mostly about? Explain using key details from the passage to support your answer."`
+
+**`theme` vs `topic` (both → `rl-2`, but they are different dimensions).** `topic` is what the
+text is *about* (its subject) — cued by "**mostly about**" / "**what is the passage/story about**".
+`theme` is the *lesson or message* the text conveys — cued by "**the theme**" / "**the message**"
+/ "**the lesson**". Route a "mostly about" prompt to `topic`, and write the correct answer as a
+subject statement ("The story is mostly about …"), **not** a life-lesson statement. Reserve the
+lesson-style answer for `theme`.
 
 ---
 
@@ -137,6 +146,14 @@ concepts / author's use of information / point of view / purpose]` (or, for an o
 `the author's opinion of [idea/concept]`; for author-intent, `[target detail]`). Note T11 says
 "key **evidence**" (T4 said "key details"), and Part B units are
 `sentence(s) / paragraph(s) / section(s)`.
+
+**`purpose` vs `point-of-view` (both start "author's …" but are different dimensions with
+different companions).** `purpose` = *why the author wrote the text* / what they are trying to do
+(inform, persuade, explain) — cued by "**author's purpose**" / "why the author wrote" → companion
+`ri-8`. `point-of-view` = *the author's stance or attitude* toward the subject — cued by
+"**author's point of view**" / "how the author feels about" → companion `ri-6`. Route a
+"purpose" prompt to `purpose`/`ri-8` and a "point of view" prompt to `point-of-view`/`ri-6`;
+easiest is to **omit `standard`** and let the dimension infer its companion.
 
 ## Task Model 1 — EBSR (two-part selected response)
 
