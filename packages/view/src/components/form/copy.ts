@@ -22,9 +22,10 @@ const esc = (s: any): string =>
 const P = (html: string, style = "margin:0 0 4px"): string => `<p style="${style}">${html}</p>`;
 const NUM = (n: any): string => `<span style="color:#9ca3af">${esc(n)}</span>`;
 
-// Mirrors ItemView's pill row: the task-model label, standards, DoK, and dimension shown at the
-// top of the item. Copied at the head of each item so the copied question/answer key carries the
-// same metadata as the on-screen view.
+// Mirrors ItemView's pill row: Claim / Target / Task Model (abbreviated C · T · TM), leading, then
+// the item-type label, standards, DoK, and dimension. Copied at the head of each item AND each
+// passage so the copied question / answer key / passage carries the same metadata as the on-screen
+// view.
 const TYPE_LABEL: Record<string, string> = {
   "ebsr": "EBSR",
   "hot-text": "Hot Text",
@@ -33,14 +34,31 @@ const TYPE_LABEL: Record<string, string> = {
   "multi-select": "Multi-Select",
 };
 
+const META_STYLE = "margin:0 0 6px;font-size:9pt;color:#6b7280";
+
+// Claim / Target parse out of the `target` tag (e.g. "c1-t9" → C1, T9); the task-model number is
+// supplied by the compiler. C · T · TM lead the row, matching ItemView.
 function metaParts(item: any): string[] {
+  const target: string = typeof item.target === "string" ? item.target : "";
+  const claimNum = (target.match(/c(\d+)/) ?? [])[1];
+  const targetNum = (target.match(/t(\d+)/) ?? [])[1];
   return [
+    claimNum && `C${claimNum}`,
+    targetNum && `T${targetNum}`,
+    item.taskModel && `TM${item.taskModel}`,
     TYPE_LABEL[item.type] ?? item.type,
     ...(item.standards ?? []),
     item.dok,
     item.dimension,
   ].filter(Boolean);
 }
+
+// The metadata pill row as an HTML paragraph / a plain-text line (empty when the item has none).
+const metaHtml = (item: any): string => {
+  const parts = metaParts(item);
+  return parts.length ? P(parts.map(esc).join(" &middot; "), META_STYLE) : "";
+};
+const metaText = (item: any): string => metaParts(item).join(" · ");
 
 function passageHtml(p: any): string {
   if (!p) return "";
@@ -120,8 +138,7 @@ export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
   const out: string[] = [];
-  const meta = metaParts(item);
-  if (meta.length) out.push(P(meta.map(esc).join(" &middot; "), "margin:0 0 6px;font-size:9pt;color:#6b7280"));
+  out.push(metaHtml(item));
   if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
 
   if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
@@ -186,8 +203,8 @@ export function itemToText(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
   const out: string[] = [];
-  const meta = metaParts(item);
-  if (meta.length) out.push(meta.join(" · "), "");
+  const meta = metaText(item);
+  if (meta) out.push(meta, "");
   if (item.stem?.leadIn) out.push(item.stem.leadIn, "");
 
   const opt = (o: any, quote: boolean) => {
@@ -261,35 +278,43 @@ export function itemToText(item: any, mode: Mode): string {
 // Dedupe the reading passage(s) across items — a set of items typically shares one passage, so
 // the Passage view (and its Copy button) collapses identical passages to one. Shared by the
 // on-screen PassageView and the passage serializers below so they never diverge.
-export function uniquePassages(items: any[]): any[] {
+// Deduped passages paired with the FIRST item that carries each — so the passage copy can prefix
+// the same metadata header (C · T · TM · type · …) as the question/answer-key copy.
+function uniquePassageEntries(items: any[]): { passage: any; item: any }[] {
   const seen = new Set<string>();
-  const out: any[] = [];
+  const out: { passage: any; item: any }[] = [];
   for (const item of items ?? []) {
     const p = item?.passage;
     if (!p) continue;
     const key = `${p.heading} ${(p.lines ?? []).map((l: any) => `${l.id}:${l.text}`).join("\n")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(p);
+    out.push({ passage: p, item });
   }
   return out;
 }
 
+export function uniquePassages(items: any[]): any[] {
+  return uniquePassageEntries(items).map((e) => e.passage);
+}
+
 // The Passage view's "Copy passage" button: just the reading passage(s), deduped, as rich text.
 export function passagesToHtml(items: any[], title?: string): string {
-  const body = uniquePassages(items)
-    .map((p) => `<div>${passageHtml(p)}</div>`)
+  const body = uniquePassageEntries(items)
+    .map(({ passage, item }) => `<div>${metaHtml(item)}${passageHtml(passage)}</div>`)
     .join('<p style="margin:14px 0"></p>');
   const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
 }
 
 export function passagesToText(items: any[], title?: string): string {
-  const body = uniquePassages(items)
-    .map((p) => {
+  const body = uniquePassageEntries(items)
+    .map(({ passage, item }) => {
       const lines: string[] = [];
-      if (p.heading) lines.push(p.heading);
-      for (const l of p.lines ?? []) lines.push(`${l.id} ${l.text}`);
+      const meta = metaText(item);
+      if (meta) lines.push(meta, "");
+      if (passage.heading) lines.push(passage.heading);
+      for (const l of passage.lines ?? []) lines.push(`${l.id} ${l.text}`);
       return lines.join("\n");
     })
     .join("\n\n———\n\n");

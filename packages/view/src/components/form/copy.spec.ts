@@ -120,6 +120,30 @@ describe("copy serializer — metadata header", () => {
   });
 });
 
+describe("copy serializer — Claim/Target/Task Model pills", () => {
+  const CLASSIFIED: any = { ...EBSR, target: "c1-t9", taskModel: "3" };
+  const HEADER = "C1 · T9 · TM3 · EBSR · ri-1 · ri-3 · r-dok3 · relationships-interactions";
+
+  it("leads the metadata header with C · T · TM in question and answer-key copy", () => {
+    for (const mode of ["preview", "review"] as const) {
+      expect(itemToText(CLASSIFIED, mode).split("\n")[0]).toBe(HEADER);
+      expect(itemToHtml(CLASSIFIED, mode)).toContain("C1 &middot; T9 &middot; TM3 &middot; EBSR");
+    }
+  });
+
+  it("includes the pills at the head of the copied passage text", () => {
+    expect(passagesToText([CLASSIFIED]).split("\n")[0]).toBe(HEADER);
+    expect(passagesToHtml([CLASSIFIED])).toContain("C1 &middot; T9 &middot; TM3");
+  });
+
+  it("omits a pill whose value is absent (no task-model → no TM)", () => {
+    const noTm: any = { ...EBSR, target: "c1-t4" }; // target only, no taskModel
+    expect(itemToText(noTm, "preview").split("\n")[0]).toBe(
+      "C1 · T4 · EBSR · ri-1 · ri-3 · r-dok3 · relationships-interactions",
+    );
+  });
+});
+
 describe("copy serializer — question (Questions view)", () => {
   const html = itemToHtml(EBSR, "preview");
   it("includes the lead-in, both parts and options but NOT the passage", () => {
