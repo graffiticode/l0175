@@ -192,10 +192,14 @@ model 3"), **resolve it against the row for the program's `target`** in the tabl
 T4/T11 default. Before composing, echo the resolution, e.g. `target c1-t9, TM3 → ebsr`, and author
 that item type.
 
-**Belt-and-suspenders:** you may author the resolved number directly on the outcome as
-`task-model tm3`. The compiler resolves it against the target's table and **hard-errors on a
-mismatch** with `type` (or supplies `type` when you omit it) — so `outcome … task-model tm3 type
-ebsr` on `c1-t9` is self-checking, and `task-model tm3 type short-text` is rejected.
+**Author it whenever the request specifies a task model.** When the request names a task model —
+by number ("TM3") or via an item type that implies one — author the resolved number directly on the
+outcome as `task-model tm3` (alongside `type`). The compiler resolves it against the target's table
+and **hard-errors on a mismatch** with `type` (or supplies `type` when you omit it) — so
+`outcome … task-model tm3 type ebsr` on `c1-t9` is self-checking, and `task-model tm3 type
+short-text` is rejected. It stays optional (the compiler emits a non-blocking warning when an
+outcome omits it), but specifying it makes the task model explicit and verifiable — so include it
+whenever it is known.
 
 The task-model mapping and Part-A choices below are the **Reasoning & Evidence (T4/T11)** catalog
 (EBSR → Task Model 1, Hot Text → Task Model 2, Short Text → Task Model 3; task = inference vs.

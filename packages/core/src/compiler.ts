@@ -931,6 +931,13 @@ function composeOutcome(outcome: any, ctx: any, graphWarnings: string[] = [], ou
   const dok = str(outcome.dok) || dokFor(ctx.profile, itemType);
   const seed = `${ctx.passage.id}:${str(outcome.id)}:${itemType}`;
 
+  // `task-model` is optional, but recommended: it makes the item's task model explicit
+  // (type→task-model is per-target and not reliably invertible). Warn — don't error — when
+  // it's omitted, so the authored task model can be shown and verified.
+  if (!str(outcome.taskModel)) {
+    warnings.push(`Outcome '${str(outcome.id)}' does not specify a task-model; add one (e.g. \`task-model tm3\`) so the item's task model is explicit.`);
+  }
+
   // T10 Word Meanings: `focus` names a `word`, and the options are its candidate meanings — a
   // separate compose path (no claim/evidence graph).
   if (ctx.profile.answerKind === "meaning") {
@@ -1237,6 +1244,10 @@ function baseItem(itemType: string, outcome: any, ctx: any, dim: string, dok: st
     id: `${ctx.passage.id}-${str(outcome.id) || itemType + "-" + dim}`,
     type: itemType,
     target: ctx.profile.id,
+    // The AUTHORED task model (e.g. "3" from `task-model tm3`), for the TM metadata
+    // pill. Authored only — type→task-model is per-target and not injective, so it is
+    // NOT reverse-derived; absent when the outcome omits `task-model`.
+    taskModel: str(outcome.taskModel).replace(/^tm/i, "") || undefined,
     standards,
     dok,
     dimension: dim,

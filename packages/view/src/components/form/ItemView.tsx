@@ -91,10 +91,19 @@ export function ItemView({
       <MultiSelectItem item={item} mode={mode} respond={respond} />
     ) : null;
 
+  // Claim / Target parse out of the `target` tag (e.g. "c1-t4" → C1, T4); the
+  // task-model number is supplied by core (per-target). Shown abbreviated: C, T, TM.
+  const target: string = typeof item.target === "string" ? item.target : "";
+  const claimNum = (target.match(/c(\d+)/) ?? [])[1];
+  const targetNum = (target.match(/t(\d+)/) ?? [])[1];
+
   return (
     <div className="font-sans flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-1.5">
         <Pill>{TYPE_LABEL[item.type] ?? item.type}</Pill>
+        {claimNum && <Pill>C{claimNum}</Pill>}
+        {targetNum && <Pill>T{targetNum}</Pill>}
+        {item.taskModel && <Pill>TM{item.taskModel}</Pill>}
         {(item.standards ?? []).map((s: string) => (
           <Pill key={s}>{s}</Pill>
         ))}
