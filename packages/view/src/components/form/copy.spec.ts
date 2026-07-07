@@ -2,7 +2,7 @@
 // Unit tests for the rich-text serializer behind the Copy button. Pure functions over the item
 // data model — no DOM. Run via the root `npm test` (vitest).
 import { describe, it, expect } from "vitest";
-import { itemToHtml, itemToText, itemsToHtml, passagesToHtml, passagesToText } from "./copy";
+import { itemToHtml, itemToText, itemsToHtml, itemsToText, passagesToHtml, passagesToText } from "./copy";
 
 const EBSR: any = {
   type: "ebsr",
@@ -257,7 +257,23 @@ describe("copy serializer — plain text & multi-item", () => {
     expect(html).toContain("My Assessment");
     expect(html).toContain("Each design solved a limit of the last."); // question content
     expect(html).toContain("author's purpose");
-    expect(html).not.toContain("The Story of Bridges"); // passage omitted from the Questions copy
+    expect(html).toContain("The Story of Bridges"); // passage now leads the Questions copy
+  });
+
+  it("leads the Questions and Review copy with the reading passage, then the question(s)", () => {
+    for (const mode of ["preview", "review"] as const) {
+      const text = itemsToText([EBSR], mode);
+      expect(text).toContain("The Story of Bridges"); // passage included
+      expect(text).toContain("1 Logs spanned streams."); // numbered passage lines
+      expect(text.indexOf("The Story of Bridges")).toBeLessThan(text.indexOf("Part A.")); // passage first
+      const html = itemsToHtml([EBSR], mode);
+      expect(html.indexOf("The Story of Bridges")).toBeLessThan(html.indexOf("Part A."));
+    }
+  });
+
+  it("dedupes a shared passage to a single leading block", () => {
+    const text = itemsToText([EBSR, EBSR], "preview"); // same passage twice
+    expect((text.match(/The Story of Bridges/g) ?? []).length).toBe(1);
   });
 });
 

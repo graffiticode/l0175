@@ -8,8 +8,9 @@
 //   - Review/Key mode -> the question PLUS a clean teacher answer key (correct option marked, the
 //     answer key, the short-text rubric, and the exemplar/correct inference). It deliberately
 //     omits author QA noise: per-distractor error types, plausibility, warnings.
-//   - Neither mode embeds the passage — it has its own view + "Copy passage" button
-//     (passagesToHtml/passagesToText serialize just the reading passage(s)).
+//   - Both modes LEAD with the reading passage(s) (deduped), then the question(s), so the copy is
+//     a self-contained passage+questions block. "Copy passage" (passagesToHtml/passagesToText)
+//     still serializes just the reading passage(s), with its metadata header.
 import type { Mode } from "./ModeToggle";
 
 const esc = (s: any): string =>
@@ -65,6 +66,15 @@ function passageHtml(p: any): string {
   const heading = p.heading ? P(`<strong>${esc(p.heading)}</strong>`) : "";
   const lines = (p.lines ?? []).map((l: any) => P(`${NUM(l.id)} ${esc(l.text)}`)).join("");
   return heading + lines;
+}
+
+// Plain reading passage as text (heading + numbered lines), no metadata header.
+function passageText(p: any): string {
+  if (!p) return "";
+  const lines: string[] = [];
+  if (p.heading) lines.push(p.heading);
+  for (const l of p.lines ?? []) lines.push(`${l.id} ${l.text}`);
+  return lines.join("\n");
 }
 
 // One option line: "A. text" (Part B EBSR options are quoted). Correct options are bolded with a ✓
@@ -133,7 +143,8 @@ function groupByLine(selectable: any[]): { lineId: number; units: any[] }[] {
 }
 
 // HTML for one composed item (the question, plus a clean answer key in review/Key mode). The
-// passage is never embedded here — it is copied separately from the Passage view.
+// passage is not embedded per-item; itemsToHtml/itemsToText prepend the deduped passage(s) for the
+// whole copy.
 export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
@@ -310,28 +321,30 @@ export function passagesToHtml(items: any[], title?: string): string {
 export function passagesToText(items: any[], title?: string): string {
   const body = uniquePassageEntries(items)
     .map(({ passage, item }) => {
-      const lines: string[] = [];
       const meta = metaText(item);
-      if (meta) lines.push(meta, "");
-      if (passage.heading) lines.push(passage.heading);
-      for (const l of passage.lines ?? []) lines.push(`${l.id} ${l.text}`);
-      return lines.join("\n");
+      return (meta ? `${meta}\n\n` : "") + passageText(passage);
     })
     .join("\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 
 // Joins the currently visible item(s) for copying, wrapped in a base-font container.
+// The Questions / Review copy leads with the reading passage(s) (deduped, no metadata header),
+// then the question(s) — so a teacher pastes a self-contained "passage + questions" block. The
+// per-question metadata header still rides on each item; the standalone "Copy passage" button
+// (passagesToHtml/Text) keeps its own metadata header.
 export function itemsToHtml(items: any[], mode: Mode, title?: string): string {
-  const body = (items ?? [])
-    .map((it) => `<div>${itemToHtml(it, mode)}</div>`)
-    .join('<p style="margin:14px 0"></p>');
+  const passages = uniquePassages(items).map((p) => `<div>${passageHtml(p)}</div>`);
+  const questions = (items ?? []).map((it) => `<div>${itemToHtml(it, mode)}</div>`);
+  const body = [...passages, ...questions].join('<p style="margin:14px 0"></p>');
   const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
 }
 
 export function itemsToText(items: any[], mode: Mode, title?: string): string {
-  const body = (items ?? []).map((it) => itemToText(it, mode)).join("\n\n———\n\n");
+  const passages = uniquePassages(items).map(passageText);
+  const questions = (items ?? []).map((it) => itemToText(it, mode));
+  const body = [...passages, ...questions].filter(Boolean).join("\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 
