@@ -100,10 +100,10 @@ export function ItemView({
   return (
     <div className="font-sans flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Pill>{TYPE_LABEL[item.type] ?? item.type}</Pill>
         {claimNum && <Pill>C{claimNum}</Pill>}
         {targetNum && <Pill>T{targetNum}</Pill>}
         {item.taskModel && <Pill>TM{item.taskModel}</Pill>}
+        <Pill>{TYPE_LABEL[item.type] ?? item.type}</Pill>
         {(item.standards ?? []).map((s: string) => (
           <Pill key={s}>{s}</Pill>
         ))}
