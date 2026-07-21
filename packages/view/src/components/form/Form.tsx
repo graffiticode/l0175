@@ -133,7 +133,7 @@ export const Form = ({ state }: FormProps) => {
             <Pagination count={items.length} current={current} setPage={setPage} />
           )}
           <div className="flex items-center justify-between gap-2">
-            <CopyButton items={visibleItems} mode={mode} title={data.title} />
+            <CopyButton items={visibleItems} allItems={items} mode={mode} title={data.title} />
             <ModeToggle mode={mode} setMode={setMode} />
           </div>
           {mode === "passage" ? (

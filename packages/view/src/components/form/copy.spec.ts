@@ -167,21 +167,24 @@ describe("copy serializer — answer key (review)", () => {
   });
   it("marks the correct option and emits the answer key + correct inference", () => {
     expect(html).toContain("✓");
-    expect(html).toMatch(/<strong>A\. Each design solved a limit of the last\. ✓<\/strong>/);
+    expect(html).toContain("<strong>A. Each design solved a limit of the last.</strong>");
+    expect(html).toMatch(/<strong style="color:#15803d">✓<\/strong>/); // green check, dark enough for grayscale print
     expect(html).toContain("Answer key:");
     expect(html).toContain("Part A");
     expect(html).toContain("Part B");
     expect(html).toContain("Correct inference:");
     expect(html).toContain("Each new design solved a limitation.");
   });
-  it("excludes author QA noise (error types, plausibility, warnings)", () => {
-    expect(html).not.toContain("misreads-detail");
-    expect(html).not.toContain("0.8");
-    expect(html).not.toContain("do not overlap");
+  it("interleaves the amber distractor annotation under each wrong option, as in the Review view", () => {
+    expect(html).toContain("misreads-detail"); // error type (bold)
+    expect(html).toContain("p=0.8"); // plausibility, matching the on-screen annotation
+    expect(html).toContain("reverses the order"); // the rationale
+    expect(html).toContain("#b45309"); // text-amber-700 color
+    expect(html).not.toContain("do not overlap"); // composition warnings still omitted
   });
   it("emits clean inline-styled HTML — no class names, balanced strong/p tags", () => {
     expect(html).not.toContain("class=");
-    expect((html.match(/<strong>/g) ?? []).length).toBe((html.match(/<\/strong>/g) ?? []).length);
+    expect((html.match(/<strong[ >]/g) ?? []).length).toBe((html.match(/<\/strong>/g) ?? []).length);
     expect((html.match(/<p[ >]/g) ?? []).length).toBe((html.match(/<\/p>/g) ?? []).length);
   });
 });
@@ -205,7 +208,9 @@ describe("copy serializer — hot text & short text", () => {
     expect(preview).not.toContain("[They");
 
     const review = itemToHtml(WORDSELECT, "review");
-    expect(review).toMatch(/<strong>\[<u style="text-decoration:underline[^"]*">aqueducts<\/u> ✓\]<\/strong>/);
+    expect(review).toMatch(
+      /<strong>\[<u style="text-decoration:underline[^"]*">aqueducts<\/u> <strong style="color:#15803d">✓<\/strong>\]<\/strong>/,
+    );
     expect(review).toContain("Answer &mdash; aqueducts");
 
     const text = itemToText(WORDSELECT, "review");
@@ -244,12 +249,12 @@ describe("copy serializer — multiple choice & multi-select", () => {
 });
 
 describe("copy serializer — plain text & multi-item", () => {
-  it("plain text mirrors content and omits QA noise", () => {
+  it("plain text mirrors content, interleaves the distractor annotation, omits warnings", () => {
     const text = itemToText(EBSR, "review");
     expect(text).toContain("Answer key:");
     expect(text).toContain("A. Each design solved a limit of the last. ✓");
-    expect(text).not.toContain("misreads-detail");
-    expect(text).not.toContain("do not overlap");
+    expect(text).toContain("misreads-detail · p=0.8 — reverses the order");
+    expect(text).not.toContain("do not overlap"); // composition warnings omitted
   });
   it("itemsToHtml wraps items in a base-font container and joins them", () => {
     const html = itemsToHtml([EBSR, SHORTTEXT], "preview", "My Assessment");

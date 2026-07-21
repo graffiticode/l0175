@@ -20,7 +20,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Publish**: `npm run publish` (publishes `@graffiticode/l0175` and `@graffiticode/l0175-view` with public access)
 
 ### Testing
-Vitest is installed at the root but no test runner script is wired up yet, and no `*.spec.*` files exist in the packages.
+- **Run all tests**: `npm test` (builds `core` first, then `vitest run`)
+- **Watch**: `npx vitest` from the repo root
+- **Single file**: `npx vitest run packages/core/test/compose.spec.ts`
+- **By name**: `npx vitest run -t "<test name substring>"`
+
+Specs live in `packages/core/test/` (`compose`, `task-model`, `corpus`, `embedding`, `verify-example`) and `packages/view/src/components/form/copy.spec.ts`. Because `npm test` builds `core` first, run it (not bare `vitest`) after changing core source so view/API tests see the rebuilt `dist/`.
 
 ### Deployment
 - **GCP Cloud Build**: `npm run gcp:build` (submits `cloudbuild.yaml` to the `graffiticode` project)
@@ -29,13 +34,18 @@ Vitest is installed at the root but no test runner script is wired up yet, and n
 
 ## Architecture
 
-L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 · Reasoning & Evidence). One language is **parameterized over learning targets** via a required top-level `target` selector: `c1-t4` (literary texts, RL standards) and `c1-t11` (informational texts, RI standards); each target is a profile (dimensions, standards, stem catalog) in `packages/core/src/compiler.ts` (`TARGETS`), while the composition engine is target-invariant. It's an npm-workspaces monorepo with three packages. A program declares its `target`, then authors an inline superset of tagged content (a passage, candidate inference `claim`s, evidence `source`s) plus intended `outcome`s; the compiler composes each outcome into a finished item. Source guidelines: `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf` and `E.G5.C1.T11 Reasoning & Evidence.pdf`.
+L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1). One language is **parameterized over learning targets** via a required top-level `target` selector. Five targets ship today: `c1-t4` (Reasoning & Evidence, literary/RL), `c1-t11` (Reasoning & Evidence, informational/RI), `c1-t9` (Central Ideas), `c1-t8` (Key Details), and `c1-t10` (Word Meanings). Each target is a profile (dimensions, standards, task models, stem catalog); the composition engine is target-invariant. It's an npm-workspaces monorepo with three packages. A program declares its `target`, then authors an inline superset of tagged content (a passage, candidate inference `claim`s, evidence `source`s) plus intended `outcome`s; the compiler composes each outcome into a finished item.
+
+**Targets are single-sourced in `packages/core/src/targets.ts`** (`TARGETS_DATA`) — the doc comment at its head is authoritative: everything the compiler enforces about a target lives there and only there. `compiler.ts` derives its runtime `TARGETS` profiles from that data, and `tools/build-static.js` serializes it to `dist/static/targets.json` and generates the per-target spec tables. To add or change a target fact, edit `targets.ts`; the compiler and docs follow. Source guidelines live in `packages/core/data/*.pdf`.
 
 ### Structure
 
 - **`packages/core/`** — `@graffiticode/l0175`: the language itself. Pure TypeScript.
+  - `src/targets.ts`: single source of truth for per-target structure (`TARGETS_DATA`, `STANDARD_FAMILIES`, task-model maps). Plain data, round-trips to JSON.
   - `src/lexicon.ts`: merges L0000's base lexicon with L0175's builder vocabulary (attribute functions, the `claims`/`evidence`/`outcomes` collection builders, the `claim`/`source`/`outcome` element wrappers, and the kebab-case enum values)
-  - `src/compiler.ts`: `Checker` + `Transformer` extending L0000's; the builder handlers reconstruct records and the overridden `PROG` runs the deterministic compose/selection that assembles each item
+  - `src/compiler.ts`: `Checker` + `Transformer` extending L0000's; the builder handlers reconstruct records and the overridden `PROG` runs the deterministic compose/selection that assembles each item. Builds runtime `TARGETS` profiles from `targets.ts`.
+  - `src/embedding.ts`: RAG helpers (relevance gate, item-type / tag extraction) for the console generator pipeline
+  - `src/verify-example.ts`: validates spec examples against target profiles
   - `spec/`: language documentation, examples, schema, RAG training prompts, etc.
   - `tools/build-static.js`: copies spec content into `dist/static/` for the API to serve
 
@@ -45,7 +55,7 @@ L0175 is a Graffiticode dialect (child of `@graffiticode/l0000`) for composing 5
   - Port: 50175 (dev) or `process.env.PORT`
 
 - **`packages/view/`** — `@graffiticode/l0175-view`: React view component. Vite + TypeScript + Tailwind.
-  - `src/components/form/Form.tsx`: renders composed items; `ItemView` + `EbsrItem`/`HotTextItem`/`ShortTextItem` render the three task models, with a `ModeToggle` for Student / Review
+  - `src/components/form/Form.tsx`: renders composed items; `ItemView` dispatches to a per-task-model component — `EbsrItem`, `HotTextItem`, `ShortTextItem`, `MultipleChoiceItem`, `MultiSelectItem`, `WordSelectItem` — with a `ModeToggle` for Student / Review. `copy.ts`/`CopyButton.tsx` build the copyable question + answer key.
   - `embed/`: standalone HTML entry built by `vite.embed.config.ts` for embedding in the API's static bundle
   - Built on top of `@graffiticode/l0000-view`
 

@@ -6,8 +6,9 @@
 //
 //   - Questions mode (id "preview") -> the question only.
 //   - Review/Key mode -> the question PLUS a clean teacher answer key (correct option marked, the
-//     answer key, the short-text rubric, and the exemplar/correct inference). It deliberately
-//     omits author QA noise: per-distractor error types, plausibility, warnings.
+//     answer key, the short-text rubric, and the exemplar/correct inference). Each wrong option is
+//     followed by the same amber annotation the on-screen Review view interleaves beneath it
+//     (error type · plausibility → tie — rationale). It still omits composition warnings.
 //   - Both modes LEAD with the reading passage(s) (deduped), then the question(s), so the copy is
 //     a self-contained passage+questions block. "Copy passage" (passagesToHtml/passagesToText)
 //     still serializes just the reading passage(s), with its metadata header.
@@ -22,6 +23,9 @@ const esc = (s: any): string =>
 
 const P = (html: string, style = "margin:0 0 4px"): string => `<p style="${style}">${html}</p>`;
 const NUM = (n: any): string => `<span style="color:#9ca3af">${esc(n)}</span>`;
+// The correct-answer check mark: green-700 (#15803d) — lighter than green-800 but still dark enough
+// to stay legible when the copied answer key is printed in grayscale.
+const CHECK = '<strong style="color:#15803d">✓</strong>';
 
 // Mirrors ItemView's pill row: Claim / Target / Task Model (abbreviated C · T · TM), leading, then
 // the item-type label, standards, DoK, and dimension. Copied at the head of each item AND each
@@ -77,15 +81,47 @@ function passageText(p: any): string {
   return lines.join("\n");
 }
 
+// The distractor analysis for a given part ("A"/"B"), indexed by option key — the same lookup the
+// Review renderers do (analysisIndex in itemKit), so the copy annotates the same options.
+function analysisMap(item: any, part: string): Record<string, any> {
+  const m: Record<string, any> = {};
+  for (const d of item.distractorAnalysis ?? []) if (d.part === part) m[d.key] = d;
+  return m;
+}
+
+// The amber annotation the Review view shows beneath each wrong option — bold error type (or
+// evidence status), then "· p=<plausibility>", the graph tie, and "— <rationale>" — colored to
+// match `text-amber-700` (#b45309). Empty when there is no analysis for the option.
+function annotationHtml(a: any): string {
+  if (!a) return "";
+  const plaus = typeof a.plausibility === "number" ? ` &middot; p=${esc(a.plausibility)}` : "";
+  const ties = a.tiesTo && !Array.isArray(a.tiesTo) ? ` &rarr; ${esc(a.tiesTo)}` : "";
+  const rationale = a.rationale ? ` — ${esc(a.rationale)}` : "";
+  return P(
+    `<strong>${esc(a.errorType || a.status)}</strong>${plaus}${ties}${rationale}`,
+    "margin:2px 0 8px 24px;font-size:9pt;color:#b45309",
+  );
+}
+function annotationText(a: any): string {
+  if (!a) return "";
+  const plaus = typeof a.plausibility === "number" ? ` · p=${a.plausibility}` : "";
+  const ties = a.tiesTo && !Array.isArray(a.tiesTo) ? ` → ${a.tiesTo}` : "";
+  const rationale = a.rationale ? ` — ${a.rationale}` : "";
+  return `    ${a.errorType || a.status}${plaus}${ties}${rationale}`;
+}
+
 // One option line: "A. text" (Part B EBSR options are quoted). Correct options are bolded with a ✓
-// in review mode only.
-function optionsHtml(options: any[], mode: Mode, quote: boolean): string {
+// in review mode only. In review mode each wrong option is followed by its amber annotation
+// (interleaved, as on screen) via `ann(key)`.
+function optionsHtml(options: any[], mode: Mode, quote: boolean, ann?: (key: string) => any): string {
   return (options ?? [])
     .map((o: any) => {
       const correct = mode === "review" && o.correct;
       const txt = quote ? `<em>&ldquo;${esc(o.text)}&rdquo;</em>` : esc(o.text);
-      const body = `${esc(o.key)}. ${txt}${correct ? " ✓" : ""}`;
-      return P(correct ? `<strong>${body}</strong>` : body);
+      const body = `${esc(o.key)}. ${txt}`;
+      const row = P(correct ? `<strong>${body}</strong> ${CHECK}` : body);
+      const note = mode === "review" && !o.correct && ann ? annotationHtml(ann(o.key)) : "";
+      return row + note;
     })
     .join("");
 }
@@ -101,8 +137,7 @@ function selectableHtml(selectable: any[], mode: Mode): string {
         g.units
           .map((s: any) => {
             const correct = mode === "review" && s.correct;
-            const sent = `${esc(s.text)}${correct ? " ✓" : ""}`;
-            return correct ? `<strong>${sent}</strong>` : sent;
+            return correct ? `<strong>${esc(s.text)}</strong> ${CHECK}` : esc(s.text);
           })
           .join(" "),
       ),
@@ -123,7 +158,7 @@ function wordSelectHtml(wordSelect: any, mode: Mode): string {
       let word = esc(t.text);
       if (t.selectable) {
         const u = `<u style="text-decoration:underline;text-decoration-style:dotted">${word}</u>`;
-        const bracketed = `[${correct ? `${u} ✓` : u}]`;
+        const bracketed = `[${correct ? `${u} ${CHECK}` : u}]`;
         word = correct ? `<strong>${bracketed}</strong>` : bracketed;
       }
       return `${esc(t.pre ?? "")}${word}${esc(t.post ?? "")}`;
@@ -148,15 +183,21 @@ function groupByLine(selectable: any[]): { lineId: number; units: any[] }[] {
 export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
   const review = mode === "review";
+  const aA = analysisMap(item, "A");
+  const aB = analysisMap(item, "B");
   const out: string[] = [];
   out.push(metaHtml(item));
   if (item.stem?.leadIn) out.push(P(`<em>${esc(item.stem.leadIn)}</em>`, "margin:8px 0;color:#6b7280"));
 
   if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
     out.push(P(`<strong>Part A.</strong> ${esc(item.stem?.partA)}`, "margin:8px 0 4px"));
-    out.push(optionsHtml(item.partA?.options, mode, false));
+    out.push(optionsHtml(item.partA?.options, mode, false, (k) => aA[k]));
     out.push(P(`<strong>Part B.</strong> ${esc(item.stem?.partB)}`, "margin:8px 0 4px"));
-    out.push(item.type === "ebsr" ? optionsHtml(item.partB?.options, mode, true) : selectableHtml(item.selectable, mode));
+    out.push(
+      item.type === "ebsr"
+        ? optionsHtml(item.partB?.options, mode, true, (k) => aB[k])
+        : selectableHtml(item.selectable, mode),
+    );
   } else if (item.type === "hot-text" && item.wordSelect) {
     // Word-select Hot Text (T10): the authored stem (definition) + the excerpt, marking the correct word.
     out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
@@ -167,7 +208,7 @@ export function itemToHtml(item: any, mode: Mode): string {
     out.push(selectableHtml(item.selectable, mode));
   } else if (item.type === "multiple-choice" || item.type === "multi-select") {
     out.push(P(`<strong>${esc(item.stem?.partA)}</strong>`, "margin:8px 0 4px"));
-    out.push(optionsHtml(item.choice?.options, mode, false));
+    out.push(optionsHtml(item.choice?.options, mode, false, (k) => aA[k]));
   } else if (item.type === "short-text") {
     out.push(P(`<strong>${esc(item.prompt)}</strong>`, "margin:8px 0 4px"));
     if (!review) out.push(P("Answer: ___________________________________________", "margin:8px 0;color:#9ca3af"));
@@ -218,9 +259,19 @@ export function itemToText(item: any, mode: Mode): string {
   if (meta) out.push(meta, "");
   if (item.stem?.leadIn) out.push(item.stem.leadIn, "");
 
+  const aA = analysisMap(item, "A");
+  const aB = analysisMap(item, "B");
   const opt = (o: any, quote: boolean) => {
     const mark = mode === "review" && o.correct ? " ✓" : "";
     return `${o.key}. ${quote ? `“${o.text}”` : o.text}${mark}`;
+  };
+  // Push an option line, and — in review mode — interleave its amber annotation beneath it.
+  const pushOpt = (o: any, quote: boolean, map: Record<string, any>) => {
+    out.push(opt(o, quote));
+    if (review && !o.correct) {
+      const note = annotationText(map[o.key]);
+      if (note.trim()) out.push(note);
+    }
   };
 
   const hotTextLines = () => {
@@ -231,10 +282,10 @@ export function itemToText(item: any, mode: Mode): string {
   };
   if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
     out.push(`Part A. ${item.stem?.partA ?? ""}`);
-    for (const o of item.partA?.options ?? []) out.push(opt(o, false));
+    for (const o of item.partA?.options ?? []) pushOpt(o, false, aA);
     out.push("", `Part B. ${item.stem?.partB ?? ""}`);
     if (item.type === "ebsr") {
-      for (const o of item.partB?.options ?? []) out.push(opt(o, true));
+      for (const o of item.partB?.options ?? []) pushOpt(o, true, aB);
     } else {
       hotTextLines();
     }
@@ -254,7 +305,7 @@ export function itemToText(item: any, mode: Mode): string {
     hotTextLines();
   } else if (item.type === "multiple-choice" || item.type === "multi-select") {
     out.push(item.stem?.partA ?? "");
-    for (const o of item.choice?.options ?? []) out.push(opt(o, false));
+    for (const o of item.choice?.options ?? []) pushOpt(o, false, aA);
   } else if (item.type === "short-text") {
     out.push(item.prompt ?? "");
     if (!review) out.push("", "Answer: ___________________________________________");
@@ -309,42 +360,74 @@ export function uniquePassages(items: any[]): any[] {
   return uniquePassageEntries(items).map((e) => e.passage);
 }
 
-// The Passage view's "Copy passage" button: just the reading passage(s), deduped, as rich text.
-export function passagesToHtml(items: any[], title?: string): string {
+// The Passage view's copy: just the reading passage(s), deduped, as rich text. With `sections` each
+// passage gets a "Passage" heading (used by the single "Copy" button in the Passage view).
+export function passagesToHtml(items: any[], title?: string, sections = false): string {
+  const head0 = sections ? sectionTitleHtml("Passage") : "";
   const body = uniquePassageEntries(items)
-    .map(({ passage, item }) => `<div>${metaHtml(item)}${passageHtml(passage)}</div>`)
+    .map(({ passage, item }) => `<div>${head0}${metaHtml(item)}${passageHtml(passage)}</div>`)
     .join('<p style="margin:14px 0"></p>');
   const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
 }
 
-export function passagesToText(items: any[], title?: string): string {
+export function passagesToText(items: any[], title?: string, sections = false): string {
   const body = uniquePassageEntries(items)
     .map(({ passage, item }) => {
       const meta = metaText(item);
-      return (meta ? `${meta}\n\n` : "") + passageText(passage);
+      return (sections ? "Passage\n\n" : "") + (meta ? `${meta}\n\n` : "") + passageText(passage);
     })
-    .join("\n\n———\n\n");
+    .join(sections ? "\n\n\n" : "\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
+
+// Section titles for the copy buttons: "Passage" over the reading passage, then "Question" /
+// "Answer Key" over each item ("#n"-numbered in the multi-item "Copy All" worksheet, bare for the
+// single-item "Copy"). Only emitted when `sections` is true.
+const SECTION_TITLE_STYLE = "margin:16px 0 6px;font-size:12pt;font-weight:bold;color:#111827";
+const sectionTitleHtml = (label: string): string => P(`<strong>${esc(label)}</strong>`, SECTION_TITLE_STYLE);
+const itemSectionLabel = (mode: Mode, i: number, numbered: boolean): string =>
+  `${mode === "review" ? "Answer Key" : "Question"}${numbered ? ` #${i + 1}` : ""}`;
 
 // Joins the currently visible item(s) for copying, wrapped in a base-font container.
 // The Questions / Review copy leads with the reading passage(s) (deduped, no metadata header),
 // then the question(s) — so a teacher pastes a self-contained "passage + questions" block. The
 // per-question metadata header still rides on each item; the standalone "Copy passage" button
-// (passagesToHtml/Text) keeps its own metadata header.
-export function itemsToHtml(items: any[], mode: Mode, title?: string): string {
-  const passages = uniquePassages(items).map((p) => `<div>${passageHtml(p)}</div>`);
-  const questions = (items ?? []).map((it) => `<div>${itemToHtml(it, mode)}</div>`);
+// (passagesToHtml/Text) keeps its own metadata header. With `sections`, each block gets a heading
+// ("Passage", "Question #n" / "Answer Key #n") — used by the "Copy All" worksheet.
+export function itemsToHtml(
+  items: any[],
+  mode: Mode,
+  title?: string,
+  sections = false,
+  numbered = false,
+): string {
+  const passages = uniquePassages(items).map(
+    (p) => `<div>${sections ? sectionTitleHtml("Passage") : ""}${passageHtml(p)}</div>`,
+  );
+  const questions = (items ?? []).map(
+    (it, i) =>
+      `<div>${sections ? sectionTitleHtml(itemSectionLabel(mode, i, numbered)) : ""}${itemToHtml(it, mode)}</div>`,
+  );
   const body = [...passages, ...questions].join('<p style="margin:14px 0"></p>');
   const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
 }
 
-export function itemsToText(items: any[], mode: Mode, title?: string): string {
-  const passages = uniquePassages(items).map(passageText);
-  const questions = (items ?? []).map((it) => itemToText(it, mode));
-  const body = [...passages, ...questions].filter(Boolean).join("\n\n———\n\n");
+export function itemsToText(
+  items: any[],
+  mode: Mode,
+  title?: string,
+  sections = false,
+  numbered = false,
+): string {
+  const passages = uniquePassages(items).map((p) => (sections ? "Passage\n\n" : "") + passageText(p));
+  const questions = (items ?? []).map(
+    (it, i) => (sections ? `${itemSectionLabel(mode, i, numbered)}\n\n` : "") + itemToText(it, mode),
+  );
+  // With section titles the headings delimit the blocks (two blank lines above each); without them
+  // fall back to the horizontal-rule separator.
+  const body = [...passages, ...questions].filter(Boolean).join(sections ? "\n\n\n" : "\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 
