@@ -5,7 +5,37 @@
 // "Questions" shows the items without the passage; "Answers" adds the answer key. Mirrors
 // ThemeToggle's published-component styling constraints (preflight off). (Mode ids stay
 // `preview`/`review`.)
+import { useCallback, useState } from "react";
+
 export type Mode = "preview" | "review" | "passage";
+
+const MODES: Mode[] = ["preview", "review", "passage"];
+const STORAGE_KEY = "l0175:form:mode";
+
+// The toggle is a per-reader preference, not item data, so it persists in localStorage and survives
+// a page refresh. Every access is guarded: the form is embedded in an iframe, where a third-party
+// storage policy can make even reading `window.localStorage` throw.
+function readStoredMode(fallback: Mode): Mode {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return MODES.includes(stored as Mode) ? (stored as Mode) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function usePersistedMode(fallback: Mode = "preview"): [Mode, (m: Mode) => void] {
+  const [mode, setModeState] = useState<Mode>(() => readStoredMode(fallback));
+  const setMode = useCallback((m: Mode) => {
+    setModeState(m);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, m);
+    } catch {
+      // Storage unavailable (private mode, blocked third-party cookies) — keep the in-memory mode.
+    }
+  }, []);
+  return [mode, setMode];
+}
 
 export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const opt = (m: Mode, label: string) => (

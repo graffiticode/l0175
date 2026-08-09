@@ -6,7 +6,7 @@
 import "../../index.css";
 import { useState } from "react";
 import type { FormProps, CompileError } from "@graffiticode/l0000-view";
-import { ModeToggle, type Mode } from "./ModeToggle";
+import { ModeToggle, usePersistedMode } from "./ModeToggle";
 import { ItemView, Passage } from "./ItemView";
 import { CopyButton } from "./CopyButton";
 import { uniquePassages } from "./copy";
@@ -112,7 +112,7 @@ function PassageView({ items }: { items: any[] }) {
 export const Form = ({ state }: FormProps) => {
   const errors: CompileError[] = state.errors ?? [];
   const data: any = state.data;
-  const [mode, setMode] = useState<Mode>("preview");
+  const [mode, setMode] = usePersistedMode("preview");
   const [page, setPage] = useState(0);
 
   const isItem = data && (data.kind === "item" || data.kind === "items");
