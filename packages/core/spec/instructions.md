@@ -374,6 +374,10 @@ It never generates content or stems — author them.
 
 ## Example (Target 4, literary)
 
+Balance the option lengths — a correct answer noticeably longer than the foils is findable without
+reading (the compiler warns past 1.35×). For EBSR, author at least **5** non-supporting evidence
+lines so Part B has real foils to choose from.
+
 ```
 target c1-t4
 passage "The Tide Pool"
@@ -381,37 +385,46 @@ type literary
 /* lines are PARAGRAPHS, auto-numbered 1..N; EBSR Part B sources `quote` the exact sentence */
 lines [
   "Mara crouched at the edge of the tide pool, ignoring the picnic behind her. Her brother called twice, but she did not turn around. A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
-  "She traced the cold water as if the pool were the only thing that mattered. Behind her, paper plates rustled and her mother laughed."
+  "She traced the cold water as if the pool were the only thing that mattered. Behind her, paper plates rustled and her mother laughed. Someone asked whether she wanted a sandwich, and she said nothing at all."
+  "Her brother stacked a small tower of stones near the blanket. The tide crept in and filled the pool to its rim. Only when her father folded the last chair did Mara stand up. She looked back at the water twice on the walk to the car."
 ]
 claims [
   claim id "c1" status supported dimension character subject "Mara"
-    text "Mara is more interested in the tide pool than in her family's picnic."
-    cites ["e1" "e3"] {}
+    text "Mara cares more about the tide pool than about the picnic."
+    cites ["e1" "e3" "e4"] {}
   /* at least 5 viable distractors targeting q1; the item draws 3 (one per error type) */
   claim id "c2" status distractor error-type misreads-detail plausibility 0.85 targets ["q1"]
-    text "Mara is angry at her brother."
+    text "Mara is angry at her brother for calling her twice."
     rationale "Not turning around shows absorption, not anger." cites ["e2"] {}
   claim id "c3" status distractor error-type misreads-detail plausibility 0.6 targets ["q1"]
-    text "Mara is bored and wants to leave."
+    text "Mara is bored by the pool and wants to go home."
     rationale "Her stillness is focus, not boredom (the crab makes her smile)." cites ["e2"] {}
   claim id "c4" status distractor error-type erroneous-inference plausibility 0.55 targets ["q1"]
-    text "Mara dislikes being outdoors."
+    text "Mara would rather be indoors than out at the beach."
     rationale "Over-generalizes from her quiet to a dislike the text contradicts." cites ["e3"] {}
   claim id "c5" status distractor error-type erroneous-inference plausibility 0.5 targets ["q1"]
-    text "Mara is waiting for her brother to join her."
+    text "Mara is waiting for her brother to come look with her."
     rationale "Invents a goal the passage never states." cites ["e2"] {}
   claim id "c6" status distractor error-type faulty-reasoning plausibility 0.45 targets ["q1"]
-    text "Because Mara is quiet, she must be upset."
+    text "Mara is quiet, so something must have upset her."
     rationale "Treats quiet as upset without textual support." cites ["e2"] {}
 ]
 evidence [
   /* `line` = the paragraph; `quote` = the exact supporting sentence shown as the Part B option */
   source id "e1" line 1 quote "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." status directly-supports supports ["c1"] {}
-  source id "e2" line 1 quote "Her brother called twice, but she did not turn around." status supports-wrong-claim supports ["c1" "c2"] {}
   source id "e3" line 1 quote "A tiny crab scuttled under a rock, and Mara smiled for the first time all day." status directly-supports supports ["c1"] {}
+  source id "e4" line 2 quote "She traced the cold water as if the pool were the only thing that mattered." status directly-supports supports ["c1"] {}
+  source id "e8" line 3 quote "She looked back at the water twice on the walk to the car." status directly-supports supports ["c1"] {}
+  /* NO-GIVEAWAY: at least one supports-wrong-claim line lists BOTH the correct claim and a
+     distractor, so Part B does not telegraph Part A */
+  source id "e2" line 1 quote "Her brother called twice, but she did not turn around." status supports-wrong-claim supports ["c1" "c2"] {}
+  source id "e5" line 2 quote "Someone asked whether she wanted a sandwich, and she said nothing at all." status supports-wrong-claim supports ["c1" "c6"] {}
+  source id "e6" line 2 quote "Behind her, paper plates rustled and her mother laughed." status irrelevant supports [] {}
+  source id "e7" line 3 quote "Her brother stacked a small tower of stones near the blanket." status irrelevant supports [] {}
+  source id "e9" line 3 quote "The tide crept in and filled the pool to its rim." status irrelevant supports [] {}
 ]
 outcomes [
-  outcome id "q1" type ebsr dimension character subject "Mara" standard rl-1 focus "c1"
+  outcome id "q1" type ebsr task-model tm1 dimension character subject "Mara" standard rl-1 focus "c1"
     stem "Which of these inferences about Mara is supported by the passage?"
     stem-b "Which sentence(s) from the passage best support your answer in Part A?" {}
 ]
@@ -428,6 +441,7 @@ The OPTIONS are still `claim`s, but the skill is the **main idea** (not infer-an
 distractors are the **significance** taxonomy — usually true statements that just aren't central.
 DOK is `r-dok2`; the standards are `ri-1` + `ri-2`. (No EBSR Part B here; on T9 EBSR/Hot-Text the
 correct claim's `directly-supports` sources are the supporting selection.)
+Keep the four options about the same length — a longer correct answer is a giveaway.
 
 ```
 target c1-t9
@@ -438,14 +452,14 @@ lines [
 ]
 claims [
   claim id "c1" status supported dimension central-idea subject "the colony" standard ri-2
-    text "Honeybees survive by living and working together, each bee with its own job."
+    text "Honeybees survive because each bee does a job for the colony."
     cites ["e1"] {}
   /* T9 distractors are usually TRUE statements that simply aren't the central idea */
   claim id "d1" status distractor error-type too-narrow targets ["q1"]
-    text "The queen bee lays all the eggs."
+    text "The queen bee lays all of the eggs for the colony."
     rationale "A true supporting detail, not the central idea." cites ["e1"] {}
   claim id "d2" status distractor error-type too-broad targets ["q1"]
-    text "Insects are the most important animals on Earth."
+    text "Insects are the most important animals on the planet."
     rationale "An overgeneralization beyond the passage." cites ["e1"] {}
   claim id "d3" status distractor error-type misreads-detail targets ["q1"]
     text "Each bee in the colony does every job by itself."
@@ -453,7 +467,7 @@ claims [
 ]
 evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
 outcomes [
-  outcome id "q1" type multiple-choice dimension central-idea subject "the colony" standard ri-2 focus "c1"
+  outcome id "q1" type multiple-choice task-model tm1 dimension central-idea subject "the colony" standard ri-2 focus "c1"
     stem "Which sentence best shows the main idea of the passage?" {}
 ]
 {}..
@@ -497,30 +511,38 @@ outcomes [
 The inference is **GIVEN in the stem**; the OPTIONS are passage `source`s, not claims. Author ONE
 supported `claim` (the given inference, named by `focus`), state it in the `stem`, and author the
 `source`s as the choices: `directly-supports` = correct evidence (give each a `quote`),
-`irrelevant`/`supports-wrong-claim` = foils. **No distractor claims.** Standards `ri-1` + `ri-7`,
-DOK `r-dok2`.
+`irrelevant`/`supports-wrong-claim` = foils (give each a `rationale`). **No distractor claims.**
+Standards `ri-1` + `ri-7`, DOK `r-dok2`.
+
+**Keep the conclusion a real inference, not a paraphrase of one sentence.** The stem states the
+conclusion and the key is the evidence for it, so if the conclusion just restates the correct
+source, the option that echoes the stem gives itself away (the compiler warns). Pitch the claim one
+step above the text — here, *careful planning*, which no single sentence says outright — and author
+at least **5** non-supporting sources so the best foils can be chosen.
 
 ```
 target c1-t8
 passage "Aqueducts"
 type informational
 lines [
-  "Roman aqueducts carried water across long distances. They used gentle slopes so water flowed by gravity. Arches held the channels high above valleys. Cities far from rivers could finally get fresh water."
+  "Rome needed more fresh water than its wells could give. Workers built long channels called aqueducts to carry water to the city. They tilted each channel down just a little, so the water moved on its own. Where the land dropped away, they raised the channel on tall stone arches. Some aqueducts started at springs sixty miles from the city. Crews walked the channels often and cleaned out leaves and mud. People in Rome filled their jugs at open fountains."
 ]
 claims [
   claim id "c1" status supported dimension supporting-evidence subject "the aqueducts"
-    text "Roman aqueducts let cities far from rivers get fresh water." cites ["e1" "e2"] {}
+    text "Roman engineers planned the aqueducts carefully." cites ["e1" "e2"] {}
 ]
 evidence [
-  source id "e1" line 1 quote "Cities far from rivers could finally get fresh water." status directly-supports supports ["c1"] {}
-  source id "e2" line 1 quote "Roman aqueducts carried water across long distances." status directly-supports supports ["c1"] {}
-  source id "e3" line 1 quote "They used gentle slopes so water flowed by gravity." status irrelevant supports [] {}
-  source id "e4" line 1 quote "Arches held the channels high above valleys." status irrelevant supports [] {}
-  source id "e5" line 1 quote "Roman builders also paved long, straight roads." status irrelevant supports [] {}
+  source id "e1" line 1 quote "They tilted each channel down just a little, so the water moved on its own." status directly-supports supports ["c1"] {}
+  source id "e2" line 1 quote "Where the land dropped away, they raised the channel on tall stone arches." status directly-supports supports ["c1"] {}
+  source id "e3" line 1 quote "Rome needed more fresh water than its wells could give." status irrelevant supports [] rationale "Gives the reason for building, not evidence that the building was planned with care." {}
+  source id "e4" line 1 quote "Workers built long channels called aqueducts to carry water to the city." status irrelevant supports [] rationale "Says what was built; a student may read any construction detail as proof of planning." {}
+  source id "e5" line 1 quote "Some aqueducts started at springs sixty miles from the city." status irrelevant supports [] rationale "A fact about scale — impressive, but it shows distance rather than design choices." {}
+  source id "e6" line 1 quote "Crews walked the channels often and cleaned out leaves and mud." status irrelevant supports [] rationale "Describes upkeep after the aqueducts were finished, not the planning behind them." {}
+  source id "e7" line 1 quote "People in Rome filled their jugs at open fountains." status irrelevant supports [] rationale "Describes how people used the water; unrelated to how the system was designed." {}
 ]
 outcomes [
-  outcome id "q1" type multiple-choice dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1"
-    stem "Roman aqueducts let far-off cities get fresh water. Which detail from the passage best supports this conclusion?" {}
+  outcome id "q1" type multiple-choice task-model tm1 dimension supporting-evidence subject "the aqueducts" standard ri-7 focus "c1"
+    stem "The reader can conclude that Roman engineers planned the aqueducts carefully. Which detail from the passage best supports this conclusion?" {}
 ]
 {}..
 ```
@@ -542,17 +564,17 @@ lines [
 words [
   word id "w1" text "aqueduct" line 1 quote "The aqueduct carried water across long distances."
     meanings [
-      meaning id "m1" status correct text "a channel built to carry water" {}
+      meaning id "m1" status correct text "a channel that carries water" {}
       meaning id "m2" status distractor error-type other-meaning text "a boat that carries cargo"
         rationale "Another meaning that ignores the context." {}
-      meaning id "m3" status distractor error-type misinterprets text "a tall stone tower"
+      meaning id "m3" status distractor error-type misinterprets text "a tall tower made of stone"
         rationale "Misreads the sentence." {}
-      meaning id "m4" status distractor error-type wrong-context text "a kind of road"
+      meaning id "m4" status distractor error-type wrong-context text "a road that crosses a valley"
         rationale "Uses the wrong context." {}
     ] {}
 ]
 outcomes [
-  outcome id "q1" type multiple-choice dimension word-meaning subject "aqueduct" standard l-4a focus "w1"
+  outcome id "q1" type multiple-choice task-model tm1 dimension word-meaning subject "aqueduct" standard l-4a focus "w1"
     stem "Read the sentence: \"The aqueduct carried water across long distances.\" What does the word aqueduct most likely mean?" {}
 ]
 {}..
