@@ -29,6 +29,17 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   the author wrote it* (cued by "author's purpose") → `ri-8`; `point-of-view` = *the author's stance*
   (cued by "author's point of view") → `ri-6`. Tag by the cue and prefer to **omit** `standard` so
   the dimension infers the right companion.
+- **`c1-t2`** — Target 2: **Central Ideas** over **literary** texts (RL standards). The **literary
+  twin of `c1-t9`** and, with it, the only target offering **all five** item types
+  (`multiple-choice`, `multi-select`, `ebsr`, `hot-text` single-part, `short-text`). Dimensions:
+  `theme`, `central-idea`, `key-detail`, `summary` — all four answer to `rl-2`, so `standards`
+  composes to `["rl-1", "rl-2"]`. **DOK 2** (3 for the written response). Same **significance**
+  distractor taxonomy as T9 (`too-narrow`, `too-broad`, `misreads-detail`, `insignificant`).
+  **Two T2-only rules:** (1) **theme leads** — for a story or poem prefer `theme` and phrase the
+  correct answer as a *lesson or message*, not a plot summary (`central-idea` is for a "main idea"
+  prompt); (2) **summary is scoped** — the guideline forbids asking students to summarize the
+  *entire* text, so every `summary` stem must point at a section or key event ("Summarize what
+  happens after…"). `key-detail` covers the guideline's "key events".
 - **`c1-t9`** — Target 9: **Central Ideas** over **informational** texts (RI standards). A
   DIFFERENT skill from Reasoning & Evidence — synthesize and condense: the main/central idea, the
   key details that build it, and summary (NOT inference + justification). Dimensions: `central-idea`,
@@ -74,7 +85,7 @@ first, then the text type:
 | Skill — how to recognize it | **Literary** (story / poem / narrative) | **Informational** (article / report) |
 |---|---|---|
 | **Reasoning & Evidence** — infer/conclude AND justify ("infer/conclude/why") | `c1-t4` | `c1-t11` |
-| **Central Ideas** — main idea, the key details that build it, or a summary ("main idea/summarize/mostly about") | — | `c1-t9` |
+| **Central Ideas** — theme, main idea, the key details that build it, or a summary ("theme/message/main idea/summarize") | `c1-t2` | `c1-t9` |
 | **Key Details** — the request **states an inference and asks which detail/sentence supports it** (the answer is evidence) | `c1-t1` | `c1-t8` |
 | **Word Meanings** — "what does [word] mean [in context]" | — | `c1-t10` |
 
@@ -83,7 +94,7 @@ literary target. When the **text type** is genuinely ambiguous, prefer the liter
 **skill** is ambiguous, match the verbs in the request. Write the choice as the first top-level
 form: `target c1-t11`. Use the dimensions, standards, and stem catalog (in `stems.md`) for that
 target; mixing targets' vocabularies is a compile error, and the passage `type` must match the
-target (literary for T4/T1; informational for T11/T9/T8/T10). If `target` is omitted entirely
+target (literary for T4/T2/T1; informational for T11/T9/T8/T10). If `target` is omitted entirely
 the compiler defaults to `c1-t4` and warns — so always emit one explicitly rather than relying on
 the default.
 
@@ -109,7 +120,7 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 ## Forms and attributes
 
-- **target** `c1-t4` | `c1-t11` | `c1-t9` | `c1-t1` | `c1-t8` | `c1-t10` — top level; selects the learning-target profile (dimensions,
+- **target** `c1-t4` | `c1-t11` | `c1-t2` | `c1-t9` | `c1-t1` | `c1-t8` | `c1-t10` — top level; selects the learning-target profile (dimensions,
   standards, stem catalog). Always author one; if omitted, the compiler defaults to `c1-t4`.
 - **grade** `<n>` — optional, top level (e.g. `grade 5`). The reading-level target the compiler
   checks the passage against. Defaults to the guideline/target's grade (5 for `c1-t4`/`c1-t11`);
@@ -179,13 +190,13 @@ each item, pick the one template that matches the item type and the task, and fi
 ⚠ **Task-model numbers are PER-TARGET and COLLIDE across targets.** The same number maps to a
 different item type depending on the `target`. Look at `tm3` alone:
 
-| Number | `c1-t4` / `c1-t11` | `c1-t9` | `c1-t8` / `c1-t10` |
-|--------|--------------------|---------|--------------------|
+| Number | `c1-t4` / `c1-t11` | `c1-t2` / `c1-t9` | `c1-t1` / `c1-t8` / `c1-t10` |
+|--------|--------------------|-------------------|------------------------------|
 | **tm3** | short-text | **ebsr (two-part)** | hot-text |
 
 So "task model 3" cannot be resolved without first knowing the target. **Do not assume the
-Reasoning & Evidence (T4/T11) numbering applies elsewhere** — under `c1-t9`, Task Model 3 is EBSR,
-Task Model 4 is Hot Text, Task Model 5 is Short Text.
+Reasoning & Evidence (T4/T11) numbering applies elsewhere** — under the Central Ideas targets
+(`c1-t2`, `c1-t9`), Task Model 3 is EBSR, Task Model 4 is Hot Text, Task Model 5 is Short Text.
 
 The full per-target task-model → item-type mapping (the compiler enforces exactly this):
 
@@ -194,7 +205,9 @@ The full per-target task-model → item-type mapping (the compiler enforces exac
 |--------|-----|-----|-----|-----|-----|
 | `c1-t4` — Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence) | ebsr | hot-text | short-text | — | — |
 | `c1-t11` — Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence) | ebsr | hot-text | short-text | — | — |
+| `c1-t2` — Grade 5 · Claim 1 · Target 2 (Central Ideas) | multiple-choice | multi-select | ebsr | hot-text | short-text |
 | `c1-t9` — Grade 5 · Claim 1 · Target 9 (Central Ideas) | multiple-choice | multi-select | ebsr | hot-text | short-text |
+| `c1-t1` — Grade 5 · Claim 1 · Target 1 (Key Details) | multiple-choice | multi-select | hot-text | — | — |
 | `c1-t8` — Grade 5 · Claim 1 · Target 8 (Key Details) | multiple-choice | multi-select | hot-text | — | — |
 | `c1-t10` — Grade 5 · Claim 1 · Target 10 (Word Meanings) | multiple-choice | multi-select | hot-text | — | — |
 <!-- GENERATED:task-models END -->
@@ -351,17 +364,17 @@ targets.
 
 ## Built-in enumerations
 
-- `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t1`, `c1-t8`, `c1-t10` (top level; always author one — defaults to `c1-t4` if omitted)
+- `target`: `c1-t4`, `c1-t11`, `c1-t2`, `c1-t9`, `c1-t1`, `c1-t8`, `c1-t10` (top level; always author one — defaults to `c1-t4` if omitted)
 - `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
-  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T1/T8/T10: multiple-choice/multi-select/hot-text)
+  (allowed per target — T4/T11: ebsr/hot-text/short-text · T2/T9: all five · T1/T8/T10: multiple-choice/multi-select/hot-text)
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
-- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t1 / c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`
+- `dimension` (**c1-t2**): `theme`, `central-idea`, `key-detail`, `summary` · (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t1 / c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant` · meaning `status` (c1-t10): `correct`, `distractor`
-- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t1 / c1-t8**): none — wrong answers are non-supporting `source`s · (**c1-t10**): `other-meaning`, `misinterprets`, `wrong-context`
-- `standard` — primary companions (normally inferred from the dimension; author one only to override): (**c1-t4**) `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` · (**c1-t11**) `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (**c1-t9**) `ri-1` + `ri-2` · (**c1-t1**) `rl-1` **alone** (no companion) · (**c1-t8**) `ri-1` + `ri-7` · (**c1-t10**) `ri-4` + `l-4` / `l-4a` / `l-4b` / `l-4c` / `l-5c`. The **full CCSS Grade-5 strand for the target's text type is accepted**: any `rl-1`–`rl-7` / `rl-9` on a literary target (c1-t4/c1-t1), any `ri-1`–`ri-9` on an informational target (c1-t11/t9/t8/t10), plus the `l-4` / `l-5` families on c1-t10. (`rl-2` is the theme standard — valid; there is no `rl-8`.)
-- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`; T1, T8 & T10 are `r-dok2`)
+- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t2 / c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t1 / c1-t8**): none — wrong answers are non-supporting `source`s · (**c1-t10**): `other-meaning`, `misinterprets`, `wrong-context`
+- `standard` — primary companions (normally inferred from the dimension; author one only to override): (**c1-t4**) `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` · (**c1-t11**) `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (**c1-t2**) `rl-1` + `rl-2` (every dimension) · (**c1-t9**) `ri-1` + `ri-2` · (**c1-t1**) `rl-1` **alone** (no companion) · (**c1-t8**) `ri-1` + `ri-7` · (**c1-t10**) `ri-4` + `l-4` / `l-4a` / `l-4b` / `l-4c` / `l-5c`. The **full CCSS Grade-5 strand for the target's text type is accepted**: any `rl-1`–`rl-7` / `rl-9` on a literary target (c1-t4/c1-t2/c1-t1), any `ri-1`–`ri-9` on an informational target (c1-t11/t9/t8/t10), plus the `l-4` / `l-5` families on c1-t10. (`rl-2` is the theme standard — valid; there is no `rl-8`.)
+- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T2/T9 selected-response is `r-dok2`, the written response `r-dok3`; T1, T8 & T10 are `r-dok2`)
 
 ## What composition does
 
@@ -434,6 +447,60 @@ outcomes [
 (For **Target 11**, the same R&E shape over an *informational* passage: `target c1-t11`,
 `type informational`, an RI dimension like `relationships-interactions`, `standard ri-1` + `ri-3`,
 and the T11 stems from `stems.md`.)
+
+## Example (Target 2 — Central Ideas, **literary**, theme)
+
+Same shape as Target 9 over a story. The T2 differences: **`theme`** is the dimension of choice and
+the correct answer reads as a *lesson*, not a plot event; every dimension answers to `rl-2`, so
+`standards` composes to `["rl-1", "rl-2"]`. A `summary` item on T2 must be scoped to a section or
+key event — never the whole text. Keep the four options about the same length.
+
+```
+target c1-t2
+passage "The Blue Ribbon"
+type literary
+lines [
+  "Every spring, Tessa entered her drawing in the county fair."
+  "This year she almost did not enter at all."
+  "Tessa drew the same barn eleven times before she kept one."
+  "At the fair, the blue ribbon went to somebody else."
+  "Then a teacher asked to hang Tessa's drawing in the hall."
+]
+claims [
+  claim id "c1" status supported dimension theme subject "Tessa"
+    text "Keeping at something can matter more than winning."
+    cites ["e3" "e5"] {}
+  /* T2 distractors are the SIGNIFICANCE taxonomy — usually true, just not the theme.
+     Keep `insignificant` foils plausible: too trivial and no student would pick them. */
+  claim id "d1" status distractor error-type too-narrow targets ["q1"]
+    text "Tessa entered the county fair every single spring."
+    rationale "A true detail from the opening, not the story's theme." cites ["e1"] {}
+  claim id "d2" status distractor error-type too-broad targets ["q1"]
+    text "Hard work always makes a person famous someday."
+    rationale "Overgeneralizes far past what the story shows." cites ["e5"] {}
+  claim id "d3" status distractor error-type misreads-detail targets ["q1"]
+    text "Tessa gave up drawing after she lost again."
+    rationale "Misreads the ending; she keeps drawing and is lifted by it." cites ["e2"] {}
+  claim id "d4" status distractor error-type insignificant targets ["q1"]
+    text "Tessa's grandmother owned more than one pencil."
+    rationale "True but far too minor to be the theme." cites ["e1"] {}
+  claim id "d5" status distractor error-type too-narrow targets ["q1"]
+    text "Tessa drew a barn instead of drawing a house."
+    rationale "A single detail of the drawing, not what the story means." cites ["e3"] {}
+]
+evidence [
+  source id "e3" line 3 status directly-supports supports ["c1"] quote "Tessa drew the same barn eleven times before she kept one." {}
+  source id "e5" line 5 status directly-supports supports ["c1"] quote "Then a teacher asked to hang Tessa's drawing in the hall." {}
+  source id "e1" line 1 status supports-wrong-claim supports ["c1" "d1"] quote "Every spring, Tessa entered her drawing in the county fair." {}
+  source id "e2" line 2 status supports-wrong-claim supports ["c1" "d3"] quote "This year she almost did not enter at all." {}
+  source id "e4" line 4 status irrelevant supports [] quote "At the fair, the blue ribbon went to somebody else." {}
+]
+outcomes [
+  outcome id "q1" type multiple-choice task-model tm1 dimension theme subject "Tessa" focus "c1"
+    stem "Which sentence best tells the theme of the passage?" {}
+]
+{}..
+```
 
 ## Example (Target 9 — Central Ideas, multiple-choice)
 

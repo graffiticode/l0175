@@ -607,6 +607,91 @@ describe("compose — Target 8 (Key Details): evidence selection", () => {
   });
 });
 
+describe("compose — Target 2 (Central Ideas, literary): theme + scoped summary", () => {
+  const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
+  // T2 is the literary twin of T9 and the only other target offering all five item types. Its own
+  // facts: THEME is a first-class dimension (RL-2), every dimension answers to rl-2 so standards
+  // compose to exactly ["rl-1", "rl-2"], and summary is scoped to a key event, never the whole text.
+  const T2 = (outcome: string, claims = CLAIMS) => `target c1-t2 passage "The Blue Ribbon" type literary lines [
+      "Every spring, Tessa entered her drawing in the county fair."
+      "This year she almost did not enter at all."
+      "Tessa drew the same barn eleven times before she kept one."
+      "At the fair, the blue ribbon went to somebody else."
+      "Then a teacher asked to hang Tessa's drawing in the hall."
+    ]
+    ${claims}
+    evidence [
+      source id "e3" line 3 status directly-supports supports ["c1"] quote "Tessa drew the same barn eleven times before she kept one." {},
+      source id "e5" line 5 status directly-supports supports ["c1"] quote "Then a teacher asked to hang Tessa's drawing in the hall." {},
+      source id "e1" line 1 status supports-wrong-claim supports ["c1" "d1"] quote "Every spring, Tessa entered her drawing in the county fair." {},
+      source id "e2" line 2 status supports-wrong-claim supports ["c1" "d3"] quote "This year she almost did not enter at all." {},
+      source id "e4" line 4 status irrelevant supports [] quote "At the fair, the blue ribbon went to somebody else." {}
+    ]
+    outcomes [ ${outcome} ] {}..`;
+  const CLAIMS = `claims [
+      claim id "c1" status supported dimension theme subject "Tessa" text "Keeping at something can matter more than winning." cites ["e3" "e5"] {},
+      claim id "d1" status distractor error-type too-narrow targets ["q1"] text "Tessa entered the county fair every single spring." rationale "A true detail, not the theme." cites ["e1"] {},
+      claim id "d2" status distractor error-type too-broad targets ["q1"] text "Hard work always makes a person famous someday." rationale "Overgeneralizes past the story." cites ["e5"] {},
+      claim id "d3" status distractor error-type misreads-detail targets ["q1"] text "Tessa gave up drawing after she lost again." rationale "Misreads the ending." cites ["e2"] {},
+      claim id "d4" status distractor error-type insignificant targets ["q1"] text "Tessa's grandmother owned more than one pencil." rationale "Too trivial to carry a theme." cites ["e1"] {}
+    ]`;
+  const THEME = (t: string, tm: string, extra = "") =>
+    `outcome id "q1" type ${t} task-model ${tm} dimension theme subject "Tessa" focus "c1" stem "Which sentence best tells the theme of the passage?" ${extra} {}`;
+
+  it("standards compose to exactly rl-1 + rl-2 — every dimension answers to the theme standard", async () => {
+    const { errors, data } = await compile(T2(THEME("multiple-choice", "tm1")));
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t2");
+    expect(it0.standards).toEqual(["rl-1", "rl-2"]);
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(1);
+  });
+
+  it("offers all five item types — tm3 is EBSR here, not hot-text as in T1/T8/T10", async () => {
+    const { errors, data } = await compile(
+      T2(THEME("ebsr", "tm3", `stem-b "Which sentence from the passage best supports your answer in Part A?"`)),
+    );
+    expect(errors).toHaveLength(0);
+    expect(item0(data).partA).toBeDefined(); // two-part, unlike the single-part hot-text targets
+    // the same number means hot-text on the Key Details / Word Meanings targets
+    const mismatch = await compile(T2(THEME("hot-text", "tm3")));
+    expect(mismatch.errors.map((e: any) => e.message).join("\n")).toMatch(/task model 'tm3' is ebsr for target c1-t2, but type is 'hot-text'/);
+  });
+
+  it("short-text bumps DOK to r-dok3; selected-response stays r-dok2", async () => {
+    const st = `outcome id "q1" type short-text task-model tm5 dimension summary subject "the fair" focus "c1" stem "Summarize what happens after the blue ribbon goes to somebody else. Use key details from the passage in your summary." {}`;
+    const claims = `claims [ claim id "c1" status supported dimension summary subject "the fair" text "A teacher asked to hang Tessa's drawing in the hall." cites ["e3" "e5"] {} ]`;
+    const { errors, data } = await compile(T2(st, claims));
+    expect(errors).toHaveLength(0);
+    expect(item0(data).dok).toBe("r-dok3");
+  });
+
+  it("hot-text is single-part (click the sentences that show the theme)", async () => {
+    const ht = `outcome id "q1" type hot-text task-model tm4 dimension theme subject "Tessa" focus "c1" stem "Click on the two sentences that best show the theme of the story." {}`;
+    const claims = `claims [ claim id "c1" status supported dimension theme subject "Tessa" text "Keeping at something can matter more than winning." cites ["e3" "e5"] {} ]`;
+    const it0 = item0((await compile(T2(ht, claims))).data);
+    expect(it0.partA).toBeUndefined();
+    expect(it0.selectable.filter((s: any) => s.correct)).toHaveLength(2);
+  });
+
+  it("takes the significance taxonomy, and rejects an R&E error type", async () => {
+    const bad = CLAIMS.replace("error-type too-narrow", "error-type faulty-reasoning");
+    const { errors } = await compile(T2(THEME("multiple-choice", "tm1"), bad));
+    expect(errors.map((e: any) => e.message).join("\n")).toMatch(
+      /distractor needs a valid error-type for target c1-t2 \(too-narrow, too-broad, misreads-detail, insignificant\)/,
+    );
+  });
+
+  it("rejects a T9 dimension: `theme` is T2's, and T2 has no informational vocabulary", async () => {
+    const bad = CLAIMS.replace(/dimension theme/g, "dimension relationships-interactions");
+    const { errors } = await compile(
+      T2(THEME("multiple-choice", "tm1").replace("dimension theme", "dimension relationships-interactions"), bad),
+    );
+    expect(errors.map((e: any) => e.message).join("\n")).toMatch(/relationships-interactions/);
+  });
+});
+
 describe("compose — Target 1 (Key Details, literary): evidence selection", () => {
   const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
   // T1 is the LITERARY mirror of T8: the inference is GIVEN in the stem and the options are passage

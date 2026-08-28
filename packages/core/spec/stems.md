@@ -12,6 +12,7 @@ dual-text-stimuli stems are out of scope).
 **First match your program's `target`, then use that target's catalog below:**
 - **`c1-t4`** (Reasoning & Evidence, literary) → `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf`
 - **`c1-t11`** (Reasoning & Evidence, informational) → `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
+- **`c1-t2`** (Central Ideas, **literary**) → `packages/core/data/E.G5.C1.T2 Central Ideas.pdf`
 - **`c1-t9`** (Central Ideas, informational) → `packages/core/data/E.G5.C1.T9 Central Ideas.pdf`
 - **`c1-t1`** (Key Details, **literary**) → `packages/core/data/E.G5.C1.T1 Key Details.pdf`
 - **`c1-t8`** (Key Details, informational) → `packages/core/data/E.G5.C1.T8 Key Details.pdf`
@@ -22,7 +23,7 @@ dual-text-stimuli stems are out of scope).
 1. Use the section for your `target`.
 2. Pick the stem that matches your **item `type`** and the task. Task-model numbering is
    per-target and differs between targets — match by item type, not by number. (R&E targets:
-   EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T9 Central Ideas: Multiple-Choice=TM1,
+   EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T2 and T9 Central Ideas: Multiple-Choice=TM1,
    Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5. T1 and T8 Key Details:
    Multiple-Choice=TM1, Multi-Select=TM2, Hot-Text=TM3. T10 Word Meanings: Multiple-Choice=TM1,
    Multi-Select=TM2, Hot-Text=TM3.)
@@ -37,7 +38,9 @@ meaningless without its target):
 |--------|-----|-----|-----|-----|-----|
 | `c1-t4` — Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence) | ebsr | hot-text | short-text | — | — |
 | `c1-t11` — Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence) | ebsr | hot-text | short-text | — | — |
+| `c1-t2` — Grade 5 · Claim 1 · Target 2 (Central Ideas) | multiple-choice | multi-select | ebsr | hot-text | short-text |
 | `c1-t9` — Grade 5 · Claim 1 · Target 9 (Central Ideas) | multiple-choice | multi-select | ebsr | hot-text | short-text |
+| `c1-t1` — Grade 5 · Claim 1 · Target 1 (Key Details) | multiple-choice | multi-select | hot-text | — | — |
 | `c1-t8` — Grade 5 · Claim 1 · Target 8 (Key Details) | multiple-choice | multi-select | hot-text | — | — |
 | `c1-t10` — Grade 5 · Claim 1 · Target 10 (Word Meanings) | multiple-choice | multi-select | hot-text | — | — |
 <!-- GENERATED:task-models END -->
@@ -215,6 +218,90 @@ Author as `stem`; every Short Text stem ends with the explain clause ("key **evi
   `stem "Which of these conclusions about the author's point of view is supported by the passage?"`
 - authors-opinion / Short Text →
   `stem "What conclusion can be drawn about the author's opinion about renewable energy? Explain using key evidence from the passage to support your answer."`
+
+---
+
+# Target 2 (`c1-t2`) — Central Ideas (**literary**)
+
+The **literary twin of Target 9**, and the only other target that offers **all five item types**.
+DOK **2** (**3** for the written response). Standards **RL-1 + RL-2**. Dimensions: `theme`,
+`central-idea`, `key-detail`, `summary` — every one answers to `rl-2`, so a composed item's
+`standards` is `["rl-1", "rl-2"]`. Distractors use the same **significance** taxonomy as T9
+(`too-narrow`, `too-broad`, `misreads-detail`, `insignificant`) — usually *true* statements that
+simply aren't central.
+
+**Three things T2 does that T9 does not:**
+
+1. **Theme leads.** RL-2 is "determine a theme of a story, drama, or poem from details in the
+   text." Prefer the `theme` dimension for a story or poem and phrase the correct answer as a
+   *lesson or message* ("Keeping at something can matter more than winning"), not a plot summary.
+   Use `central-idea` when the prompt says "main idea" rather than "theme" or "message".
+2. **Summary is SCOPED.** The guideline is explicit: *items will not ask students to summarize the
+   entire text; students will summarize a key event(s) or idea(s).* Point every `summary` stem at a
+   section or a key event ("Summarize what happens after…", "…the first paragraph"). A
+   "summarize the passage" stem is out of scope on T2 — that phrasing belongs to T9.
+3. **`key-detail` covers key EVENTS.** In a story the details that build a theme are usually
+   events, so tag them `key-detail`.
+
+**A caution from the guideline, for `insignificant`:** distractors "will not contain details of such
+insignificance that the options are implausible." A foil so trivial that no student would pick it
+is a wasted option — keep it true, relevant, and merely *not central*. Likewise, TM1 warns that
+distractors must not turn on sequencing or other DOK-1 errors.
+
+## Task Model 1 — Multiple Choice (`type multiple-choice`, single-answer, DOK 2)
+
+- Which sentence best [shows/tells/describes] the [theme/main idea] of the passage?
+- Which sentence best [shows/tells/describes] the [theme/main idea] of the [story/poem] told by the [narrator/speaker]?
+- Which sentence best [shows/tells/describes] [the author's/character's] message about [provide theme/main idea]?
+- Which [sentences/lines/paragraph(s)] from the passage best [shows/tells/describes] the [theme/main idea]?
+- Which sentence best summarizes the [first paragraph/introductory paragraph]?
+- Which sentence best summarizes what happens after [provide plot]?
+- Read this summary. [summary of a section; one key detail/event is missing] Which [key detail/event] is missing from the summary? *(the correct answer must be a pivotal key event or idea)*
+
+## Task Model 2 — Multi-Select (`type multi-select`, choose two, DOK 2)
+
+`focus` is a **list** of the two correct claims.
+- Choose two sentences that best [show/tell/describe] the [theme(s)/main idea(s)] presented in the passage.
+- Choose two sentences that should be included in a summary of [the text/section of the text].
+
+## Task Model 3 — EBSR (`type ebsr`, two-part, DOK 2)
+
+Lead-in: *The following question has two parts. First, answer part A. Then, answer part B.*
+Part A:
+- Which sentence best [shows/tells/describes] the [theme/main idea] of the text?
+- Which sentence best [shows/tells/describes] the [author's/character's] [message/main idea]?
+
+Part B (`stem-b`):
+- Which [sentence(s)/line(s)/paragraph(s)] from the passage best [support(s)/is (are) an example of] your answer in part A?
+
+**No-giveaway (the guideline states it outright):** avoid Part A/Part B choices that obviously
+correspond, so that picking a Part A option determines the Part B option. Some or all Part B options
+should plausibly support **more than one** Part A choice — author at least one
+`supports-wrong-claim` source listing BOTH the correct claim and a distractor.
+
+## Task Model 4 — Hot Text (`type hot-text`, single-part select-text, DOK 2)
+
+Single-part: the authored `stem` is the whole instruction; the student clicks the sentence(s) whose
+`source`s `directly-supports` the focus claim. The stem states how many to click.
+- Click on [one/two] [sentence(s)/line(s)/set of lines/paragraph(s)] that best [shows/tells/describes] the [theme/main idea] of [the text/section of the text]. Choose [one/two] answer(s).
+- Read this summary of [the text/section of the text]. [summary; one key event missing] A [key event/detail] is missing from the summary. Click on the [sentence(s)/paragraph(s)] that include(s) the missing [event/detail].
+- Click on the [one/two] [key detail(s)/event(s)] that should be included in a summary of the text.
+
+## Task Model 5 — Short Text (`type short-text`, constructed response, DOK 3)
+
+Written response; **never the whole text** (see #2 above).
+- Determine the [theme/main idea] of the passage. Explain the [theme/main idea] using key details from the passage to support your answer.
+- What is the [theme/main idea] of the passage? Explain using key details from the passage to support your answer.
+- Summarize the [first paragraph/introductory paragraph]. Use key [details/events] from the passage in your summary.
+- Summarize what happens [after/during] [provide text event]. Use key [details/events] from the passage in your summary.
+
+## Worked examples (T2, specific slot fills)
+
+- theme / Multiple Choice → `stem "Which sentence best tells the theme of the passage?"` with the correct claim phrased as a lesson ("Keeping at something can matter more than winning.").
+- summary / Multi-Select → `stem "Choose two sentences that should be included in a summary of the story. Select two answers."` with `focus ["s1" "s2"]`.
+- theme / EBSR → Part A as above, `stem-b "Which sentence from the passage best supports your answer in Part A?"`.
+- theme / Hot Text → `stem "Click on the two sentences that best show the theme of the story. Choose two answers."` (author exactly two `directly-supports` sources).
+- summary / Short Text → `stem "Summarize what happens after the blue ribbon goes to somebody else. Use key details from the passage in your summary."` — scoped to a key event, not the whole story.
 
 ---
 

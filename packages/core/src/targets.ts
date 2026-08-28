@@ -73,11 +73,19 @@ export function taskModelNumber(target: string, itemType: string): string | unde
 // foils by reasoning failure; Central Ideas (T9) by SIGNIFICANCE (a true statement that just
 // isn't the central idea); Word Meanings (T10) by meaning error.
 const RE_ERROR_TYPES = ["misreads-detail", "erroneous-inference", "faulty-reasoning"];
-const T9_ERROR_TYPES = ["too-narrow", "too-broad", "misreads-detail", "insignificant"];
+// Shared by BOTH Central Ideas targets (T9 informational, T2 literary): their guidelines describe
+// the same two distractor failures — misinterpreting a detail, and misjudging the SIGNIFICANCE of
+// ideas and details — which this taxonomy splits into a misread plus three significance errors.
+const CENTRAL_IDEA_ERROR_TYPES = ["too-narrow", "too-broad", "misreads-detail", "insignificant"];
 
 // R&E (T4/T11) and the single-select families share task-model layouts.
 const RE_TASK_MODELS = { tm1: "ebsr", tm2: "hot-text", tm3: "short-text" };
 const SELECT_TASK_MODELS = { tm1: "multiple-choice", tm2: "multi-select", tm3: "hot-text" };
+// Central Ideas (T9/T2) is the only family that offers all five item types, so its numbering
+// reaches tm5. NOTE tm3 is EBSR here but hot-text in the SELECT_TASK_MODELS targets.
+const CENTRAL_IDEA_TASK_MODELS = {
+  tm1: "multiple-choice", tm2: "multi-select", tm3: "ebsr", tm4: "hot-text", tm5: "short-text",
+};
 
 export const TARGETS_DATA: Record<string, TargetData> = {
   // Claim 1 · Target 4 — Reasoning & Evidence, literary texts (RL standards). The original L0175.
@@ -130,6 +138,38 @@ export const TARGETS_DATA: Record<string, TargetData> = {
       "authors-opinion": "ri-8",
     },
   },
+  // Claim 1 · Target 2 — Central Ideas, LITERARY texts (RL-1 + RL-2). The literary twin of T9, and
+  // the only other target offering all five item types. Its own emphases, from the guideline:
+  //   - THEME leads. RL-2 is "determine a theme of a story, drama, or poem from details in the
+  //     text … summarize the text", so `theme` is a first-class dimension here, not a T4 borrowing.
+  //   - SUMMARY IS SCOPED. "Items will not ask students to summarize the entire text; students will
+  //     summarize a key event(s) or idea(s)." T9 has no such limit — this is the sharpest T2/T9
+  //     difference and the docs must carry it.
+  //   - `key-detail` covers the guideline's "key event(s) or idea(s)" — in a story the key details
+  //     that build a theme are usually events, so they share one dimension rather than splitting a
+  //     single skill across two tags the compiler treats identically.
+  // Every dimension answers to RL-2 (the theme/summarize standard); RL-1 is added as the base, so a
+  // composed item's standards is ["rl-1", "rl-2"] — exactly the guideline's pair.
+  "c1-t2": {
+    id: "c1-t2",
+    label: "Grade 5 · Claim 1 · Target 2 (Central Ideas)",
+    grade: 5,
+    textType: "literary",
+    baseStandard: "rl-1",
+    defaultDok: "r-dok2", // tm5 short-text bumps to r-dok3 (dokFor), per the guideline
+    answerKind: "statement",
+    singlePartHotText: true, // T2 Hot Text (tm4): click the sentence(s) that show the theme
+    taskModels: CENTRAL_IDEA_TASK_MODELS,
+    standards: ["RL_G5"],
+    dimensions: ["theme", "central-idea", "key-detail", "summary"],
+    errorTypes: CENTRAL_IDEA_ERROR_TYPES,
+    dimStandard: {
+      "theme": "rl-2",
+      "central-idea": "rl-2",
+      "key-detail": "rl-2",
+      "summary": "rl-2",
+    },
+  },
   // Claim 1 · Target 9 — Central Ideas, informational texts (RI-1 + RI-2). A DIFFERENT skill from
   // Reasoning & Evidence: whole-text synthesis and significance (the main idea, the key details that
   // build it, and summary), DOK 2 (3 only for the written summary). Distractors are a SIGNIFICANCE
@@ -144,12 +184,10 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     defaultDok: "r-dok2",
     answerKind: "statement",
     singlePartHotText: true, // T9 Hot Text (tm4): click the sentence(s) that show the main idea
-    taskModels: {
-      tm1: "multiple-choice", tm2: "multi-select", tm3: "ebsr", tm4: "hot-text", tm5: "short-text",
-    },
+    taskModels: CENTRAL_IDEA_TASK_MODELS,
     standards: ["RI_G5"],
     dimensions: ["central-idea", "key-detail", "summary"],
-    errorTypes: T9_ERROR_TYPES,
+    errorTypes: CENTRAL_IDEA_ERROR_TYPES,
     dimStandard: {
       "central-idea": "ri-2",
       "key-detail": "ri-2",

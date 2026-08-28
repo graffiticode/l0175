@@ -68,7 +68,7 @@ The paired store and the gate now exist:
   run; `test/verify-example.spec.ts` proves the gate rejects a mislabeled example that compiles clean.
 
 **Coverage: 17 of 17 matrix cells — the full matrix.** Every `targets.<id>.taskModels` cell has a
-gated golden pair (all advisory-free): the c1-t4 / c1-t11 R&E trios, the c1-t1 / c1-t8 / c1-t10 trios, and
+gated golden pair (all advisory-free): the c1-t4 / c1-t11 R&E trios, the c1-t1 / c1-t8 / c1-t10 trios, the c1-t2 five, and
 the complete c1-t9 five-item set (tm1 MC, tm2 multi-select, tm3 ebsr, tm4 hot-text, tm5 short-text).
 Each is a contrastive sibling set (same passage per target, varying only the task model). Any new or
 edited anchor is re-validated by the gate (`test/corpus.spec.ts`).
