@@ -191,6 +191,35 @@ describe("extractQueryFacets", () => {
     }
   });
 
+  // Routing is skill x text type, the same grid the spec's routing table shows. Before this,
+  // prose-only prompts could only ever land on c1-t4 or c1-t11, under-serving the other five.
+  it.each([
+    ["what is the theme of this story?", "c1-t2", "literary"],
+    ["summarize the first paragraph of this story", "c1-t2", "literary"],
+    ["Which sentence best states the main idea of this article?", "c1-t9", "informational"],
+    ["Give students a conclusion about a story and ask which line best supports it", "c1-t1", "literary"],
+    ["The article says aqueducts reached distant cities — which detail best supports that?", "c1-t8", "informational"],
+    ["What does the word aqueduct mean as it is used in the article?", "c1-t10", "informational"],
+    ["Write an item about the narrator's point of view in a first-person diary entry", "c1-t4", "literary"],
+    ["Write an item about how the author uses evidence in this informational article", "c1-t11", "informational"],
+  ])("routes %j to %s", (prompt, target, passageType) => {
+    const f = extractQueryFacets(prompt as string);
+    expect(f.target).toBe(target);
+    expect(f.passageType).toBe(passageType);
+  });
+
+  it("falls back to Reasoning & Evidence when the text type is known but no skill is cued", () => {
+    expect(extractQueryFacets("From a short story, write an item.").target).toBe("c1-t4");
+    expect(extractQueryFacets("From an informational article, write an item.").target).toBe("c1-t11");
+  });
+
+  it("resolves a skill named without a genre, preferring the literary target", () => {
+    // "when the text type is genuinely ambiguous, prefer the literary target" (instructions.md)
+    expect(extractQueryFacets("What is the theme?").target).toBe("c1-t2");
+    // …but a skill with only one form still resolves to it
+    expect(extractQueryFacets("What does the word mean in context?").target).toBe("c1-t10");
+  });
+
   it("maps the literary Key Details target to a literary passage type", () => {
     const f = extractQueryFacets("Write a c1-t1 multiple choice item.");
     expect(f.target).toBe("c1-t1");

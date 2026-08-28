@@ -37,6 +37,11 @@ export type TargetData = {
   id: string; // the `target` tag, e.g. "c1-t4"
   label: string;
   grade: number; // the guideline's grade band — the default reading-level target
+  // The reading SKILL this target assesses. Targets pair up as skill × textType (Reasoning &
+  // Evidence is c1-t4 literary / c1-t11 informational, and so on), which is exactly how a request
+  // is routed to a target — so the pairing is data here rather than a map duplicated in the RAG
+  // layer and the docs. Word Meanings currently exists only in its informational form.
+  skill: "reasoning-evidence" | "central-ideas" | "key-details" | "word-meanings";
   textType: "literary" | "informational";
   baseStandard: string; // always added by standardsFor (the cite-evidence standard)
   defaultDok: string; // DOK for this target's selected-response items (short-text bumps to r-dok3)
@@ -57,6 +62,17 @@ export type TargetData = {
   errorTypes: string[]; // distractor taxonomy (ordered for coverage selection)
   dimStandard: Record<string, string>; // dimension → companion standard
 };
+
+// Route a (skill, textType) pair to its target — the skill × text-type grid the docs present to
+// the generator. `textType` may be omitted when a request names a skill but no genre; the literary
+// target wins then, per the spec's "when the text type is ambiguous, prefer the literary target",
+// falling back to the skill's only form (Word Meanings has no literary target).
+export function targetForSkill(skill: string, textType?: string): TargetData | undefined {
+  const all = Object.values(TARGETS_DATA).filter((d) => d.skill === skill);
+  if (!all.length) return undefined;
+  if (textType) return all.find((d) => d.textType === textType) ?? all[0];
+  return all.find((d) => d.textType === "literary") ?? all[0];
+}
 
 // Reverse lookup: the task-model NUMBER for a (target, item type) — e.g. ("c1-t9", "ebsr") → "3",
 // ("c1-t4", "short-text") → "3". Item-type → task-model is per-target (the numbers collide), so the
@@ -93,6 +109,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t4",
     label: "Grade 5 · Claim 1 · Target 4 (Reasoning & Evidence)",
     grade: 5,
+    skill: "reasoning-evidence",
     textType: "literary",
     baseStandard: "rl-1",
     defaultDok: "r-dok3",
@@ -118,6 +135,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t11",
     label: "Grade 5 · Claim 1 · Target 11 (Reasoning & Evidence)",
     grade: 5,
+    skill: "reasoning-evidence",
     textType: "informational",
     baseStandard: "ri-1",
     defaultDok: "r-dok3",
@@ -154,6 +172,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t2",
     label: "Grade 5 · Claim 1 · Target 2 (Central Ideas)",
     grade: 5,
+    skill: "central-ideas",
     textType: "literary",
     baseStandard: "rl-1",
     defaultDok: "r-dok2", // tm5 short-text bumps to r-dok3 (dokFor), per the guideline
@@ -179,6 +198,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t9",
     label: "Grade 5 · Claim 1 · Target 9 (Central Ideas)",
     grade: 5,
+    skill: "central-ideas",
     textType: "informational",
     baseStandard: "ri-1",
     defaultDok: "r-dok2",
@@ -205,6 +225,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t1",
     label: "Grade 5 · Claim 1 · Target 1 (Key Details)",
     grade: 5,
+    skill: "key-details",
     textType: "literary",
     baseStandard: "rl-1",
     defaultDok: "r-dok2",
@@ -226,6 +247,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t8",
     label: "Grade 5 · Claim 1 · Target 8 (Key Details)",
     grade: 5,
+    skill: "key-details",
     textType: "informational",
     baseStandard: "ri-1",
     defaultDok: "r-dok2",
@@ -248,6 +270,7 @@ export const TARGETS_DATA: Record<string, TargetData> = {
     id: "c1-t10",
     label: "Grade 5 · Claim 1 · Target 10 (Word Meanings)",
     grade: 5,
+    skill: "word-meanings",
     textType: "informational",
     baseStandard: "ri-4",
     defaultDok: "r-dok2",

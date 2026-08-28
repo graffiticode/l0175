@@ -24,7 +24,7 @@
 // caller composes the program (the console already parses L0175; the core tests use the parser
 // harness) and hands the composed data in.
 
-import { TARGETS_DATA, taskModelNumber } from "./targets.js";
+import { TARGETS_DATA, targetForSkill, taskModelNumber } from "./targets.js";
 
 // ---- Types -----------------------------------------------------------------------------------
 
@@ -221,6 +221,18 @@ const ITEM_TYPE_CUES: Array<[RegExp, string]> = [
   [/\bmulti[-\s]?select\b/i, "multi-select"],
 ];
 
+// Skill cues, MOST SPECIFIC FIRST — the order is the disambiguation. A prompt about a word's
+// meaning is Word Meanings even though it also says "passage"; "which detail supports X" is Key
+// Details even though it says "conclusion"; and a prompt naming the main idea is Central Ideas even
+// though its Part B asks for a supporting detail. Reasoning & Evidence is last: its cues (infer,
+// conclude, purpose) appear inside the other skills' phrasing too.
+const SKILL_CUES: Array<[RegExp, string]> = [
+  [/\bword meaning|what does the (?:word|phrase)\b|\bmean(?:s|ing)?\s+(?:of|as used|in context)\b|\bvocabulary\b/i, "word-meanings"],
+  [/\b(?:theme|central idea|main idea|summar(?:y|ize|izes|izing)|author'?s message)\b/i, "central-ideas"],
+  [/\b(?:detail|sentence|line|evidence)s?\b[^.?!]{0,60}\b(?:supports?|shows?)\b/i, "key-details"],
+  [/\b(?:infer|inference|conclude|conclusion|point of view|purpose|motivation|opinion)\b/i, "reasoning-evidence"],
+];
+
 // Every known target id, longest-first so `c1-t1` cannot shadow `c1-t10`/`c1-t11`. Built from
 // targets.ts so a new target is recognized in prompts the moment it is declared there.
 const TARGET_ID_RE = new RegExp(
@@ -244,10 +256,24 @@ export function extractQueryFacets(prompt: string): DesignFacets {
     facets.target = id;
     facets.passageType = TARGETS_DATA[id].textType;
   } else {
+    // No id named: route on the same two axes the spec's routing table uses — the SKILL asked and
+    // the TEXT TYPE. An RL/RI standard is the strongest text-type cue; otherwise a genre word.
     const rl = /\brl-\d\b/i.test(prompt);
     const ri = /\bri-\d\b/i.test(prompt);
-    if (rl || TARGET_LITERARY.test(prompt)) { facets.target = "c1-t4"; facets.passageType = "literary"; }
-    else if (ri || TARGET_INFORMATIONAL.test(prompt)) { facets.target = "c1-t11"; facets.passageType = "informational"; }
+    const textType = rl || TARGET_LITERARY.test(prompt) ? "literary"
+      : ri || TARGET_INFORMATIONAL.test(prompt) ? "informational"
+      : undefined;
+    const skill = SKILL_CUES.find(([re]) => re.test(prompt))?.[1];
+    // Skill + text type resolves exactly; a skill alone still resolves (literary preferred).
+    const hit = skill ? targetForSkill(skill, textType) : undefined;
+    // With a text type but no skill cue, fall back to Reasoning & Evidence for that type — the
+    // broadest skill, and the historical default.
+    const chosen = hit ?? (textType ? targetForSkill("reasoning-evidence", textType) : undefined);
+    if (chosen) {
+      facets.target = chosen.id;
+      // Prefer a text type the prompt actually stated over the chosen target's own.
+      facets.passageType = textType ?? chosen.textType;
+    }
   }
 
   const itemTypes = ITEM_TYPE_CUES.filter(([re]) => re.test(prompt)).map(([, t]) => t);

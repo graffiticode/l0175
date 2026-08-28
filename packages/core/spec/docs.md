@@ -33,22 +33,54 @@ The program
 target c1-t4
 passage "The Tide Pool"
 type literary
-lines [ "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." ]
-claims [ claim id "c1" status supported dimension character subject "Mara"
-  text "Mara is more interested in the tide pool than in the picnic." cites ["e1"] {}
+lines [
+  "Mara crouched at the edge of the tide pool, ignoring the picnic behind her."
+  "Her brother called twice, but she did not turn around."
+  "A tiny crab scuttled under a rock, and Mara smiled for the first time all day."
+  "She traced the cold water as if the pool were the only thing that mattered."
+  "Behind her, paper plates rustled and her mother laughed."
+  "Someone asked whether she wanted a sandwich, and she said nothing at all."
+  "Only when her father folded the last chair did Mara stand up."
+  "The tide crept in and filled the pool to its rim."
+]
+claims [
+  claim id "c1" status supported dimension character subject "Mara"
+    text "Mara cares more about the tide pool than about the picnic." cites ["e1" "e3" "e4"] {}
+  /* an EBSR needs 3 foils, so author at least 5 distractors targeting the question */
   claim id "c2" status distractor error-type misreads-detail targets ["q1"]
-  text "Mara is angry at her brother." rationale "Silence is absorption, not anger." cites ["e1"] {} ]
-evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
-outcomes [ outcome id "q1" type ebsr dimension character subject "Mara" standard rl-1 focus "c1"
-  stem "Which of these inferences about Mara is supported by the passage?"
-  stem-b "Which sentence(s) from the passage best support your answer in Part A?" {} ]
+    text "Mara is angry at her brother for calling her twice." rationale "Not turning around shows absorption, not anger." cites ["e2"] {}
+  claim id "c3" status distractor error-type misreads-detail targets ["q1"]
+    text "Mara is bored by the pool and wants to go home." rationale "Her stillness is focus, not boredom." cites ["e2"] {}
+  claim id "c4" status distractor error-type erroneous-inference targets ["q1"]
+    text "Mara would rather be indoors than out at the beach." rationale "Contradicted by her smile at the crab." cites ["e3"] {}
+  claim id "c5" status distractor error-type erroneous-inference targets ["q1"]
+    text "Mara is waiting for her brother to come look with her." rationale "Invents a goal the passage never states." cites ["e2"] {}
+  claim id "c6" status distractor error-type faulty-reasoning targets ["q1"]
+    text "Mara is quiet, so something must have upset her." rationale "Treats quiet as upset without support." cites ["e2"] {}
+]
+evidence [
+  source id "e1" line 1 quote "Mara crouched at the edge of the tide pool, ignoring the picnic behind her." status directly-supports supports ["c1"] {}
+  source id "e3" line 3 quote "A tiny crab scuttled under a rock, and Mara smiled for the first time all day." status directly-supports supports ["c1"] {}
+  source id "e4" line 4 quote "She traced the cold water as if the pool were the only thing that mattered." status directly-supports supports ["c1"] {}
+  /* NO-GIVEAWAY: back BOTH the key and a distractor so Part B does not telegraph Part A */
+  source id "e2" line 2 quote "Her brother called twice, but she did not turn around." status supports-wrong-claim supports ["c1" "c2"] {}
+  source id "e6" line 6 quote "Someone asked whether she wanted a sandwich, and she said nothing at all." status supports-wrong-claim supports ["c1" "c6"] {}
+  source id "e5" line 5 quote "Behind her, paper plates rustled and her mother laughed." status irrelevant supports [] {}
+  source id "e7" line 7 quote "Only when her father folded the last chair did Mara stand up." status irrelevant supports [] {}
+  source id "e8" line 8 quote "The tide crept in and filled the pool to its rim." status irrelevant supports [] {}
+]
+outcomes [
+  outcome id "q1" type ebsr task-model tm1 dimension character subject "Mara" standard rl-1 focus "c1"
+    stem "Which of these inferences about Mara is supported by the passage?"
+    stem-b "Which sentence(s) from the passage best support your answer in Part A?" {}
+]
 {}..
 ```
 
 composes a two-part EBSR item and renders it as an answerable form with a Student / Review
 toggle. This example is Target 4 (literary, R&E); the other targets use the same flat-chain shape
-but author their options differently — **T9** (Central Ideas) significance-taxonomy `claim`s,
-**T8** (Key Details) `source`s with the inference given in the stem, **T10** (Word Meanings)
+but author their options differently — **T2**/**T9** (Central Ideas) significance-taxonomy `claim`s,
+**T1**/**T8** (Key Details) `source`s with the inference given in the stem, **T10** (Word Meanings)
 `meaning`s of a targeted `word`. See `instructions.md` for a full worked program per target.
 
 ### Vocabulary
