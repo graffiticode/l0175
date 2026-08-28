@@ -607,6 +607,70 @@ describe("compose — Target 8 (Key Details): evidence selection", () => {
   });
 });
 
+describe("compose — Target 1 (Key Details, literary): evidence selection", () => {
+  const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
+  // T1 is the LITERARY mirror of T8: the inference is GIVEN in the stem and the options are passage
+  // evidence. The T1-specific fact is its standards — the guideline lists RL-1 and nothing else, so
+  // an item's `standards` is exactly ["rl-1"] (T8 adds the RI-7 companion).
+  const T1 = (outcome: string) => `target c1-t1 passage "The Loose Board" type literary lines [
+      "Nina had walked past Mr. Ruiz's crooked porch a hundred times. The third board rocked under her feet every time she crossed it. On Saturday she stopped, because someone had left a hammer on the step. Then she knelt down and set the first nail without anyone asking her to. Mr. Ruiz never learned who had fixed his porch."
+    ]
+    claims [
+      claim id "c1" status supported dimension supporting-evidence subject "Nina" text "Nina takes care of a problem on her own, without being told to." cites ["e1" "e2"] {}
+    ]
+    evidence [
+      source id "e1" line 1 quote "Then she knelt down and set the first nail without anyone asking her to." status directly-supports supports ["c1"] {},
+      source id "e2" line 1 quote "Mr. Ruiz never learned who had fixed his porch." status directly-supports supports ["c1"] {},
+      source id "e3" line 1 quote "The third board rocked under her feet every time she crossed it." status irrelevant supports [] {},
+      source id "e4" line 1 quote "On Saturday she stopped, because someone had left a hammer on the step." status irrelevant supports [] {},
+      source id "e5" line 1 quote "Nina had walked past Mr. Ruiz's crooked porch a hundred times." status irrelevant supports [] {}
+    ]
+    outcomes [ ${outcome} ] {}..`;
+  const MC = `outcome id "q1" type multiple-choice dimension supporting-evidence subject "Nina" focus "c1" stem "The reader can conclude that Nina takes care of a problem on her own. Which line from the passage best supports this conclusion?" {}`;
+  const MS = `outcome id "q1" type multi-select dimension supporting-evidence subject "Nina" focus "c1" stem "Which two lines from the passage best support the conclusion that Nina acts without being told? Select two answers." {}`;
+  const HT = `outcome id "q1" type hot-text dimension supporting-evidence subject "Nina" focus "c1" stem "Nina acts without being told. Click the two sentences from the passage that best support this conclusion." {}`;
+
+  it("Multiple-Choice draws evidence options; standards are RL-1 ALONE (no companion), DOK r-dok2", async () => {
+    const { errors, data } = await compile(T1(MC));
+    expect(errors).toHaveLength(0);
+    const it0 = item0(data);
+    expect(it0.target).toBe("c1-t1");
+    expect(it0.standards).toEqual(["rl-1"]); // the whole of T1's standard list — not ["rl-1", …]
+    expect(it0.dok).toBe("r-dok2");
+    expect(it0.choice.options).toHaveLength(4);
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(1);
+    // the correct option is an evidence excerpt (a source quote), not the inference statement
+    expect(it0.choice.options.find((o: any) => o.correct).text).toMatch(/set the first nail|never learned who/);
+  });
+
+  it("Multi-Select takes the directly-supporting sources as the correct set", async () => {
+    const it0 = item0((await compile(T1(MS))).data);
+    expect(it0.type).toBe("multi-select");
+    expect(it0.choice.options.filter((o: any) => o.correct)).toHaveLength(2);
+    expect(it0.selectCount).toBe(2);
+  });
+
+  it("Hot-Text is single-part, and an honorific does not split a sentence in two", async () => {
+    const it0 = item0((await compile(T1(HT))).data);
+    expect(it0.partA).toBeUndefined();
+    expect(it0.stem.partB).toBeUndefined();
+    // "Mr. Ruiz never learned…" stays ONE selectable sentence — a bare [.!?] split would have made
+    // "Mr." its own clickable option and put a phantom id in the answer key.
+    expect(it0.selectable.map((s: any) => s.text)).toContain("Mr. Ruiz never learned who had fixed his porch.");
+    expect(it0.selectable.some((s: any) => s.text === "Mr.")).toBe(false);
+    expect(it0.selectable.filter((s: any) => s.correct)).toHaveLength(2);
+    expect(it0.answerKey.partB.split(", ")).toHaveLength(2);
+  });
+
+  it("restricts item types: T1 offers only MC / MS / Hot-Text (no ebsr, no short-text)", async () => {
+    for (const bad of ["ebsr", "short-text"]) {
+      const src = T1(MC).replace("type multiple-choice", `type ${bad}`);
+      const { errors } = await compile(src);
+      expect(errors.some((e: any) => new RegExp(`item type '${bad}' is not available for target c1-t1`).test(e.message))).toBe(true);
+    }
+  });
+});
+
 describe("compose — Target 10 (Word Meanings): meaning selection", () => {
   const item0 = (d: any) => (d.kind === "items" ? d.items[0] : d);
   // T10: the answer choices are MEANINGS of a targeted `word`; correct meaning(s) + distractor

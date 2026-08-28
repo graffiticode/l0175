@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Tests for the per-target task-model guard (src/compiler.ts validateOutcome + src/targets.ts).
 // Task-model numbers are PER-TARGET and collide across targets (tm3 = short-text in c1-t4/t11,
-// ebsr in c1-t9, hot-text in c1-t8/t10), so the compiler resolves an authored `task-model` against
+// ebsr in c1-t9, hot-text in c1-t1/t8/t10), so the compiler resolves an authored `task-model` against
 // the program's target. This is the deterministic guard against the "c1-t9 tm3 EBSR drifts to
 // hot-text/short-text" generation failure.
 import { describe, it, expect } from "vitest";

@@ -552,16 +552,42 @@ function sourceText(s: any, passage: any): string {
   return ln ? ln.text : "";
 }
 
+// Abbreviations whose trailing period does NOT end a sentence. Grade-5 literary prose (the T1/T2/T4
+// targets) is full of honorifics — "Mr. Ruiz never learned who had fixed his porch." — which a bare
+// [.!?] split would cut in half, making "Mr." its own clickable Hot Text option.
+const SENTENCE_ABBREVIATIONS = [
+  "mr", "mrs", "ms", "mx", "dr", "prof", "rev", "fr", "hon",
+  "capt", "gen", "sgt", "lt", "col", "sen", "gov", "pres",
+  "jr", "sr", "st", "mt", "ft", "rd", "ave", "blvd", "no",
+  "vs", "etc", "approx", "dept",
+];
+const ABBREV_END = new RegExp(`(?:^|[\\s("'‘“])(?:${SENTENCE_ABBREVIATIONS.join("|")})\\.$`, "i");
+
+// True when `s` ends mid-abbreviation: a known abbreviation ("Mr."), a single-letter initial
+// ("J."), or a dotted pair ("a.m.", "U.S.").
+function endsMidAbbreviation(s: string): boolean {
+  return ABBREV_END.test(s) || /(?:^|\s)[A-Za-z]\.$/.test(s) || /(?:^|\s)[A-Za-z]\.[A-Za-z]\.$/.test(s);
+}
+
 // Segment a paragraph into sentences for Hot Text selection. Heuristic: take runs ending in
-// sentence punctuation (.!?), absorbing any trailing closing quote/paren, then trim. The passage
-// keeps its paragraph structure (one `lines` entry per paragraph); Hot Text makes each sentence
-// within a paragraph individually selectable. An occasional dialogue-tag mis-split is acceptable
-// for grade-level prose, and correctness is anchored to authored `quote`s rather than the split.
+// sentence punctuation (.!?), absorbing any trailing closing quote/paren, then trim, then re-join
+// any run that broke inside an abbreviation. The passage keeps its paragraph structure (one `lines`
+// entry per paragraph); Hot Text makes each sentence within a paragraph individually selectable. An
+// occasional dialogue-tag mis-split is acceptable for grade-level prose, and correctness is anchored
+// to authored `quote`s rather than the split.
 function splitSentences(text: string): string[] {
   const t = str(text).trim();
   if (!t) return [];
   const parts = t.match(/[^.!?]+[.!?]+["'”’)\]]*\s*/g);
-  return parts ? parts.map((s) => s.trim()).filter(Boolean) : [t];
+  if (!parts) return [t];
+  const out: string[] = [];
+  for (const raw of parts) {
+    const piece = raw.trim();
+    if (!piece) continue;
+    if (out.length && endsMidAbbreviation(out[out.length - 1])) out[out.length - 1] += ` ${piece}`;
+    else out.push(piece);
+  }
+  return out;
 }
 
 // Deterministic shuffle (seeded) so recompiling the same program yields stable option labels.
@@ -677,7 +703,7 @@ function countSyllables(word: string): number {
 // − 15.59. A rough proxy for text complexity — enough to flag prose that reads well above the
 // target grade. Returns null when the sample is too small to be meaningful.
 function estimateGradeLevel(text: string): number | null {
-  const sentences = (text.match(/[.!?]+/g) || []).length || (text.trim() ? 1 : 0);
+  const sentences = splitSentences(text).length || (text.trim() ? 1 : 0);
   const words: string[] = text.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
   if (sentences === 0 || words.length < 20) return null; // too little text to judge
   const syllables = words.reduce((sum: number, w: string) => sum + countSyllables(w), 0);

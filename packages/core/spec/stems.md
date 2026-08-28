@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Appropriate-Stem Catalog (SBAC · Grade 5 · Claim 1)
 
-_Revised: 2026-06-24_
+_Revised: 2026-08-28_
 
 The **code generator authors each question's stem from this catalog** and emits it on the
 outcome (`stem`, and `stem-b` on EBSR). The compiler uses the authored text verbatim — it does
@@ -13,6 +13,7 @@ dual-text-stimuli stems are out of scope).
 - **`c1-t4`** (Reasoning & Evidence, literary) → `packages/core/data/E.G5.C1.T4 Reasoning & Evidence.pdf`
 - **`c1-t11`** (Reasoning & Evidence, informational) → `packages/core/data/E.G5.C1.T11 Reasoning & Evidence.pdf`
 - **`c1-t9`** (Central Ideas, informational) → `packages/core/data/E.G5.C1.T9 Central Ideas.pdf`
+- **`c1-t1`** (Key Details, **literary**) → `packages/core/data/E.G5.C1.T1 Key Details.pdf`
 - **`c1-t8`** (Key Details, informational) → `packages/core/data/E.G5.C1.T8 Key Details.pdf`
 - **`c1-t10`** (Word Meanings, informational) → `packages/core/data/E.G5.C1.T10 Word Meanings.pdf`
 
@@ -22,9 +23,9 @@ dual-text-stimuli stems are out of scope).
 2. Pick the stem that matches your **item `type`** and the task. Task-model numbering is
    per-target and differs between targets — match by item type, not by number. (R&E targets:
    EBSR=TM1, Hot-Text=TM2, Short-Text=TM3. T9 Central Ideas: Multiple-Choice=TM1,
-   Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5. T8 Key Details: Multiple-Choice=TM1,
-   Multi-Select=TM2, Hot-Text=TM3. T10 Word Meanings: Multiple-Choice=TM1, Multi-Select=TM2,
-   Hot-Text=TM3.)
+   Multi-Select=TM2, EBSR=TM3, Hot-Text=TM4, Short-Text=TM5. T1 and T8 Key Details:
+   Multiple-Choice=TM1, Multi-Select=TM2, Hot-Text=TM3. T10 Word Meanings: Multiple-Choice=TM1,
+   Multi-Select=TM2, Hot-Text=TM3.)
 3. Pick the **one stem template** that matches the task and the dimension, and fill its
    bracketed `[...]` slot.
 
@@ -292,6 +293,63 @@ it); the student clicks the sentence(s) that show the main idea. The correct sen
   `stem "Determine the main idea of the passage. Explain using key details from the passage to support your answer."`
 - central-idea / Hot Text (single-part) →
   `stem "Click on the sentence that best shows the main idea of the passage."` (the `focus` claim's directly-supporting sources are the correct sentences)
+
+---
+
+# Target 1 (`c1-t1`) — Key Details (**literary**)
+
+The **literary mirror of Target 8**: the inference/conclusion is **GIVEN in the stem**, and the
+student selects the **text evidence** that supports it. DOK **1–2**. Standard **RL-1 — and only
+RL-1** (unlike T8 the guideline names no companion, so a composed item's `standards` is just
+`rl-1`; omit `standard` and let the dimension resolve it). Dimension: `supporting-evidence`. Item
+types: `multiple-choice`, `multi-select`, `hot-text` (no EBSR, no constructed response).
+
+**Authoring:** identical to T8 — author ONE supported `claim` = the given inference (named by the
+outcome's `focus`) and **state that inference in the `stem`**; author `source`s for the options —
+`directly-supports` (the correct evidence; give a `quote` for the exact sentence) and
+`supports-wrong-claim` / `irrelevant` (the distractor evidence, each with a `rationale`). The
+options are the **sources**, not claims; there are no distractor claims.
+
+**Two literary differences from T8's wording:** these stems offer **`line`** as a selectable unit
+(matching L0175's numbered `lines`) and say **`[author/narrator]`** where T8 says only "author" —
+use "narrator" for a first-person story. Multi-Select is exactly **two** correct (T8 allows two or
+three).
+
+## Task Model 1 — Multiple Choice (`type multiple-choice`, single-answer, DOK 1–2)
+
+The stem states the inference and asks which evidence supports it:
+- Which [detail/sentence/line] from the passage best [supports/shows] [provide inference or conclusion based on the passage]?
+- [Provide inference or conclusion based on the passage]. Which [detail/sentence/line] from the passage best supports this [inference/conclusion] OR best shows [provide the inference or conclusion]?
+- The reader can [infer/conclude] [inference or conclusion based on the passage]. Which [detail/sentence/line] from the passage best supports this [inference/conclusion]?
+- The [author/narrator] [infers/concludes] that [inference/conclusion based on the passage]. Which [detail/sentence/line] from the passage best supports this [inference/conclusion]?
+- Read this [inference/conclusion]. [Provide inference or conclusion based on the passage]. Which [detail/sentence/line] from the passage best supports this [inference/conclusion]?
+
+## Task Model 2 — Multi-Select (`type multi-select`, choose two, DOK 1–2)
+
+- Choose two [details/sentences/lines] from the passage that best support the [inference/conclusion] that [provide inference or conclusion based on the passage].
+- Which [details/sentences/lines] from the passage best support [provide inference or conclusion based on the passage]? Select two answers.
+- [Provide inference or conclusion based on the passage]. Which [details/sentences/lines] from the passage best support this [inference/conclusion]? Select two answers.
+- The reader can [infer/conclude] [provide inference/conclusion based on the passage]. Which [details/sentences/lines] from the passage best support this [inference/conclusion]? Select two answers.
+- The [author/narrator] [infers/concludes] that [provide inference/conclusion based on the passage]. Which [details/sentences/lines] from the passage best support this [inference/conclusion]? Select two answers.
+
+## Task Model 3 — Hot Text (`type hot-text`, single-part select-text, DOK 1–2)
+
+Single-part: the authored `stem` states the inference and the click instruction (the compiler does
+not synthesize it); the student clicks the supporting sentence(s):
+- Click the [detail/sentence/set of sentences/line/paragraph] that best supports [provide inference or conclusion based on the passage].
+- Click [one/two] [details/sentences/sets of sentences/lines/paragraphs] that best support [provide inference or conclusion based on the passage].
+- [Provide inference or conclusion based on the passage]. Click the [detail/sentence/set of sentences/line/paragraph] that best supports this [inference/conclusion].
+- The reader can [infer/conclude] [provide inference/conclusion based on the passage]. Click [one/two] [details/sentences/lines] that best support this [inference/conclusion].
+- Read this [inference/conclusion]. [Provide inference or conclusion based on the text]. Click [one/two] [details/sentences/sets of sentences/lines/paragraphs] that best support this [inference/conclusion].
+
+## Worked examples (T1, specific slot fills)
+
+- supporting-evidence / Multiple Choice →
+  `stem "The reader can conclude that Nina takes care of a problem on her own, without being told to. Which line from the passage best supports this conclusion?"` with one supported `claim` (the inference) at `focus`, its directly-supporting `source` the correct option.
+- supporting-evidence / Multi-Select →
+  `stem "Nina takes care of a problem on her own, without being told to. Which two lines from the passage best support this conclusion? Select two answers."` (two `directly-supports` sources)
+- supporting-evidence / Hot Text (single-part) →
+  `stem "Read this conclusion. Nina takes care of a problem on her own, without being told to. Click the two sentences from the passage that best support this conclusion."`
 
 ---
 

@@ -24,7 +24,7 @@
 // caller composes the program (the console already parses L0175; the core tests use the parser
 // harness) and hands the composed data in.
 
-import { taskModelNumber } from "./targets.js";
+import { TARGETS_DATA, taskModelNumber } from "./targets.js";
 
 // ---- Types -----------------------------------------------------------------------------------
 
@@ -221,6 +221,13 @@ const ITEM_TYPE_CUES: Array<[RegExp, string]> = [
   [/\bmulti[-\s]?select\b/i, "multi-select"],
 ];
 
+// Every known target id, longest-first so `c1-t1` cannot shadow `c1-t10`/`c1-t11`. Built from
+// targets.ts so a new target is recognized in prompts the moment it is declared there.
+const TARGET_ID_RE = new RegExp(
+  `\\b(?:${Object.keys(TARGETS_DATA).sort((a, b) => b.length - a.length).join("|")})\\b`,
+  "i",
+);
+
 /**
  * Best-effort facets from a raw prompt (the query side has no code). Only fields with a confident
  * cue are set, so the console can use them as a filter; absent fields fall back to vector ranking.
@@ -229,11 +236,13 @@ export function extractQueryFacets(prompt: string): DesignFacets {
   const facets: DesignFacets = {};
   if (!prompt) return facets;
 
-  // Explicit target wins over prose cues. Only c1-t4 is literary; every other target is informational.
-  const explicitTarget = prompt.match(/\bc1-t(4|8|9|10|11)\b/i);
+  // Explicit target wins over prose cues. Both the id set and each target's text type come from
+  // targets.ts, so adding a target does not silently leave its id unrecognized here.
+  const explicitTarget = prompt.match(TARGET_ID_RE);
   if (explicitTarget) {
-    facets.target = `c1-t${explicitTarget[1]}`;
-    facets.passageType = explicitTarget[1] === "4" ? "literary" : "informational";
+    const id = explicitTarget[0].toLowerCase();
+    facets.target = id;
+    facets.passageType = TARGETS_DATA[id].textType;
   } else {
     const rl = /\brl-\d\b/i.test(prompt);
     const ri = /\bri-\d\b/i.test(prompt);

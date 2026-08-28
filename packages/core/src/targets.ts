@@ -17,7 +17,7 @@
 // need version-fragile import attributes; build-static serializes it to `dist/static/targets.json`
 // for non-TS consumers (the console RAG pipeline) and humans.
 
-export const TARGETS_REVISED = "2026-06-30";
+export const TARGETS_REVISED = "2026-08-28";
 
 // CCSS Grade-5 reading-standard families. A target's `standards` is the full strand for its
 // text type, so any plausible CCSS code for that text type validates (the `dimStandard` map
@@ -154,6 +154,30 @@ export const TARGETS_DATA: Record<string, TargetData> = {
       "central-idea": "ri-2",
       "key-detail": "ri-2",
       "summary": "ri-2",
+    },
+  },
+  // Claim 1 · Target 1 — Key Details, LITERARY texts (RL-1 only). The literary mirror of T8: the
+  // inference/conclusion is GIVEN in the stem and the student selects the supporting EVIDENCE
+  // (answerKind "evidence"), same three task models. Unlike T8 the guideline lists NO companion
+  // standard — RL-1 (quote accurately / draw inferences) is the whole of it, so `dimStandard` maps
+  // back to the base and an item's `standards` is just ["rl-1"]. Its literary stems say
+  // "[author/narrator]" and add "line" as a selectable unit; Multi-Select is exactly TWO correct
+  // (T8 allows two or three). DOK 1–2 (default 2).
+  "c1-t1": {
+    id: "c1-t1",
+    label: "Grade 5 · Claim 1 · Target 1 (Key Details)",
+    grade: 5,
+    textType: "literary",
+    baseStandard: "rl-1",
+    defaultDok: "r-dok2",
+    answerKind: "evidence",
+    singlePartHotText: true,
+    taskModels: SELECT_TASK_MODELS,
+    standards: ["RL_G5"],
+    dimensions: ["supporting-evidence"],
+    errorTypes: [], // like T8, wrong answers are non-supporting sources, not distractor claims
+    dimStandard: {
+      "supporting-evidence": "rl-1", // no companion in the guideline — RL-1 stands alone
     },
   },
   // Claim 1 · Target 8 — Key Details, informational texts (RI-1 + RI-7). A DIFFERENT model: the

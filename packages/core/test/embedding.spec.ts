@@ -13,6 +13,7 @@ import {
   stripReadingPassage,
   extractQueryFacets,
 } from "../dist/index.js";
+import { TARGETS_DATA } from "../dist/targets.js";
 
 async function compile(src: string): Promise<{ errors: any[]; data: any }> {
   const ast = await parser.parse("0175", src, lexicon);
@@ -178,5 +179,22 @@ describe("extractQueryFacets", () => {
   it("prefers an explicit target token over prose cues", () => {
     const f = extractQueryFacets("Write a c1-t11 item. It is a short story.");
     expect(f.target).toBe("c1-t11");
+  });
+
+  // The target-id set is derived from targets.ts, so every declared target is recognized and the
+  // one-digit ids cannot shadow the two-digit ones ("c1-t1" must not swallow "c1-t10"/"c1-t11").
+  it("recognizes every declared target id, longest-first", () => {
+    for (const id of Object.keys(TARGETS_DATA)) {
+      const f = extractQueryFacets(`Write a ${id} item.`);
+      expect(f.target, `prompt named ${id}`).toBe(id);
+      expect(f.passageType, `passage type for ${id}`).toBe(TARGETS_DATA[id].textType);
+    }
+  });
+
+  it("maps the literary Key Details target to a literary passage type", () => {
+    const f = extractQueryFacets("Write a c1-t1 multiple choice item.");
+    expect(f.target).toBe("c1-t1");
+    expect(f.passageType).toBe("literary");
+    expect(f.taskModels).toEqual(["1"]); // tm1 = multiple-choice for c1-t1
   });
 });

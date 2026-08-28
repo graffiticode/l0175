@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 Dialect Extensions
 
-_Revised: 2026-06-19_
+_Revised: 2026-08-28_
 
 L0175 composes 5th-grade ELA assessment items (Smarter Balanced · Grade 5 · Claim 1 ·
 Reasoning & Evidence) from an authored, inline superset of tagged content. One language serves
@@ -38,6 +38,16 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   the correct selection). Distractors use a **significance** taxonomy (`too-narrow`,
   `too-broad`, `misreads-detail`, `insignificant`) — usually true statements that just aren't the
   central idea.
+- **`c1-t1`** — Target 1: **Key Details** over **literary** texts. The **literary twin of `c1-t8`**
+  and the same model: the inference/conclusion is **GIVEN in the stem**, and the student selects the
+  supporting **evidence**. Dimension: `supporting-evidence`. Standard: **`rl-1` and nothing else** —
+  the guideline names no companion, so a composed item's `standards` is exactly `["rl-1"]`; omit
+  `standard` on the outcome. **DOK 1–2**. Item types: `multiple-choice`, `multi-select`, `hot-text`
+  (single-part) — no EBSR, no short-text. **Author ONE supported `claim` = the given inference (its
+  `focus`), state it in the `stem`, and author `source`s as the options: `directly-supports` =
+  correct evidence (with a `quote`), `supports-wrong-claim`/`irrelevant` = distractor evidence. No
+  distractor claims.** Its stems offer `line` as a selectable unit and say `[author/narrator]`;
+  Multi-Select is exactly **two** correct.
 - **`c1-t8`** — Target 8: **Key Details** over **informational** texts (RI standards). A DIFFERENT
   model: the inference/conclusion is **GIVEN in the stem**, and the student selects the supporting
   **evidence** (the answer is evidence, not a chosen statement). Dimension: `supporting-evidence`.
@@ -57,22 +67,25 @@ Always declare a top-level `target` (the SBAC learning target the program compos
   (Multi-Select) `status correct` + `status distractor` meanings (each with a T10 `error-type`
   + `rationale`). The outcome's `focus` names the word; state the word + its context in the `stem`.**
 
-**Infer the target — the user need not state it.** Decide from the passage and the skill asked: a
-**literary** text (story/poem/narrative) → `c1-t4`; an **informational** text → an RI target. Among
-informational targets, choose by skill: **reasoning** — infer/conclude and justify with evidence
-(relationships between ideas, author's use of evidence, point of view/purpose/opinion) → `c1-t11`;
-**central ideas** — the main idea, the key details that support it, or a summary → `c1-t9`;
-**key details** — the request **states an inference/conclusion and asks which detail/sentence
-supports it** (the answer is evidence) → `c1-t8`; **word meanings** — the request asks **what a
-word/phrase means in context** → `c1-t10`. The skill also signals T4: character / theme /
-narrator's point of view. When the text type is genuinely ambiguous, prefer `c1-t4`; for an
-informational request, match the verbs: "infer/conclude/why" → T11; "main idea/summarize/most
-about" → T9; "which detail/sentence supports [this stated idea]" → T8; "what does [word] mean" → T10.
-Write the choice as the first top-level form: `target c1-t11`. Use the dimensions, standards, and
-stem catalog (in `stems.md`) for that target; mixing targets' vocabularies is a compile error,
-and the passage `type` should match the target (literary for T4; informational for T11 and T9). If
-`target` is omitted entirely the compiler defaults to `c1-t4` and warns — so always emit one
-explicitly rather than relying on the default.
+**Infer the target — the user need not state it.** Pick on **two axes: the skill asked, and the
+text type.** Most skills exist in both a literary and an informational target, so decide the skill
+first, then the text type:
+
+| Skill — how to recognize it | **Literary** (story / poem / narrative) | **Informational** (article / report) |
+|---|---|---|
+| **Reasoning & Evidence** — infer/conclude AND justify ("infer/conclude/why") | `c1-t4` | `c1-t11` |
+| **Central Ideas** — main idea, the key details that build it, or a summary ("main idea/summarize/mostly about") | — | `c1-t9` |
+| **Key Details** — the request **states an inference and asks which detail/sentence supports it** (the answer is evidence) | `c1-t1` | `c1-t8` |
+| **Word Meanings** — "what does [word] mean [in context]" | — | `c1-t10` |
+
+The skill cues also point at a dimension: character / theme / narrator's point of view → the R&E
+literary target. When the **text type** is genuinely ambiguous, prefer the literary target; when the
+**skill** is ambiguous, match the verbs in the request. Write the choice as the first top-level
+form: `target c1-t11`. Use the dimensions, standards, and stem catalog (in `stems.md`) for that
+target; mixing targets' vocabularies is a compile error, and the passage `type` must match the
+target (literary for T4/T1; informational for T11/T9/T8/T10). If `target` is omitted entirely
+the compiler defaults to `c1-t4` and warns — so always emit one explicitly rather than relying on
+the default.
 
 ## Authoring contract
 
@@ -96,7 +109,7 @@ Quote free text (`text`, `rationale`, `subject`, passage heading) and id labels 
 
 ## Forms and attributes
 
-- **target** `c1-t4` | `c1-t11` — top level; selects the learning-target profile (dimensions,
+- **target** `c1-t4` | `c1-t11` | `c1-t9` | `c1-t1` | `c1-t8` | `c1-t10` — top level; selects the learning-target profile (dimensions,
   standards, stem catalog). Always author one; if omitted, the compiler defaults to `c1-t4`.
 - **grade** `<n>` — optional, top level (e.g. `grade 5`). The reading-level target the compiler
   checks the passage against. Defaults to the guideline/target's grade (5 for `c1-t4`/`c1-t11`);
@@ -338,17 +351,17 @@ targets.
 
 ## Built-in enumerations
 
-- `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t8`, `c1-t10` (top level; always author one — defaults to `c1-t4` if omitted)
+- `target`: `c1-t4`, `c1-t11`, `c1-t9`, `c1-t1`, `c1-t8`, `c1-t10` (top level; always author one — defaults to `c1-t4` if omitted)
 - `grade`: a number (top level, optional; defaults to the target's grade — 5 for all current targets)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` · passage `type`: `literary`, `informational`
-  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select/hot-text)
+  (allowed per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T1/T8/T10: multiple-choice/multi-select/hot-text)
 - `dimension` (**c1-t4**): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (**c1-t11**): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
-- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`
+- `dimension` (**c1-t9**): `central-idea`, `key-detail`, `summary` · (**c1-t1 / c1-t8**): `supporting-evidence` · (**c1-t10**): `word-meaning`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant` · meaning `status` (c1-t10): `correct`, `distractor`
-- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t8**): none — wrong answers are non-supporting `source`s · (**c1-t10**): `other-meaning`, `misinterprets`, `wrong-context`
-- `standard` — primary companions (normally inferred from the dimension; author one only to override): (**c1-t4**) `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` · (**c1-t11**) `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (**c1-t9**) `ri-1` + `ri-2` · (**c1-t8**) `ri-1` + `ri-7` · (**c1-t10**) `ri-4` + `l-4` / `l-4a` / `l-4b` / `l-4c` / `l-5c`. The **full CCSS Grade-5 strand for the target's text type is accepted**: any `rl-1`–`rl-7` / `rl-9` on a literary target (c1-t4), any `ri-1`–`ri-9` on an informational target (c1-t11/t9/t8/t10), plus the `l-4` / `l-5` families on c1-t10. (`rl-2` is the theme standard — valid; there is no `rl-8`.)
-- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`; T8 & T10 are `r-dok2`)
+- `error-type` (**c1-t4 / c1-t11**): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (**c1-t9**): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (**c1-t1 / c1-t8**): none — wrong answers are non-supporting `source`s · (**c1-t10**): `other-meaning`, `misinterprets`, `wrong-context`
+- `standard` — primary companions (normally inferred from the dimension; author one only to override): (**c1-t4**) `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` · (**c1-t11**) `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (**c1-t9**) `ri-1` + `ri-2` · (**c1-t1**) `rl-1` **alone** (no companion) · (**c1-t8**) `ri-1` + `ri-7` · (**c1-t10**) `ri-4` + `l-4` / `l-4a` / `l-4b` / `l-4c` / `l-5c`. The **full CCSS Grade-5 strand for the target's text type is accepted**: any `rl-1`–`rl-7` / `rl-9` on a literary target (c1-t4/c1-t1), any `ri-1`–`ri-9` on an informational target (c1-t11/t9/t8/t10), plus the `l-4` / `l-5` families on c1-t10. (`rl-2` is the theme standard — valid; there is no `rl-8`.)
+- `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E items are `r-dok3`; T9 selected-response is `r-dok2`, its written summary `r-dok3`; T1, T8 & T10 are `r-dok2`)
 
 ## What composition does
 
@@ -442,6 +455,39 @@ evidence [ source id "e1" line 1 status directly-supports supports ["c1"] {} ]
 outcomes [
   outcome id "q1" type multiple-choice dimension central-idea subject "the colony" standard ri-2 focus "c1"
     stem "Which sentence best shows the main idea of the passage?" {}
+]
+{}..
+```
+
+## Example (Target 1 — Key Details, **literary**, evidence selection)
+
+Same model as Target 8 over a story: the inference is **GIVEN in the stem** and the OPTIONS are
+passage `source`s. The T1 difference is the standard — **`rl-1` alone**, so omit `standard` and let
+the dimension resolve it. DOK `r-dok2`.
+
+```
+target c1-t1
+passage "The Loose Board"
+type literary
+lines [
+  "Nina had walked past Mr. Ruiz's crooked porch a hundred times. The third board rocked under her feet every time she crossed it. On Saturday she stopped, because someone had left a hammer on the step. She looked up and down the empty street. Then she knelt down and set the first nail without anyone asking her to. Her arm ached by the fourth nail, but she did not quit. Mr. Ruiz never learned who had fixed his porch."
+]
+claims [
+  claim id "c1" status supported dimension supporting-evidence subject "Nina"
+    text "Nina takes care of a problem on her own, without being told to." cites ["e1" "e2"] {}
+]
+evidence [
+  source id "e1" line 1 quote "Then she knelt down and set the first nail without anyone asking her to." status directly-supports supports ["c1"] {}
+  source id "e2" line 1 quote "Mr. Ruiz never learned who had fixed his porch." status directly-supports supports ["c1"] {}
+  source id "e3" line 1 quote "The third board rocked under her feet every time she crossed it." status irrelevant supports [] rationale "Describes the problem, not Nina's choice to act." {}
+  source id "e4" line 1 quote "On Saturday she stopped, because someone had left a hammer on the step." status irrelevant supports [] rationale "Invites the erroneous inference that she helped only because a tool was there." {}
+  source id "e5" line 1 quote "Nina had walked past Mr. Ruiz's crooked porch a hundred times." status irrelevant supports [] rationale "Tells how often she passed, not that she acted on her own." {}
+  source id "e6" line 1 quote "She looked up and down the empty street." status irrelevant supports [] rationale "Sets the scene; shows no action Nina took." {}
+  source id "e7" line 1 quote "Her arm ached by the fourth nail, but she did not quit." status irrelevant supports [] rationale "Shows persistence once she had started, not that she started unasked." {}
+]
+outcomes [
+  outcome id "q1" type multiple-choice task-model tm1 dimension supporting-evidence subject "Nina" focus "c1"
+    stem "The reader can conclude that Nina takes care of a problem on her own, without being told to. Which line from the passage best supports this conclusion?" {}
 ]
 {}..
 ```

@@ -17,7 +17,7 @@ for the meaning of a targeted word in context.
 
 One language serves **multiple learning targets**, chosen by a required top-level `target`:
 `c1-t4` (literary, RL), `c1-t11` (informational, RI), `c1-t9` (informational, RI-1/RI-2),
-`c1-t8` (informational, RI-1/RI-7), or `c1-t10` (informational, RI-4/L-4). It is
+`c1-t1` (literary, RL-1), `c1-t8` (informational, RI-1/RI-7), or `c1-t10` (informational, RI-4/L-4). It is
 **item-first**: a program declares its `target`, then authors the `outcome`s (questions) first —
 each with a unique `id`, a `focus` correct claim (a **list** on `multi-select`), and an explicit
 `stem` — then the supported and distractor `claim`s (each distractor `targets` the question(s) it
@@ -55,7 +55,7 @@ but author their options differently — **T9** (Central Ideas) significance-tax
 
 | Form | Arity | Example | Description |
 | ---- | :---: | ------- | ----------- |
-| **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11` / `c1-t9` / `c1-t8` / `c1-t10`) |
+| **target** | 2 | `target c1-t11` | Required, top level; selects the learning-target profile (`c1-t4` / `c1-t11` / `c1-t9` / `c1-t1` / `c1-t8` / `c1-t10`) |
 | **passage** | 2 | `passage "Title"` | Sets the passage heading; chains with `type` and `lines` |
 | **type** | 2 | `type literary` | Passage type (`literary` / `informational`) or, on an outcome, the item type |
 | **lines** | 2 | `lines [ "..." "..." ]` | Passage paragraphs (one entry per source paragraph), auto-numbered from 1 — preserve the request's paragraph breaks; don't merge into one block. Hot Text selects at the sentence level automatically, so split by paragraph (not by sentence) for every task model |
@@ -72,7 +72,7 @@ but author their options differently — **T9** (Central Ideas) significance-tax
 
 Attribute functions (arity-2, merge one key into the element's record):
 
-- **top level** — `target` (required: `c1-t4` | `c1-t11` | `c1-t9` | `c1-t8` | `c1-t10`), `title` (optional), `grade` (optional reading-level target; defaults to the target's grade), `words` (c1-t10 only — a list of `word`s)
+- **top level** — `target` (required: `c1-t4` | `c1-t11` | `c1-t9` | `c1-t1` | `c1-t8` | `c1-t10`), `title` (optional), `grade` (optional reading-level target; defaults to the target's grade), `words` (c1-t10 only — a list of `word`s)
 - **word / meaning** (c1-t10) — `word` has `id`, `text`, `line`/`quote`, `meanings`; `meaning` has `id`, `text`, `status` (`correct` | `distractor`), `error-type`* + `rationale`* on distractors
 - **identity / refs** — `id`, `cites` (claim→evidence ids), `supports` (evidence→claim ids), `focus` (outcome→correct claim id, or a list on `multi-select`), `targets` (distractor→outcome ids)
 - **claim** — `status`, `dimension`, `text`, `error-type`*, `rationale`*, `targets`*, `plausibility` (0–1 distractor temptingness override), `subject`, `standard`, `dok`
@@ -84,14 +84,14 @@ Attribute functions (arity-2, merge one key into the element's record):
 
 ### Enumerations
 
-- `target`: `c1-t4` (literary, R&E), `c1-t11` (informational, R&E), `c1-t9` (informational, Central Ideas), `c1-t8` (informational, Key Details), `c1-t10` (informational, Word Meanings)
+- `target`: `c1-t4` (literary, R&E), `c1-t11` (informational, R&E), `c1-t9` (informational, Central Ideas), `c1-t1` (**literary**, Key Details), `c1-t8` (informational, Key Details), `c1-t10` (informational, Word Meanings)
 - item `type`: `ebsr`, `hot-text`, `short-text`, `multiple-choice`, `multi-select` (allowed set per target — T4/T11: ebsr/hot-text/short-text · T9: multiple-choice/multi-select/ebsr/hot-text/short-text · T8: multiple-choice/multi-select/hot-text · T10: multiple-choice/multi-select/hot-text)
 - `dimension` (c1-t4): `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`
 - `dimension` (c1-t11): `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`
-- `dimension` (c1-t9): `central-idea`, `key-detail`, `summary` · (c1-t8): `supporting-evidence` · (c1-t10): `word-meaning`
+- `dimension` (c1-t9): `central-idea`, `key-detail`, `summary` · (c1-t1 / c1-t8): `supporting-evidence` · (c1-t10): `word-meaning`
 - claim `status`: `supported`, `distractor` · source `status`: `directly-supports`, `supports-wrong-claim`, `irrelevant` · meaning `status` (c1-t10): `correct`, `distractor`
-- `error-type` (c1-t4 / c1-t11): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (c1-t9): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (c1-t8): none (non-supporting sources) · (c1-t10): `other-meaning`, `misinterprets`, `wrong-context`
-- `standard` — full CCSS Grade-5 strand for the text type accepted; the dimension's companion is inferred when omitted. Primary companions — (c1-t4): `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` [full RL `rl-1`–`rl-7`/`rl-9`, no `rl-8`] · (c1-t11): `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (c1-t9): `ri-1` + `ri-2` · (c1-t8): `ri-1` + `ri-7` [c1-t11/t9/t8 accept full RI `ri-1`–`ri-9`] · (c1-t10): `ri-4` + the `l-4` / `l-5` families
+- `error-type` (c1-t4 / c1-t11): `misreads-detail`, `erroneous-inference`, `faulty-reasoning` · (c1-t9): `too-narrow`, `too-broad`, `misreads-detail`, `insignificant` · (c1-t1 / c1-t8): none (non-supporting sources) · (c1-t10): `other-meaning`, `misinterprets`, `wrong-context`
+- `standard` — full CCSS Grade-5 strand for the text type accepted; the dimension's companion is inferred when omitted. Primary companions — (c1-t4): `rl-1` + `rl-2` (theme/topic) / `rl-3` / `rl-6` [full RL `rl-1`–`rl-7`/`rl-9`, no `rl-8`] · (c1-t11): `ri-1` + `ri-3` / `ri-6` / `ri-7` / `ri-8` · (c1-t9): `ri-1` + `ri-2` · (c1-t1): `rl-1` alone (no companion) · (c1-t8): `ri-1` + `ri-7` [c1-t11/t9/t8 accept full RI `ri-1`–`ri-9`] · (c1-t10): `ri-4` + the `l-4` / `l-5` families
 - `dok`: `r-dok1`, `r-dok2`, `r-dok3` (R&E → r-dok3; T9 → r-dok2, written summary r-dok3; T8 & T10 → r-dok2)
 
 ### Grade-appropriate reading level

@@ -29,7 +29,7 @@ const ENUM_VALUES = [
   // task-model numbers (per-target; resolved to an item type by the compiler via targets.ts)
   "tm1", "tm2", "tm3", "tm4", "tm5",
   // learning targets (the top-level `target` selector)
-  "c1-t4", "c1-t11", "c1-t9", "c1-t8", "c1-t10",
+  "c1-t4", "c1-t11", "c1-t9", "c1-t1", "c1-t8", "c1-t10",
   // T4 (literary) dimensions
   "character", "setting", "event", "point-of-view",
   "theme", "topic", "narrators-feelings", "character-relationship",
@@ -37,7 +37,7 @@ const ENUM_VALUES = [
   "relationships-interactions", "author-use-of-information", "purpose", "authors-opinion",
   // T9 (Central Ideas) dimensions
   "central-idea", "key-detail", "summary",
-  // T8 (Key Details) dimension
+  // T8 / T1 (Key Details) dimension
   "supporting-evidence",
   // T10 (Word Meanings) dimension
   "word-meaning",
@@ -85,7 +85,7 @@ const additions = {
   passage: fn2("PASSAGE"), // passage heading
   lines: fn2("LINES"), // passage line strings (auto-indexed)
   title: fn2("TITLE"),
-  target: fn2("TARGET"), // top-level SBAC learning target selector (c1-t4 | c1-t11)
+  target: fn2("TARGET"), // top-level SBAC learning target selector (see targets.ts)
   grade: fn2("GRADE"), // optional top-level grade override; defaults to the target's grade
   stem: fn2("STEM"),
   rubric: fn2("RUBRIC"),

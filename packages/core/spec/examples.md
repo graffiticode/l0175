@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # L0175 RAG Training Examples
 
-_Revised: 2026-07-01_
+_Revised: 2026-08-28_
 
 Natural-language prompts for training a RAG model on L0175 — composing 5th-grade ELA
 assessment items (Smarter Balanced · Grade 5 · Claim 1). They are written the way a fifth-grade
@@ -17,7 +17,7 @@ describes, not a tag.
 
 Item type maps to a task-model number within each target, and the numbers collide across targets —
 a short-text item is tm3 in T4/T11 but tm5 in T9; a hot-text item is tm2 in T4/T11, tm4 in T9, and
-tm3 in T8/T10 — so each prompt names its target and task model.
+tm3 in T1/T8/T10 — so each prompt names its target and task model.
 
 ## Target 4 (`c1-t4`) — Reasoning & Evidence, literary
 
@@ -59,15 +59,25 @@ overgeneralization, or a misread. This is the only target that uses all five tas
 18. c1-t9 tm4 — Make an item for an informational passage where students click the sentence or two that best show the main idea.
 19. c1-t9 tm5 — Make a written-response item for an informational passage: ask students to figure out the main idea and explain it using key details from the text.
 
+## Target 1 (`c1-t1`) — Key Details, literary
+
+The same job as Target 8, but on a story instead of an article. Give students a conclusion about
+the story and have them find the line or lines that support it. Wrong answers are other lines that
+tell about the story without backing up that particular conclusion.
+
+20. c1-t1 tm1 — Give students a conclusion about a story and make an item asking which line from the story best supports it.
+21. c1-t1 tm2 — Give students a conclusion about a story and make an item asking which two lines best support it.
+22. c1-t1 tm3 — Give students a conclusion about a story and make an item where they click the sentence or two that support it.
+
 ## Target 8 (`c1-t8`) — Key Details, informational
 
 The conclusion is handed to the students; their job is to find the evidence. Give them an
 inference about an informational passage and have them pick the detail(s) that support it. The
 wrong answers are other details that don't actually support it.
 
-20. c1-t8 tm1 — Give students a conclusion about an informational passage and make an item asking which detail from the passage best supports it.
-21. c1-t8 tm2 — Give students a conclusion about an informational passage and make an item asking which two details best support it.
-22. c1-t8 tm3 — Give students a conclusion about an informational passage and make an item where they click the sentence or two that support it.
+23. c1-t8 tm1 — Give students a conclusion about an informational passage and make an item asking which detail from the passage best supports it.
+24. c1-t8 tm2 — Give students a conclusion about an informational passage and make an item asking which two details best support it.
+25. c1-t8 tm3 — Give students a conclusion about an informational passage and make an item where they click the sentence or two that support it.
 
 ## Target 10 (`c1-t10`) — Word Meanings, informational
 
@@ -76,8 +86,8 @@ The answer choices are meanings; wrong ones come from another meaning of the wor
 the wrong context. Items lean on context, but can also use a word's roots and affixes, a dictionary
 entry, or word relationships like synonyms and antonyms.
 
-23. c1-t10 tm1 — Make an item that asks what a key word most likely means the way it is used in an informational passage.
-24. c1-t10 tm1 — Make an item that asks what a word means by using its Greek or Latin root or prefix.
-25. c1-t10 tm2 — Make an item that asks students to choose the two answers that best give the meaning of a key word as it is used in an informational passage.
-26. c1-t10 tm2 — Make an item that asks students to choose the two words that mean about the same as a key word from the passage.
-27. c1-t10 tm3 — Give students a short dictionary definition and make an item where they click the word in the paragraph that matches it.
+26. c1-t10 tm1 — Make an item that asks what a key word most likely means the way it is used in an informational passage.
+27. c1-t10 tm1 — Make an item that asks what a word means by using its Greek or Latin root or prefix.
+28. c1-t10 tm2 — Make an item that asks students to choose the two answers that best give the meaning of a key word as it is used in an informational passage.
+29. c1-t10 tm2 — Make an item that asks students to choose the two words that mean about the same as a key word from the passage.
+30. c1-t10 tm3 — Give students a short dictionary definition and make an item where they click the word in the paragraph that matches it.

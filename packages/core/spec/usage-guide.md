@@ -13,8 +13,8 @@ L0175 is a content-composition language for 5th-grade English Language Arts asse
 type (`ebsr` / `hot-text` / `short-text` / `multiple-choice` / `multi-select`) — that is unambiguous.
 Task-model *numbers* (TM1…TM5) are numbered **per target**, so the same number means different things
 in different targets: `tm3` is **short-text** in `c1-t4`/`c1-t11`, **`ebsr`** in `c1-t9`, and
-**`hot-text`** in `c1-t8`/`c1-t10`. A bare "task model 3" is therefore meaningless without its
-target — never assume the Reasoning & Evidence (T4/T11) numbering carries over to T9/T8/T10. When a
+**`hot-text`** in `c1-t1`/`c1-t8`/`c1-t10`. A bare "task model 3" is therefore meaningless without
+its target — never assume the Reasoning & Evidence (T4/T11) numbering carries over to T9/T1/T8/T10. When a
 request names a task model by number, resolve it against the **program's target** (see the per-target
 task-model table in *Vocabulary Cues*) and state the item type, e.g. for `c1-t9` "task model 3 → EBSR".
 
@@ -43,6 +43,13 @@ supports it**; dimension `supporting-evidence`, standards `ri-1`+`ri-7`, DOK 1�
 `claim` = the given inference (its `focus`), state it in the `stem`, and author `source`s as the
 options: `directly-supports` = correct evidence (with a `quote`), `supports-wrong-claim`/`irrelevant`
 = distractor evidence. No distractor claims.
+
+**`c1-t1` — Key Details over LITERARY texts** is the same model as `c1-t8` on a story rather than an
+article: same dimension `supporting-evidence`, same item types, same DOK 1–2, same authoring recipe.
+The one difference is the standard — the guideline names **`rl-1` and no companion**, so a composed
+item's `standards` is exactly `["rl-1"]`; omit `standard` on the outcome. Choose between them by the
+passage: story/poem/narrative → `c1-t1`, article/report → `c1-t8`. T1's stems offer `line` as a
+selectable unit and say "[author/**narrator**]"; its Multi-Select is exactly two correct.
 
 L0175 also composes **`c1-t10` — Word Meanings** (informational): the question asks for the
 **meaning of a targeted word/phrase in context**, so the answer choices are **meanings**, authored
@@ -80,7 +87,7 @@ Author the passage **and** every claim, option, and rationale to that grade (fig
 
 Say this to get that:
 
-- **Target** — `target c1-t4` (literary, Reasoning & Evidence), `target c1-t11` (informational, Reasoning & Evidence), `target c1-t9` (informational, Central Ideas), `target c1-t8` (informational, Key Details — given-inference → evidence), or `target c1-t10` (informational, Word Meanings — meaning of a targeted word); required, first top-level form. Selects the dimensions, standards, distractor taxonomy, DOK, item types, and stem catalog.
+- **Target** — `target c1-t4` (literary, Reasoning & Evidence), `target c1-t11` (informational, Reasoning & Evidence), `target c1-t9` (informational, Central Ideas), `target c1-t1` (**literary**, Key Details — given-inference → evidence), `target c1-t8` (informational, Key Details — same model), or `target c1-t10` (informational, Word Meanings — meaning of a targeted word); required, first top-level form. Selects the dimensions, standards, distractor taxonomy, DOK, item types, and stem catalog.
 - **Grade** — optional top-level `grade <n>` (e.g. `grade 5`). Defaults to the target/guideline's grade; author one only to override when the user asks for a different grade. Sets the reading-level target the compiler checks the passage against.
 - **Passage** — `passage "Title"` sets the heading; `type literary` (or `informational`, matching the target); `lines [ "..." "..." ]` are the passage **paragraphs** — one entry per paragraph, auto-numbered from 1. Always split by paragraph, including for Hot Text: the compiler segments each paragraph into sentences and exposes each sentence as a Part B selection, so the passage keeps its paragraph format. For EBSR Part B, evidence sources carry a `quote` with the exact supporting sentence so options stay sentence-tight while `line` points at the paragraph.
 - **Outcome** — the question, composed first. `outcome id "q1" type ebsr dimension character subject "Mara" focus "c1" stem "Which of these inferences about Mara is supported by the passage?" stem-b "Which sentence(s) from the passage best support your answer in Part A?" {}`. `id` is the handle distractors target; `focus` names the correct claim; `stem` (and `stem-b` on EBSR) come from `stems.md`. Vary `type` (`ebsr` / `hot-text` / `short-text`) for different task models. **Keep the Part A stem a neutral question** — fill the template's slot with the subject/skill only, and do **not** echo the correct option's wording (if the stem restates the answer, it gives it away). Paraphrase so stem and key share only the subject; the compiler warns when the stem reuses most of the correct option's words. Applies to every Hot Text and EBSR question, across all targets. **For Hot Text, Part A asks for the best STATEMENT** ("Click on the statement that best provides an inference about [X]…") whose options are inference claims — it is NOT a "click the sentences" instruction (that's Part B, fixed by the compiler). If a request says "select the sentences that show [X]", translate it: Part A is a statement prompt about [X], and the sentences that show [X] are `directly-supports` evidence (with exact `quote`s) that become Part B's answer. The compiler warns when a Hot Text Part A stem mentions sentences.
@@ -89,7 +96,7 @@ Say this to get that:
 - **Dimensions (c1-t4)** — `character`, `setting`, `event`, `point-of-view`, `theme`, `topic`, `narrators-feelings`, `character-relationship`.
 - **Dimensions (c1-t11)** — `relationships-interactions`, `author-use-of-information`, `point-of-view`, `purpose`, `authors-opinion`.
 - **Dimensions (c1-t9)** — `central-idea`, `key-detail`, `summary`.
-- **Dimensions (c1-t8)** — `supporting-evidence` (the answer is evidence; the inference is given in the stem).
+- **Dimensions (c1-t1 / c1-t8)** — `supporting-evidence` (the answer is evidence; the inference is given in the stem). `c1-t1` is the literary target, `c1-t8` the informational one.
 - **Dimensions (c1-t10)** — `word-meaning` (the answer is a meaning; authored via `word`/`meaning`).
 - **Word / meaning (c1-t10)** — `words [ word id "w1" text "aqueduct" line 1 quote "…" meanings [ meaning id "m1" status correct text "a water channel" {} meaning id "m2" status distractor error-type other-meaning text "a boat" rationale "…" {} ] {} ]`; the outcome's `focus` names the word.
 - **Item types** — `ebsr` (two-part: statement → evidence), `hot-text` (R&E/Central-Ideas: click the supporting/main-idea sentences; Key Details: click the evidence sentences; Word Meanings: click the word matching a definition), `short-text` (constructed response), `multiple-choice` (one correct, single-part), `multi-select` (exact correct set, single-part). MC/Multi-Select have no Part B. The allowed set is per-target (the compiler rejects others).
@@ -118,6 +125,7 @@ Say this to get that:
 - *"Make a multi-select asking for the two sentences that belong in a summary."* → `target c1-t9`, `type multi-select`, `dimension summary`, `focus` is a list of the two correct claims
 - *"The article says aqueducts brought water to distant cities — which detail best supports that? (multiple choice)"* → `target c1-t8`, `type multiple-choice`, `dimension supporting-evidence`; the inference goes in the `stem`, the options are `source`s
 - *"Make a click-the-sentence item where students select the evidence for a stated conclusion."* → `target c1-t8`, `type hot-text` (single-part), `dimension supporting-evidence`
+- *"In this story, the reader can conclude the boy regrets what he said — which line best supports that?"* → `target c1-t1` (the literary Key Details target), `type multiple-choice`, `dimension supporting-evidence`; standards are `rl-1` alone
 - *"What does the word 'aqueduct' mean as used in this article? (multiple choice)"* → `target c1-t10`, `type multiple-choice`, `dimension word-meaning`; a `word` with candidate `meaning`s, `focus` names the word
 - *"Read the paragraph below. Click the word that means 'a channel that carries water'."* → `target c1-t10`, `type hot-text` (click-the-word); author the candidate `word`s (correct one is `focus` with its paragraph's `line`, plus a few distractor candidate words from the same paragraph); definition in the stem, passage NOT in the stem
 - *"Keep the passage at a 4th-grade reading level."* → top-level `grade 4`; author shorter sentences and simpler vocabulary (the default is the guideline's Grade 5)
