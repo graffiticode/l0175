@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 // L0175's Form renders composed ELA assessment items (EBSR / Hot Text / Short Text) in a
-// student-facing answerable mode with a toggle to a review overlay (correct answers,
-// distractor analysis, scoring, warnings). Injected into the shared View (from
+// student-facing answerable mode, with a toggle to the reading passage, a bare answer key
+// ("Answers"), or a review overlay ("Rationale": correct answers, distractor analysis, scoring,
+// warnings). Injected into the shared View (from
 // @graffiticode/l0000-view), which supplies `state.data`, `state.errors`, and `state.apply`.
 import "../../index.css";
 import { useState } from "react";
 import type { FormProps, CompileError } from "@graffiticode/l0000-view";
 import { ModeToggle, usePersistedMode } from "./ModeToggle";
 import { ItemView, Passage } from "./ItemView";
+import { AnswersView } from "./AnswersView";
 import { CopyButton } from "./CopyButton";
 import { uniquePassages } from "./copy";
 
@@ -91,7 +93,7 @@ function Pagination({
 }
 
 // The "Passage" view renders the reading passage for the current question, away from the items
-// themselves. It receives the SAME paginated slice as the Questions/Answers views, so the passage
+// themselves. It receives the SAME paginated slice as the other views, so the passage
 // nav has one button per question and stays in sync — different questions can use different
 // passages, and switching tabs keeps you on the matching one (redundant repeats are intentional).
 // Identical passages within the shown slice are still collapsed via uniquePassages.
@@ -138,6 +140,8 @@ export const Form = ({ state }: FormProps) => {
           </div>
           {mode === "passage" ? (
             <PassageView items={visibleItems} />
+          ) : mode === "answers" ? (
+            <AnswersView items={visibleItems} />
           ) : (
             <div className="flex flex-col gap-8">
               {visibleItems.map((item, i) => (

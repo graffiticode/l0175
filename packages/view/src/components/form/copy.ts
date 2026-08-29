@@ -5,7 +5,9 @@
 // self-contained, inline-styled, and free of class names and form controls.
 //
 //   - Questions mode (id "preview") -> the question only.
-//   - Review/Key mode -> the question PLUS a clean teacher answer key (correct option marked, the
+//   - Answers mode -> just the correct answer(s) (answersToHtml/answersToText), with the same
+//     metadata header, so a teacher can paste a bare answer key.
+//   - Rationale mode (id "review") -> the question PLUS a clean teacher answer key (correct option marked, the
 //     answer key, the short-text rubric, and the exemplar/correct inference). Each wrong option is
 //     followed by the same amber annotation the on-screen Review view interleaves beneath it
 //     (error type · plausibility → tie — rationale). It still omits composition warnings.
@@ -13,6 +15,7 @@
 //     a self-contained passage+questions block. "Copy passage" (passagesToHtml/passagesToText)
 //     still serializes just the reading passage(s), with its metadata header.
 import type { Mode } from "./ModeToggle";
+import { answerRows } from "./answers";
 
 const esc = (s: any): string =>
   String(s ?? "")
@@ -381,13 +384,14 @@ export function passagesToText(items: any[], title?: string, sections = false): 
   return (title ? `${title}\n\n` : "") + body;
 }
 
-// Section titles for the copy buttons: "Passage" over the reading passage, then "Question" /
-// "Answer Key" over each item ("#n"-numbered in the multi-item "Copy All" worksheet, bare for the
-// single-item "Copy"). Only emitted when `sections` is true.
+// Section titles for the copy buttons: "Passage" over the reading passage, then the view's own
+// name over each item — "Question" / "Answers" / "Rationale" ("#n"-numbered in the multi-item
+// "Copy All" worksheet, bare for the single-item "Copy"). Only emitted when `sections` is true.
 const SECTION_TITLE_STYLE = "margin:16px 0 6px;font-size:12pt;font-weight:bold;color:#111827";
 const sectionTitleHtml = (label: string): string => P(`<strong>${esc(label)}</strong>`, SECTION_TITLE_STYLE);
+const MODE_SECTION: Record<string, string> = { review: "Rationale", answers: "Answers", preview: "Question" };
 const itemSectionLabel = (mode: Mode, i: number, numbered: boolean): string =>
-  `${mode === "review" ? "Answer Key" : "Question"}${numbered ? ` #${i + 1}` : ""}`;
+  `${MODE_SECTION[mode] ?? "Question"}${numbered ? ` #${i + 1}` : ""}`;
 
 // Joins the currently visible item(s) for copying, wrapped in a base-font container.
 // The Questions / Review copy leads with the reading passage(s) (deduped, no metadata header),
@@ -428,6 +432,57 @@ export function itemsToText(
   // With section titles the headings delimit the blocks (two blank lines above each); without them
   // fall back to the horizontal-rule separator.
   const body = [...passages, ...questions].filter(Boolean).join(sections ? "\n\n\n" : "\n\n———\n\n");
+  return (title ? `${title}\n\n` : "") + body;
+}
+
+// The Answers view's copy: just the correct answer(s), from the same `answerRows` the on-screen
+// AnswersView renders — no stems, options, or distractor analysis. Each item keeps its metadata
+// header, and with `sections` gets an "Answers" heading (numbered by "Copy All").
+function answerRowsHtml(item: any): string {
+  const rows = answerRows(item);
+  if (rows.length === 0) return P("No answer key for this item.", "margin:8px 0 4px;color:#6b7280");
+  return rows
+    .map((r) => {
+      const note = r.note ? ` <span style="font-weight:normal;color:#6b7280">(${esc(r.note)})</span>` : "";
+      const head = P(`<strong>${esc(r.label)}</strong>${note}`, "margin:8px 0 2px");
+      return head + r.values.map((v) => P(`${CHECK} ${esc(v)}`, "margin:0 0 2px 12px")).join("");
+    })
+    .join("");
+}
+
+function answerRowsText(item: any): string {
+  const rows = answerRows(item);
+  if (rows.length === 0) return "No answer key for this item.";
+  const out: string[] = [];
+  for (const r of rows) {
+    out.push(`${r.label}${r.note ? ` (${r.note})` : ""}:`);
+    for (const v of r.values) out.push(`  ✓ ${v}`);
+  }
+  return out.join("\n");
+}
+
+export function answersToHtml(items: any[], title?: string, sections = false, numbered = false): string {
+  const body = (items ?? [])
+    .map((item, i) => {
+      const head = sections ? sectionTitleHtml(`Answers${numbered ? ` #${i + 1}` : ""}`) : "";
+      return `<div>${head}${metaHtml(item)}${answerRowsHtml(item)}</div>`;
+    })
+    .join('<p style="margin:14px 0"></p>');
+  const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
+}
+
+export function answersToText(items: any[], title?: string, sections = false, numbered = false): string {
+  const body = (items ?? [])
+    .map((item, i) => {
+      const meta = metaText(item);
+      return (
+        (sections ? `Answers${numbered ? ` #${i + 1}` : ""}\n\n` : "") +
+        (meta ? `${meta}\n\n` : "") +
+        answerRowsText(item)
+      );
+    })
+    .join(sections ? "\n\n\n" : "\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 

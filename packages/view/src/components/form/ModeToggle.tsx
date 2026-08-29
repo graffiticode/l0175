@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
-// Questions / Answers / Passage toggle. The compiled item carries BOTH the answerable (questions)
-// payload and the answer metadata (correct answers, distractor analysis), plus the reading passage,
-// so toggling is local-only — no recompile. "Passage" shows the reading passage in its own view;
-// "Questions" shows the items without the passage; "Answers" adds the answer key. Mirrors
-// ThemeToggle's published-component styling constraints (preflight off). (Mode ids stay
-// `preview`/`review`.)
+// Passage / Questions / Answers / Rationale toggle. The compiled item carries BOTH the answerable
+// (questions) payload and the answer metadata (correct answers, distractor analysis), plus the
+// reading passage, so toggling is local-only — no recompile. "Passage" shows the reading passage in
+// its own view; "Questions" shows the items without the passage; "Answers" shows just the correct
+// answer(s) (a bare answer key); "Rationale" shows the questions with the answers revealed plus the
+// distractor analysis and scoring. Mirrors ThemeToggle's published-component styling constraints
+// (preflight off). (The Questions/Rationale mode ids stay `preview`/`review`.)
 import { useCallback, useState } from "react";
 
-export type Mode = "preview" | "review" | "passage";
+export type Mode = "preview" | "review" | "passage" | "answers";
 
-const MODES: Mode[] = ["preview", "review", "passage"];
+const MODES: Mode[] = ["preview", "review", "passage", "answers"];
 const STORAGE_KEY = "l0175:form:mode";
 
 // The toggle is a per-reader preference, not item data, so it persists in localStorage and survives
@@ -57,7 +58,8 @@ export function ModeToggle({ mode, setMode }: { mode: Mode; setMode: (m: Mode) =
     <div className="inline-flex gap-1 self-end">
       {opt("passage", "Passage")}
       {opt("preview", "Questions")}
-      {opt("review", "Answers")}
+      {opt("answers", "Answers")}
+      {opt("review", "Rationale")}
     </div>
   );
 }

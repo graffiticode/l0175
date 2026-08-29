@@ -1,21 +1,29 @@
 // SPDX-License-Identifier: MIT
-// The copy buttons beside the Questions/Review/Passage toggle. "Copy" copies the currently visible
-// content in the current mode as rich text (Questions -> the question; Review -> the question + a
-// clean answer key; Passage -> the reading passage). "Copy All" (shown only when the items are
-// paginated) copies the whole set — the passage plus every question, or every answer key in Review
-// mode — so a teacher can paste a full WYSIWYG worksheet into Google Docs or Word.
+// The copy buttons beside the Passage/Questions/Answers/Rationale toggle. "Copy" copies the
+// currently visible content in the current mode as rich text (Passage -> the reading passage;
+// Questions -> the question; Answers -> just the correct answer(s); Rationale -> the question + a
+// clean answer key). "Copy All" (shown only when the items are paginated) copies the whole set in
+// the current mode — so a teacher can paste a full WYSIWYG worksheet, or a full answer key, into
+// Google Docs or Word.
 import { useState } from "react";
 import type { Mode } from "./ModeToggle";
-import { itemsToHtml, itemsToText, passagesToHtml, passagesToText, copyRichText } from "./copy";
+import { itemsToHtml, itemsToText, passagesToHtml, passagesToText, answersToHtml, answersToText, copyRichText } from "./copy";
 
 // Serialize the given items in the given mode to a rich-text payload (HTML + plain-text fallback).
-// Passage mode serializes just the reading passage(s); the other modes lead with the passage(s)
-// then the question(s)/answer key(s).
-// Both buttons title their sections ("Passage", "Question"/"Answer Key"); "Copy All" numbers the
-// items ("Question #1", …) since it spans the whole set, while the single "Copy" leaves them bare.
+// Passage mode serializes just the reading passage(s) and Answers mode just the answer key(s); the
+// question modes lead with the passage(s) then the question(s)/answer key(s).
+// Both buttons title their sections ("Passage", "Question"/"Answers"/"Rationale"); "Copy All"
+// numbers the items ("Question #1", …) since it spans the whole set, while the single "Copy"
+// leaves them bare.
 function payload(items: any[], mode: Mode, title?: string, numbered = false): { html: string; text: string } {
   if (mode === "passage") {
     return { html: passagesToHtml(items, title, true), text: passagesToText(items, title, true) };
+  }
+  if (mode === "answers") {
+    return {
+      html: answersToHtml(items, title, true, numbered),
+      text: answersToText(items, title, true, numbered),
+    };
   }
   return {
     html: itemsToHtml(items, mode, title, true, numbered),
@@ -85,16 +93,16 @@ export function CopyButton({
   mode: Mode;
   title?: string;
 }) {
-  // "Copy All" copies the whole set: passage + all questions, or all answer keys in Review mode.
-  // Shown only in the Questions/Review views (not Passage) and when there are more items than the
-  // visible slice (i.e. paginated).
+  // "Copy All" copies the whole set in the current mode: passage + all questions, all answer keys
+  // in Rationale mode, or every correct answer in Answers mode. Shown in every view but Passage
+  // (whose passages are already deduped) and only when there are more items than the visible slice
+  // (i.e. paginated).
   const showAll = mode !== "passage" && Array.isArray(allItems) && allItems.length > items.length;
-  const allMode: Mode = mode === "review" ? "review" : "preview";
 
   return (
     <div className="flex items-center gap-2">
       <CopyBtn label="Copy" build={() => payload(items, mode, title)} />
-      {showAll && <CopyBtn label="Copy All" build={() => payload(allItems!, allMode, title, true)} />}
+      {showAll && <CopyBtn label="Copy All" build={() => payload(allItems!, mode, title, true)} />}
       {/* single Copy leaves items unnumbered (numbered defaults to false) */}
     </div>
   );

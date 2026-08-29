@@ -19,6 +19,29 @@ const TYPE_LABEL: Record<string, string> = {
   "multi-select": "Multi-Select",
 };
 
+// The item's metadata pill row: Claim / Target / Task Model (abbreviated C · T · TM) parsed out of
+// the `target` tag (e.g. "c1-t4" → C1, T4; the task-model number comes from core), then the item
+// type, standards, DoK, and dimension. Exported so the Answers view heads each answer key with the
+// same row as the question it answers.
+export function MetaPills({ item }: { item: any }) {
+  const target: string = typeof item.target === "string" ? item.target : "";
+  const claimNum = (target.match(/c(\d+)/) ?? [])[1];
+  const targetNum = (target.match(/t(\d+)/) ?? [])[1];
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {claimNum && <Pill>C{claimNum}</Pill>}
+      {targetNum && <Pill>T{targetNum}</Pill>}
+      {item.taskModel && <Pill>TM{item.taskModel}</Pill>}
+      <Pill>{TYPE_LABEL[item.type] ?? item.type}</Pill>
+      {(item.standards ?? []).map((s: string) => (
+        <Pill key={s}>{s}</Pill>
+      ))}
+      {item.dok && <Pill>{item.dok}</Pill>}
+      {item.dimension && <Pill>{item.dimension}</Pill>}
+    </div>
+  );
+}
+
 export function Passage({ passage }: { passage: any }) {
   if (!passage) return null;
   return (
@@ -91,25 +114,9 @@ export function ItemView({
       <MultiSelectItem item={item} mode={mode} respond={respond} />
     ) : null;
 
-  // Claim / Target parse out of the `target` tag (e.g. "c1-t4" → C1, T4); the
-  // task-model number is supplied by core (per-target). Shown abbreviated: C, T, TM.
-  const target: string = typeof item.target === "string" ? item.target : "";
-  const claimNum = (target.match(/c(\d+)/) ?? [])[1];
-  const targetNum = (target.match(/t(\d+)/) ?? [])[1];
-
   return (
     <div className="font-sans flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {claimNum && <Pill>C{claimNum}</Pill>}
-        {targetNum && <Pill>T{targetNum}</Pill>}
-        {item.taskModel && <Pill>TM{item.taskModel}</Pill>}
-        <Pill>{TYPE_LABEL[item.type] ?? item.type}</Pill>
-        {(item.standards ?? []).map((s: string) => (
-          <Pill key={s}>{s}</Pill>
-        ))}
-        {item.dok && <Pill>{item.dok}</Pill>}
-        {item.dimension && <Pill>{item.dimension}</Pill>}
-      </div>
+      <MetaPills item={item} />
       {item.stem?.leadIn && <p className="text-xs italic text-zinc-500">{item.stem.leadIn}</p>}
       {body}
       {mode === "review" && (
