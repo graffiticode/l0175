@@ -89,7 +89,9 @@ export function HotTextItem({
                 <span className="text-zinc-400 mr-2 select-none">{p.lineId}</span>
                 {p.units.map((s: any) => {
                 const on = picked.includes(s.id);
-                const reveal = revealed || previewB; // show correctness
+                // Answers/Rationale mark every supporting sentence; Preview marks only the
+                // sentences the student clicked, so a wrong pick doesn't point at the right one.
+                const right = s.correct && (revealed || (previewB && on));
                 const wrong = previewB && on && !s.correct;
                 return (
                   <Fragment key={s.id}>
@@ -106,7 +108,7 @@ export function HotTextItem({
                       style={{ WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}
                       className={cx(
                         "rounded px-1 py-0.5 border cursor-pointer transition",
-                        reveal && s.correct
+                        right
                           ? "border-green-400 bg-green-50"
                           : wrong
                             ? "border-red-400 bg-red-50"
@@ -116,7 +118,7 @@ export function HotTextItem({
                       )}
                     >
                       {s.text}
-                      {reveal && s.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
+                      {right && <span className="text-green-600 font-semibold ml-1">✓</span>}
                       {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
                     </span>{" "}
                   </Fragment>

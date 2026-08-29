@@ -36,8 +36,8 @@ export function MultiSelectItem({
       <StemLine>{item.stem?.partA}</StemLine>
       {options.map((o: any) => {
         const on = picked.includes(o.key);
-        const reveal = revealed || feedback;
-        const showCorrect = reveal && o.correct;
+        // Preview marks only the boxes the student checked; Answers/Rationale mark the whole set.
+        const showCorrect = o.correct && (revealed || (feedback && on));
         const showWrong = feedback && on && !o.correct;
         const an = ax[`A:${o.key}`];
         const showAnalysis = an && (analysed || showWrong);

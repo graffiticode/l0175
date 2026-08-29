@@ -50,10 +50,10 @@ export function ResultBanner({ correct, children }: { correct: boolean; children
   );
 }
 
-// A selectable option row (radio for single-select). Correctness is revealed in the Answers and
-// Rationale modes (every correct option), and in Preview mode once `feedback` is on (the part has
-// been answered): the correct option is tinted green and the user's wrong pick red. The amber
-// distractor analysis is Rationale-only.
+// A selectable option row (radio for single-select). The Answers and Rationale modes mark EVERY
+// correct option. Preview marks only the option the student picked — green if it was right, red if
+// it was wrong — so answering never gives the answer away; the correct option stays unmarked until
+// they find it. The amber distractor analysis is Rationale-only.
 export function OptionRow({
   name,
   optKey,
@@ -76,9 +76,9 @@ export function OptionRow({
   feedback?: boolean;
 }) {
   const analysed = showsAnalysis(mode);
-  const reveal = revealsAnswers(mode) || !!feedback; // correctness visible
-  const showCorrect = reveal && correct;
-  const showWrong = !!feedback && selected && !correct;
+  const answered = !!feedback && selected; // this row is the student's pick, in Preview
+  const showCorrect = correct && (revealsAnswers(mode) || answered);
+  const showWrong = answered && !correct;
   const showAnalysis = analysis && (analysed || showWrong);
   return (
     <div>

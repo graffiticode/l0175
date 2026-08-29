@@ -8,6 +8,7 @@ import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { Form } from "./Form";
+import { OptionRow } from "./itemKit";
 
 // One minimal item per task-model renderer, shaped like the compiler's output.
 const EBSR: any = {
@@ -118,5 +119,41 @@ describe("answering an item does not blank the view", () => {
     const html = render({ ...MC, choice: "A" }, "preview");
     expect(html).toContain("Questions");
     expect(html).toContain("Which sentence shows the main idea?");
+  });
+});
+
+// Preview feedback is about the student's OWN pick: answering must never point at the right
+// answer. (The Answers and Rationale views are where every correct option is marked.)
+describe("Questions mode marks only the clicked response", () => {
+  const row = (props: any) =>
+    renderToString(
+      createElement(OptionRow as any, {
+        name: "q", optKey: "A", onSelect: () => {}, mode: "preview", children: "an option",
+        ...props,
+      }),
+    );
+  const marksCorrect = (html: string) => html.includes("✓") || html.includes("green");
+  const marksWrong = (html: string) => html.includes("✗") || html.includes("red");
+
+  it("leaves the unpicked correct option unmarked after a wrong answer", () => {
+    const html = row({ correct: true, selected: false, feedback: true });
+    expect(marksCorrect(html)).toBe(false);
+  });
+  it("marks the picked option right when it is right", () => {
+    expect(marksCorrect(row({ correct: true, selected: true, feedback: true }))).toBe(true);
+  });
+  it("marks the picked option wrong when it is wrong", () => {
+    const html = row({ correct: false, selected: true, feedback: true });
+    expect(marksWrong(html)).toBe(true);
+    expect(html).not.toContain("✓");
+  });
+  it("marks nothing before the student answers", () => {
+    const html = row({ correct: true, selected: false, feedback: false });
+    expect(marksCorrect(html)).toBe(false);
+  });
+  it("still marks every correct option in the Answers and Rationale views", () => {
+    for (const mode of ["answers", "review"] as const) {
+      expect(marksCorrect(row({ mode, correct: true, selected: false }))).toBe(true);
+    }
   });
 });

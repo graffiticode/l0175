@@ -33,7 +33,8 @@ export function WordSelectItem({
         {tokens.map((t: any) => {
           if (!t.selectable) return <span key={t.idx}>{(t.pre ?? "") + t.text + (t.post ?? "")} </span>;
           const on = picked === t.idx;
-          const reveal = revealed || (preview && answered);
+          // Preview marks only the word the student clicked; Answers/Rationale mark the answer.
+          const right = t.correct && (revealed || (preview && on));
           const wrong = preview && on && !t.correct;
           return (
             <span key={t.idx}>
@@ -43,7 +44,7 @@ export function WordSelectItem({
                 onClick={() => choose(t.idx)}
                 className={cx(
                   "appearance-none rounded px-1 cursor-pointer border underline decoration-dotted underline-offset-2 transition",
-                  reveal && t.correct
+                  right
                     ? "border-green-400 bg-green-50"
                     : wrong
                       ? "border-red-400 bg-red-50"
@@ -53,7 +54,7 @@ export function WordSelectItem({
                 )}
               >
                 {t.text}
-                {reveal && t.correct && <span className="text-green-600 font-semibold ml-1">✓</span>}
+                {right && <span className="text-green-600 font-semibold ml-1">✓</span>}
                 {wrong && <span className="text-red-600 font-semibold ml-1">✗</span>}
               </button>
               {t.post}{" "}
