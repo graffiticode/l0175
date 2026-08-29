@@ -2,8 +2,7 @@
 // Unit tests for the rich-text serializer behind the Copy button. Pure functions over the item
 // data model — no DOM. Run via the root `npm test` (vitest).
 import { describe, it, expect } from "vitest";
-import { itemToHtml, itemToText, itemsToHtml, itemsToText, passagesToHtml, passagesToText, answersToHtml, answersToText } from "./copy";
-import { answerRows } from "./answers";
+import { itemToHtml, itemToText, itemsToHtml, itemsToText, passagesToHtml, passagesToText } from "./copy";
 
 const EBSR: any = {
   type: "ebsr",
@@ -301,62 +300,39 @@ describe("passage serializer — Copy passage", () => {
   });
 });
 
-describe("answers view — answerRows", () => {
-  it("EBSR yields both parts, with the Part B option quoted", () => {
-    const rows = answerRows(EBSR);
-    expect(rows.map((r) => r.label)).toEqual(["Part A", "Part B"]);
-    expect(rows[0].values).toEqual(["A — Each design solved a limit of the last."]);
-    expect(rows[1].values).toEqual(["B — “Then came stone arches.”"]);
+describe("answers mode — the question with its answers marked", () => {
+  it("marks the correct options and prints the answer key, without the distractor analysis", () => {
+    const html = itemToHtml(EBSR, "answers");
+    expect(html).toContain("Which inference about the designs is supported?"); // the question itself
+    expect(html).toContain("Stone replaced steel."); // distractors still listed, unmarked
+    expect(html).toContain("<strong>A. Each design solved a limit of the last.</strong>"); // correct, bolded
+    expect(html).toContain("✓");
+    expect(html).toContain("Answer key:");
+    expect(html).not.toContain("misreads-detail"); // analysis is Rationale-only
+    const text = itemToText(EBSR, "answers");
+    expect(text).toContain("A. Each design solved a limit of the last. ✓");
+    expect(text).toContain("Answer key: Part A — A; Part B — B");
+    expect(text).not.toContain("misreads-detail");
   });
-  it("two-part Hot Text names the selectable sentences and the choose-N rule", () => {
-    const rows = answerRows(HOTTEXT);
-    expect(rows[0].values).toEqual(["A — right"]);
-    expect(rows[1].label).toBe("Part B");
-    expect(rows[1].values).toEqual(["1.1 — “A.”", "2.1 — “C.”"]);
-    expect(rows[1].note).toBeUndefined(); // 2 valid sentences, selectCount 2 → nothing to choose between
-    // A superset of valid sentences DOES state the rule.
-    const superset = answerRows({ ...HOTTEXT, selectCount: 1 });
-    expect(superset[1].note).toBe("any 1 of these");
+  it("marks hot-text sentences and the word-select word", () => {
+    expect(itemToText(HOTTEXT, "answers")).toContain("A. ✓");
+    expect(itemToText(WORDSELECT, "answers")).toContain("[aqueducts ✓]");
   });
-  it("word-select yields the correct word; MC and multi-select their correct option(s)", () => {
-    expect(answerRows(WORDSELECT)).toEqual([{ label: "Answer", values: ["aqueducts"], note: undefined }]);
-    expect(answerRows(MC)[0].values).toEqual(["A — Bees work together."]);
-    const ms = answerRows(MULTISELECT)[0];
-    expect(ms.values).toEqual(["A — Workers gather nectar.", "B — The queen lays eggs."]);
-    expect(ms.note).toBe("select all 2");
+  it("gives short text its exemplar but not the scoring rubric", () => {
+    const text = itemToText(SHORTTEXT, "answers");
+    expect(text).toContain("Exemplar inference: The author shows that designs improve.");
+    expect(text).not.toContain("Scoring rubric");
+    expect(text).not.toContain("Full and specific."); // rubric descriptors are Rationale-only
+    expect(itemToText(SHORTTEXT, "review")).toContain("Scoring rubric:");
   });
-  it("short text — hand-scored — yields the exemplar response", () => {
-    expect(answerRows(SHORTTEXT)).toEqual([
-      { label: "Exemplar response", values: ["The author shows that designs improve."], note: undefined },
-    ]);
+  it("Questions mode still hides every answer", () => {
+    const text = itemToText(EBSR, "preview");
+    expect(text).not.toContain("✓");
+    expect(text).not.toContain("Answer key");
   });
-});
-
-describe("answers serializer — Copy answers", () => {
-  it("copies the correct answers with the metadata header and no question content", () => {
-    const html = answersToHtml([EBSR], "My Assessment");
-    expect(html).toContain("My Assessment");
-    expect(html).toContain("EBSR"); // metadata header
-    expect(html).toContain("Each design solved a limit of the last."); // the correct option
-    expect(html).not.toContain("Stone replaced steel."); // no distractors
-    expect(html).not.toContain("Which inference"); // no stem
-    expect(html).not.toContain("misreads-detail"); // no distractor analysis
-    expect(html).not.toContain("The Story of Bridges"); // no passage
-  });
-  it("plain text lists each part's answer under its label", () => {
-    const text = answersToText([EBSR]);
-    expect(text).toContain("Part A:");
-    expect(text).toContain("  ✓ A — Each design solved a limit of the last.");
-    expect(text).toContain("Part B:");
-    expect(text).toContain("  ✓ B — “Then came stone arches.”");
-  });
-  it("numbers the sections in the Copy All answer key", () => {
-    const text = answersToText([EBSR, MC], undefined, true, true);
-    expect(text).toContain("Answers #1");
-    expect(text).toContain("Answers #2");
-    expect(answersToHtml([EBSR], undefined, true)).toContain("Answers");
-  });
-  it("says so when an item has no answer key", () => {
-    expect(answersToText([{ type: "short-text", id: "x" }])).toContain("No answer key for this item.");
+  it("titles the copied section by the view it came from", () => {
+    expect(itemsToText([EBSR], "answers", undefined, true)).toContain("Answers");
+    expect(itemsToText([EBSR], "review", undefined, true)).toContain("Rationale");
+    expect(itemsToText([EBSR], "preview", undefined, true)).toContain("Question");
   });
 });

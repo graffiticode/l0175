@@ -1,29 +1,23 @@
 // SPDX-License-Identifier: MIT
 // The copy buttons beside the Passage/Questions/Answers/Rationale toggle. "Copy" copies the
 // currently visible content in the current mode as rich text (Passage -> the reading passage;
-// Questions -> the question; Answers -> just the correct answer(s); Rationale -> the question + a
-// clean answer key). "Copy All" (shown only when the items are paginated) copies the whole set in
+// Questions -> the question; Answers -> the question with its answer(s) marked; Rationale -> that
+// plus the distractor analysis). "Copy All" (shown only when the items are paginated) copies the whole set in
 // the current mode — so a teacher can paste a full WYSIWYG worksheet, or a full answer key, into
 // Google Docs or Word.
 import { useState } from "react";
 import type { Mode } from "./ModeToggle";
-import { itemsToHtml, itemsToText, passagesToHtml, passagesToText, answersToHtml, answersToText, copyRichText } from "./copy";
+import { itemsToHtml, itemsToText, passagesToHtml, passagesToText, copyRichText } from "./copy";
 
 // Serialize the given items in the given mode to a rich-text payload (HTML + plain-text fallback).
-// Passage mode serializes just the reading passage(s) and Answers mode just the answer key(s); the
-// question modes lead with the passage(s) then the question(s)/answer key(s).
+// Passage mode serializes just the reading passage(s); the question modes lead with the
+// passage(s), then the question(s) — with the answers marked in Answers/Rationale mode.
 // Both buttons title their sections ("Passage", "Question"/"Answers"/"Rationale"); "Copy All"
 // numbers the items ("Question #1", …) since it spans the whole set, while the single "Copy"
 // leaves them bare.
 function payload(items: any[], mode: Mode, title?: string, numbered = false): { html: string; text: string } {
   if (mode === "passage") {
     return { html: passagesToHtml(items, title, true), text: passagesToText(items, title, true) };
-  }
-  if (mode === "answers") {
-    return {
-      html: answersToHtml(items, title, true, numbered),
-      text: answersToText(items, title, true, numbered),
-    };
   }
   return {
     html: itemsToHtml(items, mode, title, true, numbered),

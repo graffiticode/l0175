@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Renders one composed assessment item: a metadata header, the lead-in, the task-model-specific
-// body, and (in review mode) the answer key, scoring, and warnings. The passage is never shown
-// here — it lives in its own "Passage" tab.
+// body (which reveals the correct answer(s) in the Answers and Rationale modes), and — in
+// Rationale mode only — the answer key, scoring, and warnings. The passage is never shown here —
+// it lives in its own "Passage" tab.
 import { Pill, type Mode } from "./itemKit";
 import { EbsrItem } from "./EbsrItem";
 import { HotTextItem } from "./HotTextItem";
@@ -59,18 +60,40 @@ export function Passage({ passage }: { passage: any }) {
   );
 }
 
+// The answer key, per task model: EBSR / two-part Hot Text key both parts; the single-part types
+// (multiple-choice, multi-select, word-select Hot Text) key one answer under `choice`/`choices`/
+// `word`. Short Text has no key — only the exemplar, shown by ShortTextItem.
+function answerKeyParts(item: any): { label: string; value: string }[] {
+  const key = item.answerKey ?? {};
+  const parts: { label: string; value: string }[] = [];
+  if (key.partA) parts.push({ label: "Part A", value: String(key.partA) });
+  if (key.partB) {
+    parts.push({
+      label: "Part B",
+      value: item.type === "hot-text" ? `any ${item.selectCount ?? 1} of: ${key.partB}` : String(key.partB),
+    });
+  }
+  if (key.choice) parts.push({ label: "Answer", value: String(key.choice) });
+  if (Array.isArray(key.choices) && key.choices.length) {
+    parts.push({ label: `Answer (select ${item.selectCount ?? key.choices.length})`, value: key.choices.join(", ") });
+  }
+  if (key.word) parts.push({ label: "Answer", value: String(key.word) });
+  return parts;
+}
+
 function ReviewPanel({ item }: { item: any }) {
   const r = item.review ?? {};
+  const parts = answerKeyParts(item);
   return (
     <div className="rounded-md border border-zinc-200 bg-white p-3 flex flex-col gap-2">
       <p className="text-xs font-semibold text-zinc-700">Answer key &amp; scoring</p>
       <p className="text-xs text-zinc-600">
-        {item.answerKey?.partA && <>Part A: <span className="font-semibold">{item.answerKey.partA}</span>{" "}</>}
-        {item.answerKey?.partB && (
-          <>· Part B: <span className="font-semibold">
-            {item.type === "hot-text" ? `any ${item.selectCount ?? 1} of: ${item.answerKey.partB}` : item.answerKey.partB}
-          </span></>
-        )}
+        {parts.map((p, i) => (
+          <span key={p.label}>
+            {i > 0 && " · "}
+            {p.label}: <span className="font-semibold">{p.value}</span>
+          </span>
+        ))}
       </p>
       <p className="text-xs text-zinc-600">{r.scoring}</p>
       {r.correctClaim && (
@@ -96,7 +119,13 @@ export function ItemView({
   mode: Mode;
   apply: (action: any) => void;
 }) {
-  const respond = (r: any) => apply({ type: "response", args: { itemId: item.id, ...r } });
+  // The shared View's default reducer merges a response's args into the TOP LEVEL of `data`
+  // ({...data, ...args}). A single-item program's data IS the item, so spreading the raw answer
+  // there overwrote the item's own fields — `{choice: "A"}` clobbered `item.choice` (the options
+  // object), `{partA: "C"}` clobbered `item.partA` — and the next render threw on the missing
+  // options, blanking the form. Namespacing under one `response` key keeps answers out of the
+  // item's namespace.
+  const respond = (r: any) => apply({ type: "response", args: { response: { itemId: item.id, ...r } } });
   const body =
     item.type === "ebsr" ? (
       <EbsrItem item={item} mode={mode} respond={respond} />

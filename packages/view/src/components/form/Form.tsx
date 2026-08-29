@@ -1,17 +1,39 @@
 // SPDX-License-Identifier: MIT
 // L0175's Form renders composed ELA assessment items (EBSR / Hot Text / Short Text) in a
-// student-facing answerable mode, with a toggle to the reading passage, a bare answer key
-// ("Answers"), or a review overlay ("Rationale": correct answers, distractor analysis, scoring,
-// warnings). Injected into the shared View (from
+// student-facing answerable mode, with a toggle to the reading passage, the answered item with its
+// correct answer(s) marked ("Answers"), or that plus the review overlay ("Rationale": distractor
+// analysis, answer key, scoring, warnings). Injected into the shared View (from
 // @graffiticode/l0000-view), which supplies `state.data`, `state.errors`, and `state.apply`.
 import "../../index.css";
-import { useState } from "react";
+import { Component, useState } from "react";
 import type { FormProps, CompileError } from "@graffiticode/l0000-view";
 import { ModeToggle, usePersistedMode } from "./ModeToggle";
 import { ItemView, Passage } from "./ItemView";
-import { AnswersView } from "./AnswersView";
 import { CopyButton } from "./CopyButton";
 import { uniquePassages } from "./copy";
+
+// One malformed item must not take the whole form down with it: without a boundary, a throw
+// inside any item renderer unmounts the entire React tree and the view goes blank. Each item is
+// wrapped, so a bad one degrades to an inline message and its siblings still render.
+class ItemBoundary extends Component<{ children: any }, { error: any }> {
+  state = { error: null as any };
+  static getDerivedStateFromError(error: any) {
+    return { error };
+  }
+  componentDidCatch(error: any) {
+    console.error("Item failed to render", error);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded-md p-3 border text-sm bg-amber-50 border-amber-200 text-amber-800">
+          This item could not be displayed: {String(this.state.error?.message ?? this.state.error)}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function renderErrors(errors: CompileError[]) {
   return (
@@ -120,7 +142,7 @@ export const Form = ({ state }: FormProps) => {
   const isItem = data && (data.kind === "item" || data.kind === "items");
   const items: any[] = data?.kind === "items" ? data.items : isItem ? [data] : [];
 
-  // Multiple questions are paginated one at a time, in both Preview and Review.
+  // Multiple questions are paginated one at a time, in every mode.
   const paginated = items.length > 1;
   const current = Math.min(page, items.length - 1);
   const visibleItems = paginated ? [items[current]] : items;
@@ -140,12 +162,12 @@ export const Form = ({ state }: FormProps) => {
           </div>
           {mode === "passage" ? (
             <PassageView items={visibleItems} />
-          ) : mode === "answers" ? (
-            <AnswersView items={visibleItems} />
           ) : (
             <div className="flex flex-col gap-8">
               {visibleItems.map((item, i) => (
-                <ItemView key={item.id ?? i} item={item} mode={mode} apply={state.apply} />
+                <ItemBoundary key={item?.id ?? i}>
+                  <ItemView item={item} mode={mode} apply={state.apply} />
+                </ItemBoundary>
               ))}
             </div>
           )}

@@ -3,7 +3,7 @@
 // "Choose two sentences that belong in a summary" items. 1 point only for selecting exactly the
 // correct set (and nothing else). Checkboxes, since more than one option is correct.
 import { useState } from "react";
-import { StemLine, ResultBanner, analysisIndex, cx, type Mode } from "./itemKit";
+import { StemLine, ResultBanner, analysisIndex, cx, revealsAnswers, showsAnalysis, type Mode } from "./itemKit";
 
 export function MultiSelectItem({
   item,
@@ -16,10 +16,12 @@ export function MultiSelectItem({
 }) {
   const [picked, setPicked] = useState<string[]>([]);
   const ax = analysisIndex(item);
-  const review = mode === "review";
+  const revealed = revealsAnswers(mode); // Answers / Rationale mark the correct set
+  const analysed = showsAnalysis(mode); // the amber distractor analysis is Rationale-only
   const preview = mode === "preview";
   const feedback = preview && picked.length > 0; // correctness shown once a box is checked
-  const correctKeys = item.choice.options.filter((o: any) => o.correct).map((o: any) => o.key);
+  const options: any[] = item.choice?.options ?? [];
+  const correctKeys = options.filter((o: any) => o.correct).map((o: any) => o.key);
   const need = item.selectCount ?? correctKeys.length;
   const ok = picked.length === correctKeys.length && correctKeys.every((k: string) => picked.includes(k));
 
@@ -31,14 +33,14 @@ export function MultiSelectItem({
 
   return (
     <div className="flex flex-col gap-2">
-      <StemLine>{item.stem.partA}</StemLine>
-      {item.choice.options.map((o: any) => {
+      <StemLine>{item.stem?.partA}</StemLine>
+      {options.map((o: any) => {
         const on = picked.includes(o.key);
-        const reveal = review || feedback;
+        const reveal = revealed || feedback;
         const showCorrect = reveal && o.correct;
         const showWrong = feedback && on && !o.correct;
         const an = ax[`A:${o.key}`];
-        const showAnalysis = an && (review || showWrong);
+        const showAnalysis = an && (analysed || showWrong);
         return (
           <div key={o.key}>
             <label
@@ -65,7 +67,7 @@ export function MultiSelectItem({
               {showWrong && <span className="text-red-600 font-semibold">✗</span>}
             </label>
             {showAnalysis &&
-              (review ? (
+              (analysed ? (
                 <p className="ml-9 mt-1 text-xs text-amber-700">
                   <span className="font-semibold">{an.errorType || an.status}</span>
                   {typeof an.plausibility === "number" ? ` · p=${an.plausibility}` : ""}

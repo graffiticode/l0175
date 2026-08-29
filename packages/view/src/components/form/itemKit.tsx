@@ -5,6 +5,14 @@ import type { Mode } from "./ModeToggle";
 
 export type { Mode };
 
+// Two modes reveal correctness, and they differ only in how much they say about it:
+//   - "answers" shows the item exactly as it looks once a student has answered — the correct
+//     option(s)/sentence(s)/word tinted green with a ✓ — and nothing else.
+//   - "review" (the Rationale view) adds the distractor analysis, answer key, and scoring.
+// Preview reveals the same marks once the student answers (the `feedback` flag).
+export const revealsAnswers = (mode: Mode) => mode === "review" || mode === "answers";
+export const showsAnalysis = (mode: Mode) => mode === "review";
+
 export function cx(...c: any[]) {
   return c.filter(Boolean).join(" ");
 }
@@ -42,9 +50,10 @@ export function ResultBanner({ correct, children }: { correct: boolean; children
   );
 }
 
-// A selectable option row (radio for single-select). Correctness is revealed in Review mode
-// (every correct option), and in Preview mode once `feedback` is on (the part has been
-// answered): the correct option is tinted green and the user's wrong pick red.
+// A selectable option row (radio for single-select). Correctness is revealed in the Answers and
+// Rationale modes (every correct option), and in Preview mode once `feedback` is on (the part has
+// been answered): the correct option is tinted green and the user's wrong pick red. The amber
+// distractor analysis is Rationale-only.
 export function OptionRow({
   name,
   optKey,
@@ -66,11 +75,11 @@ export function OptionRow({
   analysis?: any;
   feedback?: boolean;
 }) {
-  const review = mode === "review";
-  const reveal = review || !!feedback; // correctness visible
+  const analysed = showsAnalysis(mode);
+  const reveal = revealsAnswers(mode) || !!feedback; // correctness visible
   const showCorrect = reveal && correct;
   const showWrong = !!feedback && selected && !correct;
-  const showAnalysis = analysis && (review || showWrong);
+  const showAnalysis = analysis && (analysed || showWrong);
   return (
     <div>
       <label
@@ -98,7 +107,7 @@ export function OptionRow({
         {showWrong && <span className="text-red-600 font-semibold">✗</span>}
       </label>
       {showAnalysis &&
-        (review ? (
+        (analysed ? (
           <p className="ml-9 mt-1 text-xs text-amber-700">
             <span className="font-semibold">{analysis.errorType || analysis.status}</span>
             {typeof analysis.plausibility === "number" ? ` · p=${analysis.plausibility}` : ""}

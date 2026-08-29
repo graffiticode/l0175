@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Short Text (Task Model 3): constructed response. A prompt + a text box; hand-scored 0/1/2
-// against the rubric (no auto-scoring). Review mode shows the rubric and the answer-key rationale.
+// against the rubric (no auto-scoring). There is no option to mark correct, so the two revealing
+// modes show the exemplar response — Answers on its own, Rationale alongside the scoring rubric.
 import { useState } from "react";
-import { StemLine, type Mode } from "./itemKit";
+import { StemLine, revealsAnswers, type Mode } from "./itemKit";
 
 export function ShortTextItem({
   item,
@@ -14,6 +15,9 @@ export function ShortTextItem({
   respond: (r: any) => void;
 }) {
   const [text, setText] = useState("");
+  // Hand-scored: the "answer" is the exemplar the rubric is applied against — the authored
+  // rationale, falling back to the correct claim the item was composed from.
+  const exemplar = item.answerKey?.rationale || item.review?.correctClaim?.text;
   return (
     <div className="flex flex-col gap-3">
       <StemLine>{item.prompt}</StemLine>
@@ -29,22 +33,27 @@ export function ShortTextItem({
       />
       {mode === "preview" && text.trim() !== "" && (
         <p className="text-xs text-zinc-500">
-          This constructed response is hand-scored against a 0–2 rubric — switch to Review to see it.
+          This constructed response is hand-scored against a 0–2 rubric — switch to Rationale to see it.
         </p>
       )}
-      {mode === "review" && (
+      {revealsAnswers(mode) && (
         <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-          <p className="text-xs font-semibold text-zinc-700 mb-2">Scoring rubric (hand-scored)</p>
-          <ul className="flex flex-col gap-1">
-            {item.rubric.map((r: any) => (
-              <li key={r.score} className="text-xs text-zinc-700">
-                <span className="font-semibold">{r.score}</span> — {r.descriptor}
-              </li>
-            ))}
-          </ul>
-          {item.answerKey?.rationale && (
-            <p className="text-xs text-zinc-600 mt-2">
-              <span className="font-semibold">Exemplar inference:</span> {item.answerKey.rationale}
+          {mode === "review" && (
+            <>
+              <p className="text-xs font-semibold text-zinc-700 mb-2">Scoring rubric (hand-scored)</p>
+              <ul className="flex flex-col gap-1">
+                {(item.rubric ?? []).map((r: any) => (
+                  <li key={r.score} className="text-xs text-zinc-700">
+                    <span className="font-semibold">{r.score}</span> — {r.descriptor}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {exemplar && (
+            <p className={"text-xs text-zinc-600" + (mode === "review" ? " mt-2" : "")}>
+              <span className="font-semibold text-green-700">✓</span>{" "}
+              <span className="font-semibold">Exemplar response:</span> {exemplar}
             </p>
           )}
         </div>

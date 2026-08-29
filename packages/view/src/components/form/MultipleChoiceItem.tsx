@@ -16,7 +16,8 @@ export function MultipleChoiceItem({
   const [picked, setPicked] = useState<string | undefined>();
   const ax = analysisIndex(item);
   const preview = mode === "preview";
-  const ok = !!item.choice.options.find((o: any) => o.key === picked)?.correct;
+  const options: any[] = item.choice?.options ?? [];
+  const ok = !!options.find((o: any) => o.key === picked)?.correct;
 
   const choose = (key: string) => {
     setPicked(key);
@@ -25,8 +26,8 @@ export function MultipleChoiceItem({
 
   return (
     <div className="flex flex-col gap-2">
-      <StemLine>{item.stem.partA}</StemLine>
-      {item.choice.options.map((o: any) => (
+      <StemLine>{item.stem?.partA}</StemLine>
+      {options.map((o: any) => (
         <OptionRow
           key={o.key}
           name={`${item.id}-mc`}

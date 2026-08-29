@@ -2,10 +2,11 @@
 // Passage / Questions / Answers / Rationale toggle. The compiled item carries BOTH the answerable
 // (questions) payload and the answer metadata (correct answers, distractor analysis), plus the
 // reading passage, so toggling is local-only — no recompile. "Passage" shows the reading passage in
-// its own view; "Questions" shows the items without the passage; "Answers" shows just the correct
-// answer(s) (a bare answer key); "Rationale" shows the questions with the answers revealed plus the
-// distractor analysis and scoring. Mirrors ThemeToggle's published-component styling constraints
-// (preflight off). (The Questions/Rationale mode ids stay `preview`/`review`.)
+// its own view; "Questions" shows the items without the passage; "Answers" shows those same items
+// as they look once answered — the correct option/sentence/word tinted green with a ✓; "Rationale"
+// adds the teacher layer on top: the distractor analysis, answer key, scoring, and warnings.
+// Mirrors ThemeToggle's published-component styling constraints (preflight off). (The
+// Questions/Rationale mode ids stay `preview`/`review`.)
 import { useCallback, useState } from "react";
 
 export type Mode = "preview" | "review" | "passage" | "answers";

@@ -3,7 +3,7 @@
 // clicks the word in the excerpt that matches it. Single-part, exactly one correct word. The
 // excerpt renders in-context — candidate words are underlined and clickable, other words plain.
 import { useState } from "react";
-import { StemLine, ResultBanner, cx, type Mode } from "./itemKit";
+import { StemLine, ResultBanner, cx, revealsAnswers, type Mode } from "./itemKit";
 
 export function WordSelectItem({
   item,
@@ -15,7 +15,7 @@ export function WordSelectItem({
   respond: (r: any) => void;
 }) {
   const [picked, setPicked] = useState<number | undefined>();
-  const review = mode === "review";
+  const revealed = revealsAnswers(mode); // Answers / Rationale mark the correct word
   const preview = mode === "preview";
   const tokens: any[] = item.wordSelect?.tokens ?? [];
   const ok = picked !== undefined && !!tokens.find((t) => t.idx === picked)?.correct;
@@ -28,12 +28,12 @@ export function WordSelectItem({
 
   return (
     <div className="flex flex-col gap-2">
-      <StemLine>{item.stem.partA}</StemLine>
+      <StemLine>{item.stem?.partA}</StemLine>
       <p className="font-sans rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800 leading-loose">
         {tokens.map((t: any) => {
           if (!t.selectable) return <span key={t.idx}>{(t.pre ?? "") + t.text + (t.post ?? "")} </span>;
           const on = picked === t.idx;
-          const reveal = review || (preview && answered);
+          const reveal = revealed || (preview && answered);
           const wrong = preview && on && !t.correct;
           return (
             <span key={t.idx}>

@@ -17,8 +17,10 @@ export function EbsrItem({
   const [partB, setPartB] = useState<string | undefined>();
   const ax = analysisIndex(item);
   const preview = mode === "preview";
-  const aOk = !!item.partA.options.find((o: any) => o.key === partA)?.correct;
-  const bOk = !!item.partB.options.find((o: any) => o.key === partB)?.correct;
+  const aOptions: any[] = item.partA?.options ?? [];
+  const bOptions: any[] = item.partB?.options ?? [];
+  const aOk = !!aOptions.find((o: any) => o.key === partA)?.correct;
+  const bOk = !!bOptions.find((o: any) => o.key === partB)?.correct;
   const answered = partA !== undefined && partB !== undefined;
 
   const pick = (part: "A" | "B", key: string) => {
@@ -30,8 +32,8 @@ export function EbsrItem({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <StemLine>Part A. {item.stem.partA}</StemLine>
-        {item.partA.options.map((o: any) => (
+        <StemLine>Part A. {item.stem?.partA}</StemLine>
+        {aOptions.map((o: any) => (
           <OptionRow
             key={o.key}
             name={`${item.id}-A`}
@@ -48,8 +50,8 @@ export function EbsrItem({
         ))}
       </div>
       <div className="flex flex-col gap-2">
-        <StemLine>Part B. {item.stem.partB}</StemLine>
-        {item.partB.options.map((o: any) => (
+        <StemLine>Part B. {item.stem?.partB}</StemLine>
+        {bOptions.map((o: any) => (
           <OptionRow
             key={o.key}
             name={`${item.id}-B`}

@@ -5,17 +5,21 @@
 // self-contained, inline-styled, and free of class names and form controls.
 //
 //   - Questions mode (id "preview") -> the question only.
-//   - Answers mode -> just the correct answer(s) (answersToHtml/answersToText), with the same
-//     metadata header, so a teacher can paste a bare answer key.
-//   - Rationale mode (id "review") -> the question PLUS a clean teacher answer key (correct option marked, the
-//     answer key, the short-text rubric, and the exemplar/correct inference). Each wrong option is
-//     followed by the same amber annotation the on-screen Review view interleaves beneath it
-//     (error type · plausibility → tie — rationale). It still omits composition warnings.
+//   - Answers mode -> the question with the correct answer(s) marked (bold + ✓) and the answer key
+//     line, mirroring the on-screen Answers view. No distractor analysis, no rubric.
+//   - Rationale mode (id "review") -> all of that PLUS the teacher's analysis: the short-text
+//     rubric, and, beneath each wrong option, the same amber annotation the on-screen Rationale
+//     view interleaves (error type · plausibility → tie — rationale). It still omits composition
+//     warnings.
 //   - Both modes LEAD with the reading passage(s) (deduped), then the question(s), so the copy is
 //     a self-contained passage+questions block. "Copy passage" (passagesToHtml/passagesToText)
 //     still serializes just the reading passage(s), with its metadata header.
 import type { Mode } from "./ModeToggle";
-import { answerRows } from "./answers";
+
+// The two revealing modes, mirroring itemKit's helpers: both mark the correct answer(s); only
+// Rationale carries the distractor analysis and the scoring rubric.
+const revealsAnswers = (mode: Mode) => mode === "review" || mode === "answers";
+const showsAnalysis = (mode: Mode) => mode === "review";
 
 const esc = (s: any): string =>
   String(s ?? "")
@@ -114,16 +118,16 @@ function annotationText(a: any): string {
 }
 
 // One option line: "A. text" (Part B EBSR options are quoted). Correct options are bolded with a ✓
-// in review mode only. In review mode each wrong option is followed by its amber annotation
-// (interleaved, as on screen) via `ann(key)`.
+// in the revealing modes. In Rationale mode each wrong option is additionally followed by its
+// amber annotation (interleaved, as on screen) via `ann(key)`.
 function optionsHtml(options: any[], mode: Mode, quote: boolean, ann?: (key: string) => any): string {
   return (options ?? [])
     .map((o: any) => {
-      const correct = mode === "review" && o.correct;
+      const correct = revealsAnswers(mode) && o.correct;
       const txt = quote ? `<em>&ldquo;${esc(o.text)}&rdquo;</em>` : esc(o.text);
       const body = `${esc(o.key)}. ${txt}`;
       const row = P(correct ? `<strong>${body}</strong> ${CHECK}` : body);
-      const note = mode === "review" && !o.correct && ann ? annotationHtml(ann(o.key)) : "";
+      const note = showsAnalysis(mode) && !o.correct && ann ? annotationHtml(ann(o.key)) : "";
       return row + note;
     })
     .join("");
@@ -131,7 +135,7 @@ function optionsHtml(options: any[], mode: Mode, quote: boolean, ann?: (key: str
 
 // Hot Text Part B: the passage keeps its paragraph format, with each sentence individually
 // selectable. Group the selectable sentences by paragraph (lineId) — one <p> per paragraph,
-// sentences inline; correct sentences are bolded with a ✓ in review mode only.
+// sentences inline; correct sentences are bolded with a ✓ in the revealing modes.
 function selectableHtml(selectable: any[], mode: Mode): string {
   const groups = groupByLine(selectable ?? []);
   return groups
@@ -139,7 +143,7 @@ function selectableHtml(selectable: any[], mode: Mode): string {
       P(
         g.units
           .map((s: any) => {
-            const correct = mode === "review" && s.correct;
+            const correct = revealsAnswers(mode) && s.correct;
             return correct ? `<strong>${esc(s.text)}</strong> ${CHECK}` : esc(s.text);
           })
           .join(" "),
@@ -153,11 +157,11 @@ function selectableHtml(selectable: any[], mode: Mode): string {
 // preserves `text-decoration:underline`, unlike a `border-bottom`), while the brackets are literal
 // characters that survive even when a target strips formatting (e.g. Docs "paste without
 // formatting", which derives plain text from the HTML and ignores the clipboard's text/plain).
-// In review the correct word is also bolded with a ✓.
+// In the revealing modes the correct word is also bolded with a ✓.
 function wordSelectHtml(wordSelect: any, mode: Mode): string {
   return (wordSelect?.tokens ?? [])
     .map((t: any) => {
-      const correct = mode === "review" && t.correct;
+      const correct = revealsAnswers(mode) && t.correct;
       let word = esc(t.text);
       if (t.selectable) {
         const u = `<u style="text-decoration:underline;text-decoration-style:dotted">${word}</u>`;
@@ -180,12 +184,12 @@ function groupByLine(selectable: any[]): { lineId: number; units: any[] }[] {
   return groups;
 }
 
-// HTML for one composed item (the question, plus a clean answer key in review/Key mode). The
+// HTML for one composed item (the question, plus the answer key in the revealing modes). The
 // passage is not embedded per-item; itemsToHtml/itemsToText prepend the deduped passage(s) for the
 // whole copy.
 export function itemToHtml(item: any, mode: Mode): string {
   if (!item) return "";
-  const review = mode === "review";
+  const reveal = revealsAnswers(mode);
   const aA = analysisMap(item, "A");
   const aB = analysisMap(item, "B");
   const out: string[] = [];
@@ -214,10 +218,10 @@ export function itemToHtml(item: any, mode: Mode): string {
     out.push(optionsHtml(item.choice?.options, mode, false, (k) => aA[k]));
   } else if (item.type === "short-text") {
     out.push(P(`<strong>${esc(item.prompt)}</strong>`, "margin:8px 0 4px"));
-    if (!review) out.push(P("Answer: ___________________________________________", "margin:8px 0;color:#9ca3af"));
+    if (!reveal) out.push(P("Answer: ___________________________________________", "margin:8px 0;color:#9ca3af"));
   }
 
-  if (review) {
+  if (reveal) {
     const key: string[] = [];
     if (item.answerKey?.partA) key.push(`Part A &mdash; ${esc(item.answerKey.partA)}`);
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B &mdash; ${esc(item.answerKey.partB)}`);
@@ -230,7 +234,8 @@ export function itemToHtml(item: any, mode: Mode): string {
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer &mdash; ${esc(item.answerKey.choices.join(", "))}`);
     if (key.length) out.push(P(`<strong>Answer key:</strong> ${key.join("; ")}`, "margin:8px 0 4px"));
 
-    if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
+    // The rubric is scoring, not an answer — Rationale only.
+    if (showsAnalysis(mode) && item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
       out.push(P("<strong>Scoring rubric:</strong>", "margin:8px 0 4px"));
       out.push(
         `<ul style="margin:0 0 4px;padding-left:20px">${item.rubric
@@ -256,7 +261,7 @@ export function itemToHtml(item: any, mode: Mode): string {
 // Plain-text fallback (mirrors itemToHtml, no markup).
 export function itemToText(item: any, mode: Mode): string {
   if (!item) return "";
-  const review = mode === "review";
+  const reveal = revealsAnswers(mode);
   const out: string[] = [];
   const meta = metaText(item);
   if (meta) out.push(meta, "");
@@ -265,22 +270,22 @@ export function itemToText(item: any, mode: Mode): string {
   const aA = analysisMap(item, "A");
   const aB = analysisMap(item, "B");
   const opt = (o: any, quote: boolean) => {
-    const mark = mode === "review" && o.correct ? " ✓" : "";
+    const mark = reveal && o.correct ? " ✓" : "";
     return `${o.key}. ${quote ? `“${o.text}”` : o.text}${mark}`;
   };
-  // Push an option line, and — in review mode — interleave its amber annotation beneath it.
+  // Push an option line, and — in Rationale mode — interleave its amber annotation beneath it.
   const pushOpt = (o: any, quote: boolean, map: Record<string, any>) => {
     out.push(opt(o, quote));
-    if (review && !o.correct) {
+    if (showsAnalysis(mode) && !o.correct) {
       const note = annotationText(map[o.key]);
       if (note.trim()) out.push(note);
     }
   };
 
   const hotTextLines = () => {
-    // Hot Text: one line per paragraph, sentences inline; correct sentences marked in review.
+    // Hot Text: one line per paragraph, sentences inline; correct sentences marked when revealed.
     for (const g of groupByLine(item.selectable ?? [])) {
-      out.push(g.units.map((s: any) => `${s.text}${mode === "review" && s.correct ? " ✓" : ""}`).join(" "));
+      out.push(g.units.map((s: any) => `${s.text}${reveal && s.correct ? " ✓" : ""}`).join(" "));
     }
   };
   if ((item.type === "ebsr" || item.type === "hot-text") && item.partA) {
@@ -298,7 +303,7 @@ export function itemToText(item: any, mode: Mode): string {
     out.push(
       (item.wordSelect.tokens ?? [])
         .map((t: any) => {
-          const core = t.selectable ? `[${t.text}${mode === "review" && t.correct ? " ✓" : ""}]` : t.text;
+          const core = t.selectable ? `[${t.text}${reveal && t.correct ? " ✓" : ""}]` : t.text;
           return `${t.pre ?? ""}${core}${t.post ?? ""}`;
         })
         .join(" "),
@@ -311,10 +316,10 @@ export function itemToText(item: any, mode: Mode): string {
     for (const o of item.choice?.options ?? []) pushOpt(o, false, aA);
   } else if (item.type === "short-text") {
     out.push(item.prompt ?? "");
-    if (!review) out.push("", "Answer: ___________________________________________");
+    if (!reveal) out.push("", "Answer: ___________________________________________");
   }
 
-  if (review) {
+  if (reveal) {
     const key: string[] = [];
     if (item.answerKey?.partA) key.push(`Part A — ${item.answerKey.partA}`);
     if (item.answerKey?.partB && item.type !== "hot-text") key.push(`Part B — ${item.answerKey.partB}`);
@@ -326,7 +331,7 @@ export function itemToText(item: any, mode: Mode): string {
     if (item.answerKey?.choice) key.push(`Answer — ${item.answerKey.choice}`);
     if (Array.isArray(item.answerKey?.choices) && item.answerKey.choices.length) key.push(`Answer — ${item.answerKey.choices.join(", ")}`);
     if (key.length) out.push("", `Answer key: ${key.join("; ")}`);
-    if (item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
+    if (showsAnalysis(mode) && item.type === "short-text" && Array.isArray(item.rubric) && item.rubric.length) {
       out.push("", "Scoring rubric:");
       for (const r of item.rubric) out.push(`  ${r.score} — ${r.descriptor}`);
     }
@@ -432,57 +437,6 @@ export function itemsToText(
   // With section titles the headings delimit the blocks (two blank lines above each); without them
   // fall back to the horizontal-rule separator.
   const body = [...passages, ...questions].filter(Boolean).join(sections ? "\n\n\n" : "\n\n———\n\n");
-  return (title ? `${title}\n\n` : "") + body;
-}
-
-// The Answers view's copy: just the correct answer(s), from the same `answerRows` the on-screen
-// AnswersView renders — no stems, options, or distractor analysis. Each item keeps its metadata
-// header, and with `sections` gets an "Answers" heading (numbered by "Copy All").
-function answerRowsHtml(item: any): string {
-  const rows = answerRows(item);
-  if (rows.length === 0) return P("No answer key for this item.", "margin:8px 0 4px;color:#6b7280");
-  return rows
-    .map((r) => {
-      const note = r.note ? ` <span style="font-weight:normal;color:#6b7280">(${esc(r.note)})</span>` : "";
-      const head = P(`<strong>${esc(r.label)}</strong>${note}`, "margin:8px 0 2px");
-      return head + r.values.map((v) => P(`${CHECK} ${esc(v)}`, "margin:0 0 2px 12px")).join("");
-    })
-    .join("");
-}
-
-function answerRowsText(item: any): string {
-  const rows = answerRows(item);
-  if (rows.length === 0) return "No answer key for this item.";
-  const out: string[] = [];
-  for (const r of rows) {
-    out.push(`${r.label}${r.note ? ` (${r.note})` : ""}:`);
-    for (const v of r.values) out.push(`  ✓ ${v}`);
-  }
-  return out.join("\n");
-}
-
-export function answersToHtml(items: any[], title?: string, sections = false, numbered = false): string {
-  const body = (items ?? [])
-    .map((item, i) => {
-      const head = sections ? sectionTitleHtml(`Answers${numbered ? ` #${i + 1}` : ""}`) : "";
-      return `<div>${head}${metaHtml(item)}${answerRowsHtml(item)}</div>`;
-    })
-    .join('<p style="margin:14px 0"></p>');
-  const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
-}
-
-export function answersToText(items: any[], title?: string, sections = false, numbered = false): string {
-  const body = (items ?? [])
-    .map((item, i) => {
-      const meta = metaText(item);
-      return (
-        (sections ? `Answers${numbered ? ` #${i + 1}` : ""}\n\n` : "") +
-        (meta ? `${meta}\n\n` : "") +
-        answerRowsText(item)
-      );
-    })
-    .join(sections ? "\n\n\n" : "\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 
