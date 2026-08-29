@@ -18,7 +18,7 @@ export function HotTextItem({
   const [partA, setPartA] = useState<string | undefined>();
   const [picked, setPicked] = useState<string[]>([]);
   const ax = analysisIndex(item);
-  const revealed = revealsAnswers(mode); // Answers / Rationale mark the supporting sentences
+  const revealed = revealsAnswers(mode); // Rationale marks the supporting sentences
   const preview = mode === "preview";
   const previewB = preview && picked.length > 0; // Part B feedback active once a sentence is clicked
   // Single-part Hot Text (evidence targets, e.g. T8): the inference is given in the stem and there
@@ -89,8 +89,8 @@ export function HotTextItem({
                 <span className="text-zinc-400 mr-2 select-none">{p.lineId}</span>
                 {p.units.map((s: any) => {
                 const on = picked.includes(s.id);
-                // Answers/Rationale mark every supporting sentence; Preview marks only the
-                // sentences the student clicked, so a wrong pick doesn't point at the right one.
+                // Rationale marks every supporting sentence; Preview marks only the sentences the
+                // student clicked, so a wrong pick doesn't point at the right one.
                 const right = s.correct && (revealed || (previewB && on));
                 const wrong = previewB && on && !s.correct;
                 return (

@@ -5,13 +5,11 @@ import type { Mode } from "./ModeToggle";
 
 export type { Mode };
 
-// Two modes reveal correctness, and they differ only in how much they say about it:
-//   - "answers" shows the item exactly as it looks once a student has answered — the correct
-//     option(s)/sentence(s)/word tinted green with a ✓ — and nothing else.
-//   - "review" (the Rationale view) adds the distractor analysis, answer key, and scoring.
-// Preview reveals the same marks once the student answers (the `feedback` flag).
-export const revealsAnswers = (mode: Mode) => mode === "review" || mode === "answers";
-export const showsAnalysis = (mode: Mode) => mode === "review";
+// Rationale (mode id "review") is the mode that reveals every correct answer inside the item
+// body, along with the distractor analysis. (The Answers view doesn't render an item body at all —
+// ItemView swaps in the answer key itself.) Preview reveals only the student's own pick, once
+// they answer (the `feedback` flag).
+export const revealsAnswers = (mode: Mode) => mode === "review";
 
 export function cx(...c: any[]) {
   return c.filter(Boolean).join(" ");
@@ -50,10 +48,10 @@ export function ResultBanner({ correct, children }: { correct: boolean; children
   );
 }
 
-// A selectable option row (radio for single-select). The Answers and Rationale modes mark EVERY
-// correct option. Preview marks only the option the student picked — green if it was right, red if
-// it was wrong — so answering never gives the answer away; the correct option stays unmarked until
-// they find it. The amber distractor analysis is Rationale-only.
+// A selectable option row (radio for single-select). Rationale marks EVERY correct option and
+// annotates the wrong ones. Preview marks only the option the student picked — green if it was
+// right, red if it was wrong — so answering never gives the answer away; the correct option stays
+// unmarked until they find it.
 export function OptionRow({
   name,
   optKey,
@@ -75,7 +73,7 @@ export function OptionRow({
   analysis?: any;
   feedback?: boolean;
 }) {
-  const analysed = showsAnalysis(mode);
+  const analysed = mode === "review";
   const answered = !!feedback && selected; // this row is the student's pick, in Preview
   const showCorrect = correct && (revealsAnswers(mode) || answered);
   const showWrong = answered && !correct;

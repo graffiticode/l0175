@@ -15,7 +15,7 @@ export function WordSelectItem({
   respond: (r: any) => void;
 }) {
   const [picked, setPicked] = useState<number | undefined>();
-  const revealed = revealsAnswers(mode); // Answers / Rationale mark the correct word
+  const revealed = revealsAnswers(mode); // Rationale marks the correct word
   const preview = mode === "preview";
   const tokens: any[] = item.wordSelect?.tokens ?? [];
   const ok = picked !== undefined && !!tokens.find((t) => t.idx === picked)?.correct;
@@ -33,7 +33,7 @@ export function WordSelectItem({
         {tokens.map((t: any) => {
           if (!t.selectable) return <span key={t.idx}>{(t.pre ?? "") + t.text + (t.post ?? "")} </span>;
           const on = picked === t.idx;
-          // Preview marks only the word the student clicked; Answers/Rationale mark the answer.
+          // Preview marks only the word the student clicked; Rationale marks the answer.
           const right = t.correct && (revealed || (preview && on));
           const wrong = preview && on && !t.correct;
           return (

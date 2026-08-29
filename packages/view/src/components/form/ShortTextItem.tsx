@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Short Text (Task Model 3): constructed response. A prompt + a text box; hand-scored 0/1/2
-// against the rubric (no auto-scoring). There is no option to mark correct, so the two revealing
-// modes show the exemplar response — Answers on its own, Rationale alongside the scoring rubric.
+// against the rubric (no auto-scoring). There is no option to mark correct, so Rationale shows the
+// scoring rubric and the exemplar response. (The Answers view shows the exemplar on its own — see
+// ItemView's answers body.)
 import { useState } from "react";
 import { StemLine, revealsAnswers, type Mode } from "./itemKit";
 
@@ -38,20 +39,16 @@ export function ShortTextItem({
       )}
       {revealsAnswers(mode) && (
         <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-          {mode === "review" && (
-            <>
-              <p className="text-xs font-semibold text-zinc-700 mb-2">Scoring rubric (hand-scored)</p>
-              <ul className="flex flex-col gap-1">
-                {(item.rubric ?? []).map((r: any) => (
-                  <li key={r.score} className="text-xs text-zinc-700">
-                    <span className="font-semibold">{r.score}</span> — {r.descriptor}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          <p className="text-xs font-semibold text-zinc-700 mb-2">Scoring rubric (hand-scored)</p>
+          <ul className="flex flex-col gap-1">
+            {(item.rubric ?? []).map((r: any) => (
+              <li key={r.score} className="text-xs text-zinc-700">
+                <span className="font-semibold">{r.score}</span> — {r.descriptor}
+              </li>
+            ))}
+          </ul>
           {exemplar && (
-            <p className={"text-xs text-zinc-600" + (mode === "review" ? " mt-2" : "")}>
+            <p className="text-xs text-zinc-600 mt-2">
               <span className="font-semibold text-green-700">✓</span>{" "}
               <span className="font-semibold">Exemplar response:</span> {exemplar}
             </p>

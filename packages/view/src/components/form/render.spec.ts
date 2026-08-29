@@ -83,6 +83,33 @@ function render(data: any, mode: string): string {
   return renderToString(createElement(Form as any, { state: { data, errors: [], apply: () => {} } }));
 }
 
+// The Answers view answers the question instead of asking it: the stem, then the correct
+// answer(s) — no distractors to pick from.
+describe("Answers view shows only the correct answer", () => {
+  it("multiple-choice shows the correct option and drops the distractors", () => {
+    const html = render(MC, "answers");
+    expect(html).toContain("Which sentence shows the main idea?"); // the stem
+    expect(html).toContain("A — right");
+    expect(html).not.toContain("wrong"); // no distractors
+  });
+  it("EBSR shows both parts' answers", () => {
+    const html = render(EBSR, "answers");
+    expect(html).toContain("Part A");
+    expect(html).toContain("Part B");
+    expect(html).toContain("A — right");
+  });
+  it("short text shows a sample correct answer", () => {
+    const html = render(SHORTTEXT, "answers");
+    expect(html).toContain("Sample correct answer");
+    expect(html).toContain("The exemplar.");
+    expect(html).not.toContain("Scoring rubric"); // scoring belongs to Rationale
+  });
+  it("word-select shows the word; hot text the supporting sentences", () => {
+    expect(render(WORDSELECT, "answers")).toContain("aqueduct");
+    expect(render(HOTTEXT, "answers")).toContain("1.1");
+  });
+});
+
 describe("Form renders every item type in every mode", () => {
   for (const [name, item] of Object.entries(ITEMS)) {
     for (const mode of MODES) {
@@ -151,9 +178,7 @@ describe("Questions mode marks only the clicked response", () => {
     const html = row({ correct: true, selected: false, feedback: false });
     expect(marksCorrect(html)).toBe(false);
   });
-  it("still marks every correct option in the Answers and Rationale views", () => {
-    for (const mode of ["answers", "review"] as const) {
-      expect(marksCorrect(row({ mode, correct: true, selected: false }))).toBe(true);
-    }
+  it("still marks every correct option in the Rationale view", () => {
+    expect(marksCorrect(row({ mode: "review", correct: true, selected: false }))).toBe(true);
   });
 });

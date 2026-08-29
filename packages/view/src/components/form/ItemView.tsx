@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-// Renders one composed assessment item: a metadata header, the lead-in, the task-model-specific
-// body (which reveals the correct answer(s) in the Answers and Rationale modes), and — in
-// Rationale mode only — the answer key, scoring, and warnings. The passage is never shown here —
-// it lives in its own "Passage" tab.
-import { Pill, type Mode } from "./itemKit";
+// Renders one composed assessment item: a metadata header, the lead-in, and the body — the
+// task-model component in Questions and Rationale (Rationale reveals the answers and adds the
+// analysis, key, scoring, and warnings), or, in Answers, just the stem plus the correct answer(s).
+// The passage is never shown here — it lives in its own "Passage" tab.
+import { Pill, StemLine, type Mode } from "./itemKit";
+import { answerRows, type AnswerRow } from "./answers";
 import { EbsrItem } from "./EbsrItem";
 import { HotTextItem } from "./HotTextItem";
 import { ShortTextItem } from "./ShortTextItem";
@@ -81,6 +82,46 @@ function answerKeyParts(item: any): { label: string; value: string }[] {
   return parts;
 }
 
+// The "Answers" body: the question's stem, then just the correct answer(s) — no distractors, no
+// passage, no analysis. Every task model reduces to the same shape (see answerRows): one row per
+// answerable part, each value marked with a ✓.
+function AnswerRowView({ row }: { row: AnswerRow }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-xs font-semibold text-zinc-700">
+        {row.label}
+        {row.note && <span className="ml-1.5 font-normal text-zinc-500">({row.note})</span>}
+      </p>
+      {row.values.map((v, i) => (
+        <p key={i} className="text-sm text-zinc-900">
+          <span className="text-green-600 font-semibold mr-1.5 select-none">✓</span>
+          {v}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function AnswersBody({ item }: { item: any }) {
+  const rows = answerRows(item);
+  const stem = item.type === "short-text" ? item.prompt : item.stem?.partA;
+  return (
+    <div className="flex flex-col gap-3">
+      {stem && <StemLine>{stem}</StemLine>}
+      {item.stem?.partB && <StemLine>{item.stem.partB}</StemLine>}
+      {rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">No answer key for this item.</p>
+      ) : (
+        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3 flex flex-col gap-3">
+          {rows.map((row, i) => (
+            <AnswerRowView key={i} row={row} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReviewPanel({ item }: { item: any }) {
   const r = item.review ?? {};
   const parts = answerKeyParts(item);
@@ -126,8 +167,12 @@ export function ItemView({
   // options, blanking the form. Namespacing under one `response` key keeps answers out of the
   // item's namespace.
   const respond = (r: any) => apply({ type: "response", args: { response: { itemId: item.id, ...r } } });
+  // "Answers" replaces the answerable body with the answer itself; every other mode renders the
+  // task-model component (Questions plain, Rationale with the answers and analysis revealed).
   const body =
-    item.type === "ebsr" ? (
+    mode === "answers" ? (
+      <AnswersBody item={item} />
+    ) : item.type === "ebsr" ? (
       <EbsrItem item={item} mode={mode} respond={respond} />
     ) : item.type === "hot-text" ? (
       item.wordSelect ? (

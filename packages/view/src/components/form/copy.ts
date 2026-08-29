@@ -5,20 +5,22 @@
 // self-contained, inline-styled, and free of class names and form controls.
 //
 //   - Questions mode (id "preview") -> the question only.
-//   - Answers mode -> the question with the correct answer(s) marked (bold + ✓) and the answer key
-//     line, mirroring the on-screen Answers view. No distractor analysis, no rubric.
-//   - Rationale mode (id "review") -> all of that PLUS the teacher's analysis: the short-text
-//     rubric, and, beneath each wrong option, the same amber annotation the on-screen Rationale
-//     view interleaves (error type · plausibility → tie — rationale). It still omits composition
-//     warnings.
+//   - Answers mode -> the stem plus just the correct answer(s) (answersToHtml/answersToText),
+//     mirroring the on-screen Answers view: no distractors, no passage, no analysis.
+//   - Rationale mode (id "review") -> the question PLUS a clean teacher answer key (correct option
+//     marked, the answer key, the short-text rubric, and the exemplar/correct inference). Each
+//     wrong option is followed by the same amber annotation the on-screen Rationale view
+//     interleaves beneath it (error type · plausibility → tie — rationale). It still omits
+//     composition warnings.
 //   - Both modes LEAD with the reading passage(s) (deduped), then the question(s), so the copy is
 //     a self-contained passage+questions block. "Copy passage" (passagesToHtml/passagesToText)
 //     still serializes just the reading passage(s), with its metadata header.
 import type { Mode } from "./ModeToggle";
+import { answerRows } from "./answers";
 
-// The two revealing modes, mirroring itemKit's helpers: both mark the correct answer(s); only
-// Rationale carries the distractor analysis and the scoring rubric.
-const revealsAnswers = (mode: Mode) => mode === "review" || mode === "answers";
+// Rationale (mode id "review") is the mode that marks the answers inside the question and carries
+// the analysis; Answers copies the answer key on its own, via answersToHtml/answersToText below.
+const revealsAnswers = (mode: Mode) => mode === "review";
 const showsAnalysis = (mode: Mode) => mode === "review";
 
 const esc = (s: any): string =>
@@ -118,8 +120,8 @@ function annotationText(a: any): string {
 }
 
 // One option line: "A. text" (Part B EBSR options are quoted). Correct options are bolded with a ✓
-// in the revealing modes. In Rationale mode each wrong option is additionally followed by its
-// amber annotation (interleaved, as on screen) via `ann(key)`.
+// in Rationale mode, where each wrong option is additionally followed by its amber annotation
+// (interleaved, as on screen) via `ann(key)`.
 function optionsHtml(options: any[], mode: Mode, quote: boolean, ann?: (key: string) => any): string {
   return (options ?? [])
     .map((o: any) => {
@@ -437,6 +439,70 @@ export function itemsToText(
   // With section titles the headings delimit the blocks (two blank lines above each); without them
   // fall back to the horizontal-rule separator.
   const body = [...passages, ...questions].filter(Boolean).join(sections ? "\n\n\n" : "\n\n———\n\n");
+  return (title ? `${title}\n\n` : "") + body;
+}
+
+// The Answers view's copy: the stem, then just the correct answer(s), from the same `answerRows`
+// the on-screen Answers body renders — no distractors, no passage, no analysis. Each item keeps
+// its metadata header, and with `sections` gets an "Answers" heading (numbered by "Copy All").
+const stemOf = (item: any): string =>
+  item.type === "short-text" ? (item.prompt ?? "") : (item.stem?.partA ?? "");
+
+function answerRowsHtml(item: any): string {
+  const rows = answerRows(item);
+  const stems = [stemOf(item), item.stem?.partB]
+    .filter(Boolean)
+    .map((t: any) => P(`<strong>${esc(t)}</strong>`, "margin:8px 0 4px"))
+    .join("");
+  if (rows.length === 0) return stems + P("No answer key for this item.", "margin:8px 0 4px;color:#6b7280");
+  return (
+    stems +
+    rows
+      .map((r) => {
+        const note = r.note ? ` <span style="font-weight:normal;color:#6b7280">(${esc(r.note)})</span>` : "";
+        const head = P(`<strong>${esc(r.label)}</strong>${note}`, "margin:8px 0 2px");
+        return head + r.values.map((v) => P(`${CHECK} ${esc(v)}`, "margin:0 0 2px 12px")).join("");
+      })
+      .join("")
+  );
+}
+
+function answerRowsText(item: any): string {
+  const out: string[] = [stemOf(item), item.stem?.partB].filter(Boolean) as string[];
+  const rows = answerRows(item);
+  if (rows.length === 0) {
+    out.push("", "No answer key for this item.");
+  } else {
+    for (const r of rows) {
+      out.push("", `${r.label}${r.note ? ` (${r.note})` : ""}:`);
+      for (const v of r.values) out.push(`  ✓ ${v}`);
+    }
+  }
+  return out.join("\n").trim();
+}
+
+export function answersToHtml(items: any[], title?: string, sections = false, numbered = false): string {
+  const body = (items ?? [])
+    .map((item, i) => {
+      const head = sections ? sectionTitleHtml(`Answers${numbered ? ` #${i + 1}` : ""}`) : "";
+      return `<div>${head}${metaHtml(item)}${answerRowsHtml(item)}</div>`;
+    })
+    .join('<p style="margin:14px 0"></p>');
+  const head = title ? `<h3 style="margin:0 0 8px">${esc(title)}</h3>` : "";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;color:#111827">${head}${body}</div>`;
+}
+
+export function answersToText(items: any[], title?: string, sections = false, numbered = false): string {
+  const body = (items ?? [])
+    .map((item, i) => {
+      const meta = metaText(item);
+      return (
+        (sections ? `Answers${numbered ? ` #${i + 1}` : ""}\n\n` : "") +
+        (meta ? `${meta}\n\n` : "") +
+        answerRowsText(item)
+      );
+    })
+    .join(sections ? "\n\n\n" : "\n\n———\n\n");
   return (title ? `${title}\n\n` : "") + body;
 }
 

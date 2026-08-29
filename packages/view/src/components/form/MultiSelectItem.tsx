@@ -3,7 +3,7 @@
 // "Choose two sentences that belong in a summary" items. 1 point only for selecting exactly the
 // correct set (and nothing else). Checkboxes, since more than one option is correct.
 import { useState } from "react";
-import { StemLine, ResultBanner, analysisIndex, cx, revealsAnswers, showsAnalysis, type Mode } from "./itemKit";
+import { StemLine, ResultBanner, analysisIndex, cx, revealsAnswers, type Mode } from "./itemKit";
 
 export function MultiSelectItem({
   item,
@@ -16,8 +16,8 @@ export function MultiSelectItem({
 }) {
   const [picked, setPicked] = useState<string[]>([]);
   const ax = analysisIndex(item);
-  const revealed = revealsAnswers(mode); // Answers / Rationale mark the correct set
-  const analysed = showsAnalysis(mode); // the amber distractor analysis is Rationale-only
+  const revealed = revealsAnswers(mode); // Rationale marks the correct set
+  const analysed = revealed; // and carries the amber distractor analysis
   const preview = mode === "preview";
   const feedback = preview && picked.length > 0; // correctness shown once a box is checked
   const options: any[] = item.choice?.options ?? [];
@@ -36,7 +36,7 @@ export function MultiSelectItem({
       <StemLine>{item.stem?.partA}</StemLine>
       {options.map((o: any) => {
         const on = picked.includes(o.key);
-        // Preview marks only the boxes the student checked; Answers/Rationale mark the whole set.
+        // Preview marks only the boxes the student checked; Rationale marks the whole set.
         const showCorrect = o.correct && (revealed || (feedback && on));
         const showWrong = feedback && on && !o.correct;
         const an = ax[`A:${o.key}`];
