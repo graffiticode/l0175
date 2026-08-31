@@ -2,6 +2,7 @@
 // Tests for the RAG embedding helpers (src/embedding.ts): passage-free embeddingText, the design
 // signature tags/facets derived from the composed item, and query-side facet extraction.
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 // @ts-expect-error — sibling repo, plain JS, no types
 import { parser } from "../../../../graffiticode/packages/parser/src/index.js";
 import {
@@ -225,5 +226,74 @@ describe("extractQueryFacets", () => {
     expect(f.target).toBe("c1-t1");
     expect(f.passageType).toBe("literary");
     expect(f.taskModels).toEqual(["1"]); // tm1 = multiple-choice for c1-t1
+  });
+  // ---- Regression guards for the twin-target confusion -----------------------------------------
+  //
+  // Key Details (T1/T8) and Reasoning & Evidence (T4/T11) both end in "find the line that supports
+  // it". A skill cue keyed on supporting evidence therefore matched both and, being earlier in
+  // SKILL_CUES, took every T4/T11 prompt for T1/T8: 11 of the 35 spec prompts resolved to a
+  // confidently WRONG target. That is not a ranking nit — the console's facetAdjustment treats a
+  // target mismatch as a hard exclusion, so a misread deletes the right examples from retrieval.
+  //
+  // Two sets, because they fail differently. The corpus set is the authoring voice these cues were
+  // written against; the held-out set is the register a teacher actually types, and it is the one
+  // that catches cues fitted too tightly to spec phrasing (the first pass at this fix scored 34/35
+  // on the corpus and 6/15 here).
+
+  it("resolves every spec prompt's declared target from its prose alone", () => {
+    const md = readFileSync(new URL("../spec/examples.md", import.meta.url), "utf8");
+    const rows: Array<{ target: string; prose: string }> = [];
+    for (const line of md.split("\n")) {
+      const m = line.match(/^\d+\.\s+(c1-t\d+)\s+tm\d\s*[—-]\s*(.+)$/);
+      if (m) rows.push({ target: m[1], prose: m[2].trim() });
+    }
+    expect(rows.length, "spec prompts parsed").toBeGreaterThan(30);
+
+    // "ask students what the theme is and have them explain it using details from the text" is
+    // genuinely shared ground: T4 lists theme among the things it reasons about, and T2 IS theme.
+    // Left as a known ambiguity rather than fitted with a rule that only this prompt could trip.
+    const KNOWN_AMBIGUOUS = /what the theme is and have them explain/i;
+
+    const wrong = rows
+      .filter((r) => !KNOWN_AMBIGUOUS.test(r.prose))
+      .map((r) => ({ ...r, got: extractQueryFacets(r.prose).target }))
+      .filter((r) => r.got !== r.target);
+
+    expect(wrong.map((w) => `${w.target} -> ${w.got ?? "none"}: ${w.prose}`)).toEqual([]);
+  });
+
+  it.each([
+    ["The story shows Maya was nervous before the recital. Which line proves it?", "c1-t1"],
+    ["Give students the idea that the dog was frightened and have them find the two sentences that back it up.", "c1-t1"],
+    ["The article claims bats help farmers. Which fact supports that?", "c1-t8"],
+    ["Hand kids a statement about volcanoes and ask which detail from the report supports it.", "c1-t8"],
+    ["I want students to work out why the boy lied to his sister, then cite the text.", "c1-t4"],
+    ["Ask what the narrator thinks of her grandmother and have them prove it from the story.", "c1-t4"],
+    ["What's the lesson of this fable?", "c1-t2"],
+    ["Ask students for the message of the poem.", "c1-t2"],
+    ["Which sentence gives the main idea of the article?", "c1-t9"],
+    ["Have students write a short summary of the nonfiction piece.", "c1-t9"],
+    ["What does 'brittle' mean here?", "c1-t10"],
+    ["Use the prefix to work out what 'unbearable' means.", "c1-t10"],
+    ["Which two words mean about the same as 'enormous' in this article?", "c1-t10"],
+  ])("routes teacher-voice %j to %s", (prompt, target) => {
+    expect(extractQueryFacets(prompt as string).target).toBe(target);
+  });
+  // KNOWN GAP, and a different axis from the twin-target fix above: both of these now identify the
+  // SKILL correctly (reasoning-evidence) and then pick the wrong TEXT TYPE. Neither prompt carries
+  // a genre word, so extractQueryFacets has nothing to route on and targetForSkill falls back to
+  // the literary form — landing on c1-t4 where an article was meant.
+  //
+  // Not fixed here because the honest options are both bigger than a cue tweak: infer text type
+  // from weaker signals (an "author"/"writer" writes articles, a "narrator" tells stories), or
+  // ABSTAIN when the text type is unknown. Abstaining is the safer of the two under hard-exclusion
+  // semantics — no target set means no exclusion, where a coin-flip guess deletes the right
+  // examples half the time — but it would change the documented fallback that the
+  // "falls back to Reasoning & Evidence" test above pins.
+  it.skip.each([
+    ["Have students decide what the author thinks about zoos and back it with evidence.", "c1-t11"],
+    ["Students should explain how the writer uses statistics to make her case.", "c1-t11"],
+  ])("routes genre-less informational %j to %s", (prompt, target) => {
+    expect(extractQueryFacets(prompt as string).target).toBe(target);
   });
 });
