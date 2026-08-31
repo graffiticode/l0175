@@ -222,15 +222,52 @@ const ITEM_TYPE_CUES: Array<[RegExp, string]> = [
 ];
 
 // Skill cues, MOST SPECIFIC FIRST — the order is the disambiguation. A prompt about a word's
-// meaning is Word Meanings even though it also says "passage"; "which detail supports X" is Key
-// Details even though it says "conclusion"; and a prompt naming the main idea is Central Ideas even
-// though its Part B asks for a supporting detail. Reasoning & Evidence is last: its cues (infer,
-// conclude, purpose) appear inside the other skills' phrasing too.
+// meaning is Word Meanings even though it also says "passage"; and a prompt naming the main idea is
+// Central Ideas even though its Part B asks for a supporting detail. Reasoning & Evidence is last:
+// its cues (infer, conclude, purpose) appear inside the other skills' phrasing too.
+//
+// KEY DETAILS vs REASONING & EVIDENCE is the hard pair, and the reason `key-details` is written
+// the way it is. Both skills end in "find the line that supports it", so a cue keyed on supporting
+// evidence — which is what this was — matches BOTH and, being earlier in the list, stole every
+// T4/T11 prompt for T1/T8. That is not a cosmetic ranking error: facetAdjustment in the console
+// (src/lib/lang-embedding.ts) treats a confident target mismatch as a HARD EXCLUSION, so a
+// misread here removes the correct examples from retrieval entirely.
+//
+// What actually separates them is WHO SUPPLIES THE CONCLUSION, which is how targets.ts and the
+// spec define them:
+//   Key Details (T1/T8)          — the conclusion is HANDED to the student; the whole task is
+//                                  finding the evidence for it. "Give students a conclusion ...
+//                                  which line best supports it."
+//   Reasoning & Evidence (T4/T11) — the student DERIVES the claim (a motive, a mood, a point of
+//                                  view, how the author uses information) and then backs it up.
+// So `key-details` now requires the handed-over frame, and Reasoning & Evidence carries the
+// derive-it verbs. Prompts matching neither still fall through to the reasoning-evidence default,
+// which is the safer of the two: it is the broadest skill.
 const SKILL_CUES: Array<[RegExp, string]> = [
-  [/\bword meaning|what does the (?:word|phrase)\b|\bmean(?:s|ing)?\s+(?:of|as used|in context)\b|\bvocabulary\b/i, "word-meanings"],
-  [/\b(?:theme|central idea|main idea|summar(?:y|ize|izes|izing)|author'?s message)\b/i, "central-ideas"],
-  [/\b(?:detail|sentence|line|evidence)s?\b[^.?!]{0,60}\b(?:supports?|shows?)\b/i, "key-details"],
-  [/\b(?:infer|inference|conclude|conclusion|point of view|purpose|motivation|opinion)\b/i, "reasoning-evidence"],
+  // Word Meanings. The L-4 strategies each get a cue, because the dimension spans four of them
+  // (context, roots and affixes, dictionary, word relationships) and a prompt naming only its
+  // strategy — "using its Greek or Latin root", "a short dictionary definition", "words that mean
+  // about the same" — otherwise matched nothing at all and fell through to a wrong target.
+  [/\bword meanings?\b|\bwhat does\b[^.?!]{0,25}\bmeans?\b|\bmean(?:s|ing)?\b[^.?!]{0,30}\b(?:of|as used|in context|used|here)\b|\bvocabulary\b|\b(?:greek|latin)\b|\b(?:root|prefix|suffix|affix)e?s?\b|\bdictionary\b|\bsynonyms?\b|\bantonyms?\b|\bmean about the same\b/i, "word-meanings"],
+  // `lesson`, `moral` and a bare `message` belong here as much as `theme` does — a fifth-grade
+  // teacher asking "what's the lesson of this fable?" is asking for the theme. Requiring the
+  // possessive in `author's message` missed the far commoner bare noun.
+  [/\b(?:theme|central idea|main idea|summar(?:y|ize|izes|izing)|message|lesson|moral)\b/i, "central-ideas"],
+  // The conclusion is GIVEN. Without this frame a supporting-evidence prompt is Reasoning &
+  // Evidence, not Key Details. Two registers, and both are needed:
+  //   authoring — "Give students a conclusion about X ... which line supports it" (examples.md)
+  //   user      — "The article says X — which detail best supports that?" (the claim stated
+  //               inline, then a pure evidence question). Matching only the authoring voice
+  //               scores well on examples.md and still misroutes what a person actually types,
+  //               which is the register the query side sees.
+  // The `which <noun> <verb>` anchor is what keeps this off Reasoning & Evidence: T4/T11 phrase
+  // the same evidence step without it ("then click the sentences that support it"), so requiring
+  // an interrogative confines this to prompts whose WHOLE task is finding the evidence.
+  [/\b(?:give|gives|given|giving|provide[sd]?|hand(?:s|ed)?|shows?)\s+(?:the\s+)?students?\b[^.?!]{0,40}\b(?:conclusion|inference|statement|claim|idea)\b|\bwhich\s+(?:\w+\s+){0,3}(?:detail|line|sentence|evidence|quotation|quote|fact|reason|example)s?\b[^.?!]{0,40}\b(?:supports?|proves?|backs?|shows?|demonstrates?)\b/i, "key-details"],
+  // The student derives it: the verbs of reasoning, not of evidence-hunting. `work out`,
+  // `determine` and `decide` are the same act as `figure out` and a teacher uses them
+  // interchangeably; `writer` is as common as `author` for the same referent.
+  [/\b(?:infer|inference|conclude|conclusion|point of view|purpose|motivation|motives?|opinion|figure out|work out|determine|decide|feels?|feelings?|reacts?|mood|relate)\b|\bhow (?:the )?(?:author|writer|narrator|two|characters?|setting)\b|\bwhat the (?:author|writer|narrator)\b/i, "reasoning-evidence"],
 ];
 
 // Every known target id, longest-first so `c1-t1` cannot shadow `c1-t10`/`c1-t11`. Built from

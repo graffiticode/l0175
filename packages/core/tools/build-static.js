@@ -4,7 +4,7 @@
 //     (the legacy lexicon.js request path is aliased to it by the API server.)
 //   - instructions.md: parent (L0000) instructions concatenated with L0175's.
 // The rest (spec.html, language-info.json, scope.json, schema.json, template.gc,
-// usage-guide.md, stems.md) are L0175's own.
+// usage-guide.md, stems.md, targets.json, examples.md) are L0175's own.
 import { createRequire } from "module";
 import {
   mkdirSync,
@@ -98,7 +98,11 @@ writeFileSync(
   join(outDir, "stems.md"),
   spliceGenerated(readFileSync(join(specDir, "stems.md"), "utf-8"), "task-models", taskModelTable),
 );
-for (const f of ["scope.json", "schema.json", "template.gc", "unparse-hints.json"]) {
+// examples.md is the prompt list the console's corpus pipeline generates from
+// (create-items-from-prompts / extract-prompts / run-codegen). Serving it removes their
+// `../l{lang}/packages/core/spec/examples.md` filesystem read, which only ever worked from a
+// checkout with sibling repos beside it — never from Cloud Run.
+for (const f of ["scope.json", "schema.json", "template.gc", "unparse-hints.json", "examples.md"]) {
   const src = join(specDir, f);
   if (existsSync(src)) copyFileSync(src, join(outDir, f));
 }
